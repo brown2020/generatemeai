@@ -1,4 +1,4 @@
-## Generate.me
+# Generate.me
 
 Generate.me is an AI-powered application that enables users to create custom images based on their prompts, manage profile details, and explore various artistic styles. The app integrates multiple services, including OpenAI, Fireworks API, Firebase, and more, to deliver a dynamic user experience.
 
