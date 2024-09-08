@@ -2,26 +2,211 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html,
+  body {
+    min-height: 500px;
+    height: calc(var(--vh, 1vh) * 100);
+    width: 100vw;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    background-color: #ffffff;
+    color: #000000;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .h-container-max {
+    max-height: calc(100vh - 4rem);
+    overscroll-behavior-y: contain;
+  }
+
+  .h-container-custom {
+    height: calc(100vh - 4rem);
+    overscroll-behavior-y: contain;
+  }
+  .h-container-small {
+    height: calc(100vh - 8rem);
+    overscroll-behavior-y: contain;
+  }
+
+  .sidebar-closed {
+    transform-origin: top left;
+    transform: scale(0);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
+      visibility 0s 0.5s;
+  }
+
+  .sidebar-open {
+    transform-origin: top left;
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  }
+
+  .menu-closed {
+    transform-origin: top right;
+    transform: scale(0);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
+      visibility 0s 0.5s;
+  }
+
+  .menu-open {
+    transform-origin: top right;
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  }
+
+  .overlay-closed {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
+    visibility: hidden;
+  }
+
+  .overlay-open {
+    opacity: 0.3;
+    transition: opacity 0.3s ease-in-out;
+    visibility: visible;
+    transition-delay: 0.2s;
+  }
+
+  .noscroll {
+    overflow: hidden;
+  }
+
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .btn {
+    @apply flex items-center justify-center px-3 py-2 hover:opacity-50 rounded-md gap-1 disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply cursor-pointer flex w-full outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-[#2563EB] text-white font-semibold hover:bg-[#2563EB]/30 rounded-full disabled:bg-[#2563EB]/30 disabled:hover:bg-[#2563EB]/30 disabled:cursor-not-allowed;
+  }
+
+  .btn-blue {
+    @apply cursor-pointer flex w-full outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-blue-500 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-white {
+    @apply cursor-pointer flex outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-white text-black font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-muted {
+    @apply cursor-pointer flex w-full outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-gray-400 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary2 {
+    @apply cursor-pointer flex outline-none items-center gap-2 mt-2 px-6 py-2 bg-black/20 text-black font-semibold hover:bg-black/30 rounded-full disabled:bg-white/10 disabled:hover:bg-white/10 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply cursor-pointer flex outline-none items-center gap-2 mt-2 px-6 py-2 bg-white/10 text-black/50 font-semibold hover:bg-white/30 ml-auto rounded-full;
+  }
+
+  .input-primary {
+    @apply w-full text-black px-4 py-2 outline-none border border-[#111113]/20  bg-white rounded-lg;
+  }
+
+  .text-wrapper {
+    @apply flex flex-col space-y-3 max-w-4xl mx-auto;
+  }
+  .text-wrapper h3 {
+    @apply text-2xl;
+  }
+  .text-wrapper h4 {
+    @apply text-lg;
+  }
+  .text-wrapper ul {
+    @apply list-disc mx-4 space-y-3;
+  }
+
+  .form-wrapper {
+    @apply flex flex-col space-y-3 w-full;
+  }
+  .form-wrapper form {
+    @apply flex flex-col space-y-3;
+  }
+  .form-wrapper label {
+    @apply flex flex-col space-y-1;
+  }
+  .form-wrapper input,
+  .form-wrapper textarea {
+    @apply px-3 py-2 outline-none border rounded-md;
+  }
+  .form-wrapper button {
+    @apply mr-auto py-2 px-3 bg-orange-500 text-black rounded-md cursor-pointer disabled:opacity-50 hover:opacity-50;
+  }
+  .response {
+    @apply p-3 bg-orange-500 bg-opacity-20 my-3 rounded-md whitespace-pre-wrap;
+  }
+
+  .form-input {
+    @apply px-2 py-2 border  border-[#111113]/20  w-full outline-none text-sm rounded-[4px];
+  }
+  .form-input-required {
+    @apply px-2 py-2 border border-red-500 w-full outline-none text-sm rounded-[4px];
+  }
+
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px; /* Adjust as needed */
+  }
+
+  .custom-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: #fff; /* Default background */
+    border-color: rgba(66, 80, 102, 0.4); /* Border color */
+    border-width: 1px;
+    box-shadow: 0px 0px 2px 4px rgba(66, 80, 102, 0.1);
+    padding: 10px; /* Size of the checkbox */
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    vertical-align: middle;
+    margin-right: 8px; /* Space between checkbox and label */
+  }
+
+  .custom-checkbox:checked {
+    background-color: #fbbf24; /* Bright yellow background */
+  }
+
+  .custom-checkbox:checked:after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px; /* Adjust size of checkmark */
+    color: #000000;
+  }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.videoWrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+}
+
+.videoWrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
