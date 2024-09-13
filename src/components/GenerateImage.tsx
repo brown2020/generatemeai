@@ -13,9 +13,15 @@ import Select from "react-select";
 import { PulseLoader } from "react-spinners";
 import { generateImage } from "@/actions/generateImage";
 import { generatePrompt } from "@/utils/promptUtils";
+import useProfileStore from "@/zustand/useProfileStore";
+import toast from "react-hot-toast";
 
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
+  const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
+  const useCredits = useProfileStore((s) => s.profile.useCredits);
+  const credits = useProfileStore((s) => s.profile.credits)
+  const minusCredits = useProfileStore((state) => state.minusCredits)
   const [imagePrompt, setImagePrompt] = useState<string>("");
   const [imageStyle, setImageStyle] = useState<string>("");
   const [promptData, setPromptData] = useState<PromptDataType>({
@@ -60,11 +66,20 @@ export default function GenerateImage() {
     try {
       setLoading(true);
       const prompt: string = generatePrompt(imagePrompt, imageStyle);
-      const response = await generateImage(prompt, uid);
+      const response = await generateImage(prompt, uid, fireworksAPIKey, useCredits, credits);
 
-      const downloadURL = response.imageUrl;
+      if (response?.error) {
+        toast.error(response.error)
+        return
+      }
+
+      const downloadURL = response?.imageUrl;
       if (!downloadURL) {
         throw new Error("Error generating image");
+      }
+
+      if (useCredits == true) {
+        await minusCredits(Number(process.env.NEXT_PUBLIC_CREDITS_PER_IMAGE) || 2)
       }
 
       setGeneratedImage(downloadURL);

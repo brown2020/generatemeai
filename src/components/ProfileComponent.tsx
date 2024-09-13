@@ -7,10 +7,9 @@ import { useEffect, useState } from "react";
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
-  const [fireworksApiKey, setFireworksApiKey] = useState(
-    profile.fireworks_api_key
-  );
+  const [fireworksApiKey, setFireworksApiKey] = useState(profile.fireworks_api_key);
   const [openaiApiKey, setOpenaiApiKey] = useState(profile.openai_api_key);
+  const [useCredits, setUseCredits] = useState(profile.useCredits);
 
   useEffect(() => {
     setFireworksApiKey(profile.fireworks_api_key);
@@ -18,10 +17,7 @@ export default function ProfileComponent() {
   }, [profile.fireworks_api_key, profile.openai_api_key]);
 
   const handleApiKeyChange = async () => {
-    if (
-      fireworksApiKey !== profile.fireworks_api_key ||
-      openaiApiKey !== profile.openai_api_key
-    ) {
+    if (fireworksApiKey !== profile.fireworks_api_key || openaiApiKey !== profile.openai_api_key) {
       try {
         await updateProfile({
           fireworks_api_key: fireworksApiKey,
@@ -33,6 +29,13 @@ export default function ProfileComponent() {
       }
     }
   };
+
+  const handleCreditsChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setUseCredits(e.target.value === "credits"); 
+    await updateProfile({ useCredits: e.target.value == 'credits' });
+  }
+
+  const areApiKeysAvailable = fireworksApiKey && openaiApiKey;
 
   return (
     <div className="flex flex-col gap-4">
@@ -49,10 +52,10 @@ export default function ProfileComponent() {
           </Link>
         </div>
         <div className="text-sm text-gray-600 mt-2">
-          You can either buy credits or add your own API keys for Fireworks and
-          OpenAI.
+          You can either buy credits or add your own API keys for Fireworks and OpenAI.
         </div>
       </div>
+
       <div className="flex flex-col px-5 py-3 gap-3 border border-gray-500 rounded-md">
         <label htmlFor="fireworks-api-key" className="text-sm font-medium">
           Fireworks API Key:
@@ -86,6 +89,23 @@ export default function ProfileComponent() {
         >
           Update API Keys
         </button>
+      </div>
+
+
+      <div className="flex items-center px-5 py-3 gap-3 border border-gray-500 rounded-md">
+        <label htmlFor="toggle-use-credits" className="text-sm font-medium">
+          Use:
+        </label>
+        <select
+          id="toggle-use-credits"
+          value={useCredits ? "credits" : "apikeys"}
+          onChange={handleCreditsChange}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          disabled={!areApiKeysAvailable}
+        >
+          <option value="credits">Credits</option>
+          {areApiKeysAvailable && <option value="apikeys">API Keys</option>}
+        </select>
       </div>
     </div>
   );

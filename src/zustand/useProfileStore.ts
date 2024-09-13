@@ -14,6 +14,7 @@ export interface ProfileType {
   openai_api_key: string;
   selectedAvatar: string;
   selectedTalkingPhoto: string;
+  useCredits: boolean;
 }
 
 const defaultProfile: ProfileType = {
@@ -27,13 +28,14 @@ const defaultProfile: ProfileType = {
   openai_api_key: "",
   selectedAvatar: "",
   selectedTalkingPhoto: "",
+  useCredits: true
 };
 
 interface ProfileState {
   profile: ProfileType;
   fetchProfile: () => Promise<void>;
   updateProfile: (newProfile: Partial<ProfileType>) => Promise<void>;
-  useCredits: (amount: number) => Promise<boolean>;
+  minusCredits: (amount: number) => Promise<boolean>;
   addCredits: (amount: number) => Promise<void>;
 }
 
@@ -109,7 +111,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  useCredits: async (amount: number) => {
+  minusCredits: async (amount: number) => {
     const uid = useAuthStore.getState().uid;
     if (!uid) return false;
 
@@ -161,6 +163,7 @@ function createNewProfile(
     openai_api_key: "",
     selectedAvatar: "",
     selectedTalkingPhoto: "",
+    useCredits: true
   };
 }
 
