@@ -5,8 +5,12 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-export async function generateImage(message: string, uid: string) {
+export async function generateImage(message: string, uid: string, fireworksAPIKey: string, useCredits: boolean, credits: number) {
   try {
+    if (useCredits && credits < 2) {
+      throw new Error("Not enough credits to generate an image. Please purchase credits or use your own API keys.");
+    }
+
     const apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0`;
     const requestBody = {
       cfg_scale: 7,
@@ -26,7 +30,7 @@ export async function generateImage(message: string, uid: string) {
       headers: {
         "Content-Type": "application/json",
         Accept: "image/jpeg",
-        Authorization: `Bearer ${process.env.FIREWORKS_API_KEY}`,
+        Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY : fireworksAPIKey}`,
       },
       body: JSON.stringify(requestBody),
     });
@@ -44,6 +48,14 @@ export async function generateImage(message: string, uid: string) {
     await file.save(Buffer.from(imageData), {
       contentType: "image/jpeg",
     });
+
+    const metadata = {
+      metadata: {
+        prompt: message,
+      }
+    };
+
+    await file.setMetadata(metadata);
 
     const [imageUrl] = await file.getSignedUrl({
       action: "read",
