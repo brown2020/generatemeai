@@ -8,6 +8,8 @@ import {
   orderBy,
   limit,
   onSnapshot,
+  DocumentData,
+  QuerySnapshot,
 } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { Download, Share2 as Share, X } from "lucide-react";
@@ -22,12 +24,24 @@ import {
   EmailIcon,
 } from "react-share";
 
+interface FileData {
+  id: string;
+  downloadUrl: string;
+  freestyle?: string;
+  prompt?: string;
+  style?: string;
+  model?: string;
+  timestamp?: {
+    seconds: number;
+  };
+}
+
 export default function ImageSelector() {
   const uid = useAuthStore((s) => s.uid);
-  const [files, setFiles] = useState<any[]>([]);
+  const [files, setFiles] = useState<FileData[]>([]);
   const [imagesLength, setImagesLength] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageMetadata, setImageMetadata] = useState<any>(null);   
+  const [imageMetadata, setImageMetadata] = useState<FileData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -40,14 +54,20 @@ export default function ImageSelector() {
       limit(20)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const filesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setFiles(filesData);
-      setImagesLength(filesData.length);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        const filesData = snapshot.docs.map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as FileData)
+        );
+        setFiles(filesData);
+        setImagesLength(filesData.length);
+      }
+    );
 
     return () => unsubscribe();
   }, [uid]);
@@ -78,7 +98,7 @@ export default function ImageSelector() {
     }
   };
 
-  const handleImageClick = (url: string, metadata: any) => {
+  const handleImageClick = (url: string, metadata: FileData) => {
     setSelectedImage(url);
     setImageMetadata(metadata);
     setIsModalOpen(true);
@@ -94,7 +114,8 @@ export default function ImageSelector() {
     setIsShareModalOpen(!isShareModalOpen);
   };
 
-  const currentPageUrl = window.location.href;
+  const currentPageUrl =
+    typeof window !== "undefined" ? window.location.href : "";
 
   return (
     <div className="p-4 bg-white">
@@ -165,7 +186,9 @@ export default function ImageSelector() {
                 {imageMetadata.timestamp?.seconds && (
                   <p>
                     <strong>Timestamp:</strong>{" "}
-                    {new Date(imageMetadata.timestamp.seconds * 1000).toLocaleString()}
+                    {new Date(
+                      imageMetadata.timestamp.seconds * 1000
+                    ).toLocaleString()}
                   </p>
                 )}
               </div>
