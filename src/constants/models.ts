@@ -2,11 +2,11 @@ export const models = [
     {
         id: 1,
         value: "Firework",
-        label: "Firework",
+        label: "Firework Stability",
     },
     {
         id: 2,
         value: "Dalle",
-        label: "Dalle"
+        label: "DALL-E (OpenAI)"
     },
 ]
