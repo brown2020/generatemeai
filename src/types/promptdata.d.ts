@@ -7,4 +7,5 @@ export type PromptDataType = {
   prompt?: string;
   timestamp?: Timestamp;
   id?: string;
+  model: string;
 };

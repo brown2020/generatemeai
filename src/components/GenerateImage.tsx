@@ -15,20 +15,25 @@ import { generateImage } from "@/actions/generateImage";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
+import { models } from "@/constants/models";
 
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
+  const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const useCredits = useProfileStore((s) => s.profile.useCredits);
-  const credits = useProfileStore((s) => s.profile.credits)
-  const minusCredits = useProfileStore((state) => state.minusCredits)
+  const credits = useProfileStore((s) => s.profile.credits);
+  const minusCredits = useProfileStore((state) => state.minusCredits);
   const [imagePrompt, setImagePrompt] = useState<string>("");
   const [imageStyle, setImageStyle] = useState<string>("");
+  const [model, setModel] = useState<string>("Firework");
+  const [overlayText, setOverlayText] = useState<string>("");
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
     downloadUrl: "",
     prompt: "",
+    model: model,
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
@@ -52,6 +57,7 @@ export default function GenerateImage() {
     const p: PromptDataType = {
       ...promptData,
       downloadUrl: downloadUrl,
+      model: model,
       prompt: prompt,
       id: docRef.id,
       timestamp: Timestamp.now(),
@@ -66,11 +72,11 @@ export default function GenerateImage() {
     try {
       setLoading(true);
       const prompt: string = generatePrompt(imagePrompt, imageStyle);
-      const response = await generateImage(prompt, uid, fireworksAPIKey, useCredits, credits);
+      const response = await generateImage(prompt, uid, fireworksAPIKey, openAPIKey, useCredits, credits, (model == 'Firework'), overlayText);
 
       if (response?.error) {
-        toast.error(response.error)
-        return
+        toast.error(response.error);
+        return;
       }
 
       const downloadURL = response?.imageUrl;
@@ -78,12 +84,19 @@ export default function GenerateImage() {
         throw new Error("Error generating image");
       }
 
-      if (useCredits == true) {
-        await minusCredits(Number(process.env.NEXT_PUBLIC_CREDITS_PER_IMAGE) || 2)
+      if (useCredits) {
+        await minusCredits(Number(process.env.NEXT_PUBLIC_CREDITS_PER_IMAGE) || 2);
       }
 
       setGeneratedImage(downloadURL);
-      await saveHistory(promptData, prompt, downloadURL);
+      await saveHistory({
+        ...promptData,
+        freestyle: imagePrompt,
+        style: imageStyle,
+        downloadUrl: downloadURL,
+        model: model,
+        prompt,
+      }, prompt, downloadURL);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error generating image:", error.message);
@@ -115,6 +128,28 @@ export default function GenerateImage() {
             name="styles"
             onChange={(v) => setImageStyle(v ? v.value : "")}
             options={artStyles}
+            styles={selectStyles}
+          />
+        </div>
+        <div>
+          <div>Text Overlay (optional)</div>
+          <TextareaAutosize
+            minRows={1}
+            value={overlayText || ""}
+            placeholder="Add text to overlay on the image"
+            onChange={(e) => setOverlayText(e.target.value)}
+            className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
+          />
+        </div>
+        <div>
+          <div>Use</div>
+          <Select
+            isClearable={true}
+            isSearchable={true}
+            name="model"
+            onChange={(v) => setModel(v ? v.value : "")}
+            defaultValue={models[0]}
+            options={models}
             styles={selectStyles}
           />
         </div>
