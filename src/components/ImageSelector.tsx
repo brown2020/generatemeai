@@ -85,6 +85,13 @@ const ImageListPage = () => {
               alt="Visual Result"
               className="w-full h-64 object-cover rounded-lg"
             />
+            <div className="absolute inset-0 flex items-center justify-center cursor-pointer select-none">
+              {image.caption && (
+                <div className="bg-[#000] bg-opacity-50 text-white text-sm rounded-md text-center h-[40%] w-[90%] overflow-hidden flex justify-center items-center">
+                  {image.caption}
+                </div>
+              )}
+            </div>
             <div className="p-2">
               <p className="font-bold text-sm">{image.freestyle.length > 100
                 ? `${image.freestyle.substring(0, 100)}...`

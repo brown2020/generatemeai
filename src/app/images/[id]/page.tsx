@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../../firebase/firebaseClient";
 import { doc, getDoc, runTransaction, updateDoc } from "firebase/firestore";
 import {
@@ -16,6 +16,7 @@ import {
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
+import domtoimage from 'dom-to-image'
 
 type Params = { params: { id: string } };
 
@@ -24,8 +25,11 @@ const ImagePage = ({ params: { id } }: Params) => {
     const [isSharable, setIsSharable] = useState<boolean>(false);
     const [newTag, setNewTag] = useState('');
     const [tags, setTags] = useState<string[]>([]);
+    const [caption, setCaption] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
     const uid = useAuthStore((s) => s.uid);
     const authPending = useAuthStore((s) => s.authPending);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
         const fetchImageData = async () => {
@@ -40,9 +44,10 @@ const ImagePage = ({ params: { id } }: Params) => {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                setImageData(data);
+                setImageData({...data, ownerUid: data.uid || null});
                 setIsSharable(data.isSharable ?? false);
                 setTags(data.tags ?? []);
+                setCaption(data.caption ?? '');
             }
         };
 
@@ -51,24 +56,19 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     }, [id, uid, authPending]);
 
+
     const handleDownload = async () => {
-        if (!imageData) return;
+        const container = document.getElementById('image-container');
+        if (!container) return;
+
         try {
-            const response = await fetch(imageData.downloadUrl);
-            if (!response.ok) throw new Error("Network response was not ok");
-
-            const blob = await response.blob();
-            const link = document.createElement("a");
-
-            const url = new URL(imageData.downloadUrl);
-            const filename = url.pathname.split("/").pop() || "image.jpg";
-
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
+            const dataUrl = await domtoimage.toPng(container);
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'image-with-caption.png';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
         } catch (error) {
             toast.error("Download error: " + error);
         }
@@ -140,19 +140,49 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     };
 
-    if (!imageData) return <div></div>;
+    const handleRegenerateImage = async () => {
+        if (!imageData) return;
+
+        setLoading(true);
+
+        try {
+            const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
+
+            await updateDoc(docRef, {
+                caption: caption || ''
+            });
+
+            toast.success("Caption saved successfully");
+        } catch (error) {
+            toast.error("Error saving caption: " + error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!imageData) return <div>Loading...</div>;
 
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
     return (
         <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
-            <img
-                className="h-full w-full object-cover"
-                src={imageData.downloadUrl}
-                alt="Visual Result"
-                height={512}
-                width={512}
-            />
+            <div className="relative inline-block" id="image-container">
+                <img
+                    className="block h-full w-full object-cover"
+                    src={imageData.downloadUrl}
+                    alt="Visual Result"
+                    height={512}
+                    width={512}
+                />
+                {caption && (
+                    <div className="absolute inset-0 flex items-center justify-center cursor-default">
+                        <div className="bg-[#000] bg-opacity-50 text-white text-xl md:text-3xl rounded-md text-center h-[40%] md:h-[30%] w-[90%] md:w-[80%] overflow-hidden flex justify-center items-center select-none">
+                            {caption}
+                        </div>
+                    </div>
+                )}
+            </div>
+
 
             {isSharable && (
                 <div className="flex gap-4 mt-4 justify-center">
@@ -178,13 +208,32 @@ const ImagePage = ({ params: { id } }: Params) => {
                 Download
             </button>
 
-            {uid && (
+            {uid == imageData.ownerUid && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
                     onClick={toggleSharable}
                 >
                     {isSharable ? "Make Private" : "Make Sharable"}
                 </button>
+            )}
+
+            {uid && (
+                <div className="mt-4 w-full p-3 py-0">
+                    <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
+                    <textarea
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                        placeholder="Enter caption"
+                        className="p-2 border border-gray-300 rounded-md w-full"
+                    />
+                    <button
+                        onClick={handleRegenerateImage}
+                        className={`btn-primary2 h-12 mt-2 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={loading}
+                    >
+                        {loading ? 'Regenerating...' : 'Regenerate Image'}
+                    </button>
+                </div>
             )}
 
             <div className="mt-4 w-1/2 p-3 py-0">
@@ -231,6 +280,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 )}
             </div>
             <br />
+            <canvas ref={canvasRef} className="hidden" />
         </div>
     );
 };

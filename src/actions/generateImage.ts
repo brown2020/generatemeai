@@ -15,8 +15,7 @@ export async function generateImage(
   stabilityAPIKey: string,
   useCredits: boolean,
   credits: number,
-  model: model,
-  overlayText: string
+  model: model
 ) {
   try {
     if (useCredits && credits < 2) {
@@ -107,21 +106,6 @@ export async function generateImage(
       : await response.arrayBuffer();
 
     let finalImage = Buffer.from(imageData);
-    if (overlayText) {
-      finalImage = await sharp(finalImage)
-        .composite([
-          {
-            input: Buffer.from(
-              `<svg width="1024" height="1024">
-                 <rect x="0" y="450" width="1024" height="150" fill="rgba(0, 0, 0, 0.7)"/>
-                 <text x="50%" y="525" font-size="48" fill="white" text-anchor="middle">${overlayText}</text>
-               </svg>`
-            ),
-            gravity: 'center'
-          }
-        ])
-        .toBuffer();
-    }
 
     const fileName = `generated/${uid}/${Date.now()}.jpg`;
     const file = adminBucket.file(fileName);

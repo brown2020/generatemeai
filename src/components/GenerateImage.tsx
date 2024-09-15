@@ -30,7 +30,6 @@ export default function GenerateImage() {
   const [imagePrompt, setImagePrompt] = useState<string>("");
   const [imageStyle, setImageStyle] = useState<string>("");
   const [model, setModel] = useState<model>("dall-e");
-  const [overlayText, setOverlayText] = useState<string>("");
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
@@ -75,7 +74,7 @@ export default function GenerateImage() {
     try {
       setLoading(true);
       const prompt: string = generatePrompt(imagePrompt, imageStyle);
-      const response = await generateImage(prompt, uid, openAPIKey, fireworksAPIKey, stabilityAPIKey, useCredits, credits, model, overlayText);
+      const response = await generateImage(prompt, uid, openAPIKey, fireworksAPIKey, stabilityAPIKey, useCredits, credits, model);
 
       if (response?.error) {
         toast.error(response.error);
@@ -132,16 +131,6 @@ export default function GenerateImage() {
             onChange={(v) => setImageStyle(v ? v.value : "")}
             options={artStyles}
             styles={selectStyles}
-          />
-        </div>
-        <div>
-          <div>Text Overlay (optional)</div>
-          <TextareaAutosize
-            minRows={1}
-            value={overlayText || ""}
-            placeholder="Add text to overlay on the image"
-            onChange={(e) => setOverlayText(e.target.value)}
-            className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
           />
         </div>
         <div>

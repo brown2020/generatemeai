@@ -13,10 +13,10 @@
     "@stripe/react-stripe-js": "^2.8.0",
     "ai": "^3.3.35",
     "cookies-next": "^4.2.1",
+    "dom-to-image": "^2.6.0",
     "dotenv": "^16.4.5",
     "firebase": "^10.13.1",
     "firebase-admin": "^12.5.0",
-    "html2canvas": "^1.4.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.441.0",
     "next": "^14.2.11",
@@ -34,6 +34,7 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
+    "@types/dom-to-image": "^2.6.7",
     "@types/lodash": "^4.17.7",
     "@types/node": "^22.5.4",
     "@types/react": "^18",
