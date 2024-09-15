@@ -9,19 +9,22 @@ export default function ProfileComponent() {
   const updateProfile = useProfileStore((state) => state.updateProfile);
   const [fireworksApiKey, setFireworksApiKey] = useState(profile.fireworks_api_key);
   const [openaiApiKey, setOpenaiApiKey] = useState(profile.openai_api_key);
+  const [stabilityAPIKey, setStabilityAPIKey] = useState(profile.stability_api_key);
   const [useCredits, setUseCredits] = useState(profile.useCredits);
 
   useEffect(() => {
     setFireworksApiKey(profile.fireworks_api_key);
     setOpenaiApiKey(profile.openai_api_key);
-  }, [profile.fireworks_api_key, profile.openai_api_key]);
+    setStabilityAPIKey(profile.stability_api_key);
+  }, [profile.fireworks_api_key, profile.openai_api_key, profile.stability_api_key]);
 
   const handleApiKeyChange = async () => {
-    if (fireworksApiKey !== profile.fireworks_api_key || openaiApiKey !== profile.openai_api_key) {
+    if (fireworksApiKey !== profile.fireworks_api_key || openaiApiKey !== profile.openai_api_key || stabilityAPIKey !== profile.stability_api_key) {
       try {
         await updateProfile({
           fireworks_api_key: fireworksApiKey,
           openai_api_key: openaiApiKey,
+          stability_api_key: stabilityAPIKey
         });
         console.log("API keys updated successfully!");
       } catch (error) {
@@ -31,7 +34,7 @@ export default function ProfileComponent() {
   };
 
   const handleCreditsChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setUseCredits(e.target.value === "credits"); 
+    setUseCredits(e.target.value === "credits");
     await updateProfile({ useCredits: e.target.value == 'credits' });
   }
 
@@ -79,11 +82,23 @@ export default function ProfileComponent() {
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your OpenAI API Key"
         />
+        <label htmlFor="openai-api-key" className="text-sm font-medium">
+          Stability API Key:
+        </label>
+        <input
+          type="text"
+          id="openai-api-key"
+          value={stabilityAPIKey}
+          onChange={(e) => setStabilityAPIKey(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          placeholder="Enter your OpenAI API Key"
+        />
         <button
           onClick={handleApiKeyChange}
           disabled={
             fireworksApiKey === profile.fireworks_api_key &&
-            openaiApiKey === profile.openai_api_key
+            openaiApiKey === profile.openai_api_key &&
+            stabilityAPIKey === profile.stability_api_key
           }
           className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 disabled:opacity-50"
         >
