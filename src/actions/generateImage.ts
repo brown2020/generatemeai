@@ -90,60 +90,60 @@ export async function generateImage(
       };
     }
 
-    if (apiUrl) {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: headers,
-        body: model != 'stability-sd3-turbo' ? JSON.stringify(requestBody) : formData,
-      });
+    if (!apiUrl) return;
 
-      if (!response.ok) {
-        throw new Error(`Error from Image API: ${response.status} ${response.statusText}`);
-      }
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: headers,
+      body: model != 'stability-sd3-turbo' ? JSON.stringify(requestBody) : formData,
+    });
 
-      const imageData = model == "dall-e"
-        ? await fetch((await response.json()).data[0].url).then(res => res.arrayBuffer())
-        : await response.arrayBuffer();
+    if (!response.ok) {
+      throw new Error(`Error from Image API: ${response.status} ${response.statusText}`);
+    }
 
-      let finalImage = Buffer.from(imageData);
-      if (overlayText) {
-        finalImage = await sharp(finalImage)
-          .composite([
-            {
-              input: Buffer.from(
-                `<svg width="1024" height="1024">
+    const imageData = model == "dall-e"
+      ? await fetch((await response.json()).data[0].url).then(res => res.arrayBuffer())
+      : await response.arrayBuffer();
+
+    let finalImage = Buffer.from(imageData);
+    if (overlayText) {
+      finalImage = await sharp(finalImage)
+        .composite([
+          {
+            input: Buffer.from(
+              `<svg width="1024" height="1024">
                  <rect x="0" y="450" width="1024" height="150" fill="rgba(0, 0, 0, 0.7)"/>
                  <text x="50%" y="525" font-size="48" fill="white" text-anchor="middle">${overlayText}</text>
                </svg>`
-              ),
-              gravity: 'center'
-            }
-          ])
-          .toBuffer();
-      }
-
-      const fileName = `generated/${uid}/${Date.now()}.jpg`;
-      const file = adminBucket.file(fileName);
-
-      await file.save(finalImage, {
-        contentType: "image/jpeg",
-      });
-
-      const metadata = {
-        metadata: {
-          prompt: message,
-        },
-      };
-
-      await file.setMetadata(metadata);
-
-      const [imageUrl] = await file.getSignedUrl({
-        action: "read",
-        expires: "03-17-2125",
-      });
-
-      return { imageUrl };
+            ),
+            gravity: 'center'
+          }
+        ])
+        .toBuffer();
     }
+
+    const fileName = `generated/${uid}/${Date.now()}.jpg`;
+    const file = adminBucket.file(fileName);
+
+    await file.save(finalImage, {
+      contentType: "image/jpeg",
+    });
+
+    const metadata = {
+      metadata: {
+        prompt: message,
+      },
+    };
+
+    await file.setMetadata(metadata);
+
+    const [imageUrl] = await file.getSignedUrl({
+      action: "read",
+      expires: "03-17-2125",
+    });
+
+    return { imageUrl };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error generating image:", error);

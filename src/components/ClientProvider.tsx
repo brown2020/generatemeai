@@ -8,9 +8,12 @@ import CookieConsent from "react-cookie-consent";
 import useAuthToken from "@/hooks/useAuthToken";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import ErrorBoundary from "./ErrorBoundary";
+import { usePathname, useRouter } from "next/navigation";
 
 export function ClientProvider({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);
+  const { loading, uid } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);
+  const router = useRouter()
+  const pathname = usePathname()
   useInitializeStores();
 
   useEffect(() => {
@@ -44,6 +47,12 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       document.body.classList.remove("noscroll");
     };
   }, []);
+
+  useEffect(() => {
+    if (!loading && !uid && pathname != '/' && !pathname.includes('images/')) {
+      router.push("/")
+    }
+  }, [loading, pathname])
 
   if (loading)
     return (

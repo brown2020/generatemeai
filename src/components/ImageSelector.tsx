@@ -10,17 +10,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { Download, Share2 as Share, X } from "lucide-react";
-import {
-  FacebookShareButton,
-  TwitterShareButton,
-  LinkedinShareButton,
-  EmailShareButton,
-  FacebookIcon,
-  TwitterIcon,
-  LinkedinIcon,
-  EmailIcon,
-} from "react-share";
+import { useRouter } from "next/navigation";
 
 export default function ImageSelector() {
   const uid = useAuthStore((s) => s.uid);
@@ -29,7 +19,7 @@ export default function ImageSelector() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageMetadata, setImageMetadata] = useState<any>(null);   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!uid) return;
@@ -52,36 +42,8 @@ export default function ImageSelector() {
     return () => unsubscribe();
   }, [uid]);
 
-  const handleDownload = async (url: string) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Network response was not ok");
-
-      const blob = await response.blob();
-
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-
-      const urlObject = new URL(url);
-      const pathname = urlObject.pathname;
-      const filename = pathname.substring(pathname.lastIndexOf("/") + 1);
-
-      link.download = filename;
-
-      document.body.appendChild(link);
-      link.click();
-
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch (error) {
-      console.error("Download error:", error);
-    }
-  };
-
-  const handleImageClick = (url: string, metadata: any) => {
-    setSelectedImage(url);
-    setImageMetadata(metadata);
-    setIsModalOpen(true);
+  const handleImageClick = (id: string) => {
+    router.push(`/images/${id}`);
   };
 
   const closeModal = () => {
@@ -89,12 +51,6 @@ export default function ImageSelector() {
     setSelectedImage(null);
     setImageMetadata(null);
   };
-
-  const toggleShareModal = () => {
-    setIsShareModalOpen(!isShareModalOpen);
-  };
-
-  const currentPageUrl = window.location.href;
 
   return (
     <div className="p-4 bg-white">
@@ -105,22 +61,8 @@ export default function ImageSelector() {
               src={file.downloadUrl}
               alt={`Cover ${index}`}
               className="w-full h-60 object-cover rounded-md cursor-pointer"
-              onClick={() => handleImageClick(file.downloadUrl, file)}
+              onClick={() => handleImageClick(file.id)}
             />
-            <button
-              onClick={() => handleDownload(file.downloadUrl)}
-              className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-md"
-              aria-label="Download"
-            >
-              <Download size={24} />
-            </button>
-            <button
-              onClick={toggleShareModal}
-              className="absolute bottom-2 left-2 p-2 bg-white rounded-full shadow-md"
-              aria-label="Share"
-            >
-              <Share size={24} />
-            </button>
           </div>
         ))}
       </div>
@@ -133,7 +75,7 @@ export default function ImageSelector() {
               className="absolute top-2 right-2 p-2 bg-gray-200 rounded-full"
               onClick={closeModal}
             >
-              <X size={24} />
+              X
             </button>
             <img
               src={selectedImage}
@@ -170,36 +112,6 @@ export default function ImageSelector() {
                 )}
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {isShareModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="relative bg-white p-4 max-w-md w-full rounded-lg">
-            <button
-              className="absolute top-2 right-2 p-2 bg-gray-200 rounded-full"
-              onClick={toggleShareModal}
-            >
-              <X size={24} />
-            </button>
-            <div className="flex flex-col items-center">
-              <h2 className="text-lg font-semibold mb-4">Share this Image</h2>
-              <div className="flex gap-4">
-                <FacebookShareButton url={currentPageUrl}>
-                  <FacebookIcon size={32} />
-                </FacebookShareButton>
-                <TwitterShareButton url={currentPageUrl}>
-                  <TwitterIcon size={32} />
-                </TwitterShareButton>
-                <LinkedinShareButton url={currentPageUrl}>
-                  <LinkedinIcon size={32} />
-                </LinkedinShareButton>
-                <EmailShareButton url={currentPageUrl}>
-                  <EmailIcon size={32} />
-                </EmailShareButton>
-              </div>
-            </div>
           </div>
         </div>
       )}
