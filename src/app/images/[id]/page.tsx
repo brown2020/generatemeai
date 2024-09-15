@@ -21,6 +21,7 @@ import domtoimage from 'dom-to-image'
 type Params = { params: { id: string } };
 
 const ImagePage = ({ params: { id } }: Params) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [imageData, setImageData] = useState<any>(null);
     const [isSharable, setIsSharable] = useState<boolean>(false);
     const [newTag, setNewTag] = useState('');
@@ -167,6 +168,7 @@ const ImagePage = ({ params: { id } }: Params) => {
     return (
         <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
             <div className="relative inline-block" id="image-container">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     className="block h-full w-full object-cover"
                     src={imageData.downloadUrl}

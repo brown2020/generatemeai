@@ -3,7 +3,6 @@
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { model } from "@/types/model";
 import * as dotenv from "dotenv";
-import sharp from "sharp";
 
 dotenv.config();
 
@@ -105,7 +104,7 @@ export async function generateImage(
       ? await fetch((await response.json()).data[0].url).then(res => res.arrayBuffer())
       : await response.arrayBuffer();
 
-    let finalImage = Buffer.from(imageData);
+    const finalImage = Buffer.from(imageData);
 
     const fileName = `generated/${uid}/${Date.now()}.jpg`;
     const file = adminBucket.file(fileName);

@@ -52,7 +52,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     if (!loading && !uid && pathname != '/' && !pathname.includes('images/')) {
       router.push("/")
     }
-  }, [loading, pathname])
+  }, [loading, pathname, router, uid])
 
   if (loading)
     return (

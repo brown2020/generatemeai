@@ -6,6 +6,7 @@ import { collection, query, getDocs } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 
 const ImageListPage = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [images, setImages] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -18,6 +19,7 @@ const ImageListPage = () => {
       if (uid && !authPending) {
         const q = query(collection(db, "profiles", uid, "covers"));
         const querySnapshot = await getDocs(q);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fetchedImages: any[] = [];
         const tagsSet: Set<string> = new Set();
 
@@ -80,6 +82,7 @@ const ImageListPage = () => {
             className="relative cursor-pointer"
             onClick={() => window.location.href = `/images/${image.id}`}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image.downloadUrl}
               alt="Visual Result"
