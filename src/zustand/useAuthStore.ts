@@ -62,11 +62,22 @@ async function updateUserDetailsInFirestore(
 ) {
   if (uid) {
     const userRef = doc(db, `users/${uid}`);
-    console.log("Updating auth details in Firestore:", details);
+
+    // Sanitize the details object to exclude any functions
+    const sanitizedDetails = { ...details };
+
+    // Remove any unexpected functions or properties
+    Object.keys(sanitizedDetails).forEach((key) => {
+      if (typeof sanitizedDetails[key as keyof AuthState] === "function") {
+        delete sanitizedDetails[key as keyof AuthState];
+      }
+    });
+
+    console.log("Updating auth details in Firestore:", sanitizedDetails);
     try {
       await setDoc(
         userRef,
-        { ...details, lastSignIn: serverTimestamp() },
+        { ...sanitizedDetails, lastSignIn: serverTimestamp() },
         { merge: true }
       );
       console.log("Auth details updated successfully in Firestore.");
