@@ -1,120 +1,110 @@
-/* eslint-disable @next/next/no-img-element */
-"use client";
+'use client'
+
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase/firebaseClient";
-import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-} from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { useRouter } from "next/navigation";
 
-export default function ImageSelector() {
+const ImageListPage = () => {
+  const [images, setImages] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const uid = useAuthStore((s) => s.uid);
-  const [files, setFiles] = useState<any[]>([]);
-  const [imagesLength, setImagesLength] = useState(0);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageMetadata, setImageMetadata] = useState<any>(null);   
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
+  const authPending = useAuthStore((s) => s.authPending);
 
   useEffect(() => {
-    if (!uid) return;
+    const fetchImages = async () => {
+      if (uid && !authPending) {
+        const q = query(collection(db, "profiles", uid, "covers"));
+        const querySnapshot = await getDocs(q);
+        const fetchedImages: any[] = [];
+        const tagsSet: Set<string> = new Set();
 
-    const q = query(
-      collection(db, "profiles", uid, "covers"),
-      orderBy("timestamp", "desc"),
-      limit(20)
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          fetchedImages.push({ id: doc.id, ...data });
+          data.tags?.forEach((tag: string) => tagsSet.add(tag));
+        });
+
+        setImages(fetchedImages);
+        setAllTags(Array.from(tagsSet));
+      }
+    };
+
+    fetchImages();
+  }, [uid, authPending]);
+
+  const handleSearch = () => {
+    const filteredImages = images.filter(image =>
+      image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (selectedTags.length === 0 || selectedTags.every(tag => image.tags?.includes(tag)))
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const filesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setFiles(filesData);
-      setImagesLength(filesData.length);
-    });
-
-    return () => unsubscribe();
-  }, [uid]);
-
-  const handleImageClick = (id: string) => {
-    router.push(`/images/${id}`);
+    return filteredImages;
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedImage(null);
-    setImageMetadata(null);
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
   };
+
+  const filteredImages = handleSearch();
 
   return (
-    <div className="p-4 bg-white">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {files.map((file, index) => (
-          <div key={index} className="relative">
+    <div className="flex flex-col w-[98%] mx-auto h-full gap-2">
+      <div className="flex items-center gap-4 my-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search..."
+          className="p-2 border border-gray-300 rounded-md"
+        />
+      </div>
+      <div className="flex gap-2 flex-wrap mb-4">
+        {allTags.map((tag, index) => (
+          <button
+            key={index}
+            onClick={() => toggleTag(tag)}
+            className={`px-3 py-1 rounded-md ${selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {filteredImages.map((image) => (
+          <div
+            key={image.id}
+            className="relative cursor-pointer"
+            onClick={() => window.location.href = `/images/${image.id}`}
+          >
             <img
-              src={file.downloadUrl}
-              alt={`Cover ${index}`}
-              className="w-full h-60 object-cover rounded-md cursor-pointer"
-              onClick={() => handleImageClick(file.id)}
+              src={image.downloadUrl}
+              alt="Visual Result"
+              className="w-full h-64 object-cover rounded-lg"
             />
+            <div className="p-2">
+              <p className="font-bold text-sm">{image.freestyle.length > 100
+                ? `${image.freestyle.substring(0, 100)}...`
+                : image.freestyle}</p>
+              <div className="flex gap-2 flex-wrap mt-2">
+                {image.tags?.map((tag: string, index: number) => (
+                  <span
+                    key={index}
+                    className="text-sm bg-gray-200 rounded-md px-2 py-1"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         ))}
       </div>
-      <div className="mt-4 text-center">Images: {imagesLength}</div>
-
-      {isModalOpen && selectedImage && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="relative bg-white p-4 max-w-3xl w-full rounded-lg">
-            <button
-              className="absolute top-2 right-2 p-2 bg-gray-200 rounded-full"
-              onClick={closeModal}
-            >
-              X
-            </button>
-            <img
-              src={selectedImage}
-              alt="Selected"
-              className="w-full h-auto object-cover rounded-md"
-            />
-            {imageMetadata && (
-              <div className="mt-4">
-                {imageMetadata.freestyle && (
-                  <p>
-                    <strong>Freestyle:</strong> {imageMetadata.freestyle}
-                  </p>
-                )}
-                {imageMetadata.prompt && (
-                  <p>
-                    <strong>Prompt:</strong> {imageMetadata.prompt}
-                  </p>
-                )}
-                {imageMetadata.style && (
-                  <p>
-                    <strong>Style:</strong> {imageMetadata.style}
-                  </p>
-                )}
-                {imageMetadata.model && (
-                  <p>
-                    <strong>Model:</strong> {imageMetadata.model}
-                  </p>
-                )}
-                {imageMetadata.timestamp?.seconds && (
-                  <p>
-                    <strong>Timestamp:</strong>{" "}
-                    {new Date(imageMetadata.timestamp.seconds * 1000).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
-}
+};
+
+export default ImageListPage;

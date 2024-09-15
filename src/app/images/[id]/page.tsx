@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { db } from "../../../firebase/firebaseClient";
-import { doc, getDoc, runTransaction } from "firebase/firestore";
+import { doc, getDoc, runTransaction, updateDoc } from "firebase/firestore";
 import {
     FacebookShareButton,
     TwitterShareButton,
@@ -15,12 +15,15 @@ import {
 } from "react-share";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
+import { X } from "lucide-react";
 
 type Params = { params: { id: string } };
 
 const ImagePage = ({ params: { id } }: Params) => {
     const [imageData, setImageData] = useState<any>(null);
     const [isSharable, setIsSharable] = useState<boolean>(false);
+    const [newTag, setNewTag] = useState('');
+    const [tags, setTags] = useState<string[]>([]);
     const uid = useAuthStore((s) => s.uid);
     const authPending = useAuthStore((s) => s.authPending);
 
@@ -36,8 +39,10 @@ const ImagePage = ({ params: { id } }: Params) => {
 
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                setImageData(docSnap.data());
-                setIsSharable(docSnap.data().isSharable ?? false);
+                const data = docSnap.data();
+                setImageData(data);
+                setIsSharable(data.isSharable ?? false);
+                setTags(data.tags ?? []);
             }
         };
 
@@ -84,6 +89,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                     }
                     transaction.set(publicImagesDocRef, { ...coversDocSnap.data(), isSharable: true });
                     transaction.update(coversDocRef, { isSharable: true });
+
                 });
             } else {
                 await runTransaction(db, async (transaction) => {
@@ -92,7 +98,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                         throw new Error("Document does not exist in publicImages");
                     }
                     transaction.set(coversDocRef, { ...publicImagesDocSnap.data(), isSharable: false });
-                    transaction.update(publicImagesDocRef, { isSharable: false });
+                    transaction.delete(publicImagesDocRef);
                 });
             }
 
@@ -103,12 +109,43 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     };
 
+    const handleAddTag = async () => {
+        if (!newTag.trim() || !imageData) return;
+
+        try {
+            const updatedTags = [...tags, newTag.trim()];
+            const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
+
+            await updateDoc(docRef, { tags: updatedTags });
+            setTags(updatedTags);
+            setNewTag('');
+            toast.success("Tag added successfully");
+        } catch (error) {
+            toast.error("Error adding tag: " + error);
+        }
+    };
+
+    const handleRemoveTag = async (tagToRemove: string) => {
+        if (!imageData) return;
+
+        try {
+            const updatedTags = tags.filter(tag => tag !== tagToRemove);
+            const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
+
+            await updateDoc(docRef, { tags: updatedTags });
+            setTags(updatedTags);
+            toast.success("Tag removed successfully");
+        } catch (error) {
+            toast.error("Error removing tag: " + error);
+        }
+    };
+
     if (!imageData) return <div></div>;
 
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
     return (
-        <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2 ">
+        <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
             <img
                 className="h-full w-full object-cover"
                 src={imageData.downloadUrl}
@@ -158,6 +195,39 @@ const ImagePage = ({ params: { id } }: Params) => {
                 {imageData.model && <p><strong>Model:</strong> {imageData.model}</p>}
                 {imageData.timestamp?.seconds && (
                     <p><strong>Timestamp:</strong> {new Date(imageData.timestamp.seconds * 1000).toLocaleString()}</p>
+                )}
+                {uid && (
+                    <div className="mt-4">
+                        <h3 className="text-xl mb-2 font-bold">Tags:</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {tags.map((tag, index) => (
+                                <div key={index} className="flex items-center gap-2 bg-gray-100 border border-gray-300 rounded px-2 py-1">
+                                    <span className="flex-1">{tag}</span>
+                                    <button
+                                        onClick={() => handleRemoveTag(tag)}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-2 flex items-center">
+                            <input
+                                type="text"
+                                value={newTag}
+                                onChange={(e) => setNewTag(e.target.value)}
+                                placeholder="Add new tag"
+                                className="p-2 mt-2 border border-gray-300 rounded-l-md"
+                            />
+                            <button
+                                onClick={handleAddTag}
+                                className="btn-primary2 px-2 py-[0.65rem] pr-4 text-sm rounded-l-md"
+                            >
+                                Add Tag
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
             <br />
