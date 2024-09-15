@@ -1,0 +1,16 @@
+[
+    {
+        "origin": [
+            "https://generate.me",
+            "http://localhost:3000"
+        ],
+        "responseHeader": [
+            "Content-Type"
+        ],
+        "method": [
+            "GET",
+            "HEAD"
+        ],
+        "maxAgeSeconds": 3600
+    }
+]
