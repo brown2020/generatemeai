@@ -61,12 +61,16 @@ const ImagePage = ({ params: { id } }: Params) => {
     const handleDownload = async () => {
         const container = document.getElementById('image-container');
         if (!container) return;
-
+    
         try {
             const dataUrl = await domtoimage.toPng(container);
+    
+            const currentDate = new Date().toISOString().split('T')[0];
+            const fileName = `${imageData.freestyle}_${currentDate}.png`;
+    
             const link = document.createElement('a');
             link.href = dataUrl;
-            link.download = 'image-with-caption.png';
+            link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -210,7 +214,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 Download
             </button>
 
-            {uid == imageData.ownerUid && (
+            {uid && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
                     onClick={toggleSharable}
