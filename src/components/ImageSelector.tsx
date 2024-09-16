@@ -1,231 +1,120 @@
-/* eslint-disable @next/next/no-img-element */
-"use client";
+'use client'
+
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase/firebaseClient";
-import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-  DocumentData,
-  QuerySnapshot,
-} from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { Download, Share2 as Share, X } from "lucide-react";
-import {
-  FacebookShareButton,
-  TwitterShareButton,
-  LinkedinShareButton,
-  EmailShareButton,
-  FacebookIcon,
-  TwitterIcon,
-  LinkedinIcon,
-  EmailIcon,
-} from "react-share";
 
-interface FileData {
-  id: string;
-  downloadUrl: string;
-  freestyle?: string;
-  prompt?: string;
-  style?: string;
-  model?: string;
-  timestamp?: {
-    seconds: number;
-  };
-}
-
-export default function ImageSelector() {
+const ImageListPage = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [images, setImages] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const uid = useAuthStore((s) => s.uid);
-  const [files, setFiles] = useState<FileData[]>([]);
-  const [imagesLength, setImagesLength] = useState(0);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageMetadata, setImageMetadata] = useState<FileData | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const authPending = useAuthStore((s) => s.authPending);
 
   useEffect(() => {
-    if (!uid) return;
+    const fetchImages = async () => {
+      if (uid && !authPending) {
+        const q = query(collection(db, "profiles", uid, "covers"));
+        const querySnapshot = await getDocs(q);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fetchedImages: any[] = [];
+        const tagsSet: Set<string> = new Set();
 
-    const q = query(
-      collection(db, "profiles", uid, "covers"),
-      orderBy("timestamp", "desc"),
-      limit(20)
-    );
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          fetchedImages.push({ id: doc.id, ...data });
+          data.tags?.forEach((tag: string) => tagsSet.add(tag));
+        });
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot: QuerySnapshot<DocumentData>) => {
-        const filesData = snapshot.docs.map(
-          (doc) =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            } as FileData)
-        );
-        setFiles(filesData);
-        setImagesLength(filesData.length);
+        setImages(fetchedImages);
+        setAllTags(Array.from(tagsSet));
       }
+    };
+
+    fetchImages();
+  }, [uid, authPending]);
+
+  const handleSearch = () => {
+    const filteredImages = images.filter(image =>
+      image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (selectedTags.length === 0 || selectedTags.every(tag => image.tags?.includes(tag)))
     );
-
-    return () => unsubscribe();
-  }, [uid]);
-
-  const handleDownload = async (url: string) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Network response was not ok");
-
-      const blob = await response.blob();
-
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-
-      const urlObject = new URL(url);
-      const pathname = urlObject.pathname;
-      const filename = pathname.substring(pathname.lastIndexOf("/") + 1);
-
-      link.download = filename;
-
-      document.body.appendChild(link);
-      link.click();
-
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch (error) {
-      console.error("Download error:", error);
-    }
+    return filteredImages;
   };
 
-  const handleImageClick = (url: string, metadata: FileData) => {
-    setSelectedImage(url);
-    setImageMetadata(metadata);
-    setIsModalOpen(true);
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedImage(null);
-    setImageMetadata(null);
-  };
-
-  const toggleShareModal = () => {
-    setIsShareModalOpen(!isShareModalOpen);
-  };
-
-  const currentPageUrl =
-    typeof window !== "undefined" ? window.location.href : "";
+  const filteredImages = handleSearch();
 
   return (
-    <div className="p-4 bg-white">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {files.map((file, index) => (
-          <div key={index} className="relative">
-            <img
-              src={file.downloadUrl}
-              alt={`Cover ${index}`}
-              className="w-full h-60 object-cover rounded-md cursor-pointer"
-              onClick={() => handleImageClick(file.downloadUrl, file)}
-            />
-            <button
-              onClick={() => handleDownload(file.downloadUrl)}
-              className="absolute bottom-2 right-2 p-2 bg-white rounded-full shadow-md"
-              aria-label="Download"
-            >
-              <Download size={24} />
-            </button>
-            <button
-              onClick={toggleShareModal}
-              className="absolute bottom-2 left-2 p-2 bg-white rounded-full shadow-md"
-              aria-label="Share"
-            >
-              <Share size={24} />
-            </button>
-          </div>
+    <div className="flex flex-col w-[98%] mx-auto h-full gap-2">
+      <div className="flex items-center gap-4 my-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search..."
+          className="p-2 border border-gray-300 rounded-md"
+        />
+      </div>
+      <div className="flex gap-2 flex-wrap mb-4">
+        {allTags.map((tag, index) => (
+          <button
+            key={index}
+            onClick={() => toggleTag(tag)}
+            className={`px-3 py-1 rounded-md ${selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            {tag}
+          </button>
         ))}
       </div>
-      <div className="mt-4 text-center">Images: {imagesLength}</div>
-
-      {isModalOpen && selectedImage && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="relative bg-white p-4 max-w-3xl w-full rounded-lg">
-            <button
-              className="absolute top-2 right-2 p-2 bg-gray-200 rounded-full"
-              onClick={closeModal}
-            >
-              <X size={24} />
-            </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {filteredImages.map((image) => (
+          <div
+            key={image.id}
+            className="relative cursor-pointer"
+            onClick={() => window.location.href = `/images/${image.id}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={selectedImage}
-              alt="Selected"
-              className="w-full h-auto object-cover rounded-md"
+              src={image.downloadUrl}
+              alt="Visual Result"
+              className="w-full h-64 object-cover rounded-lg"
             />
-            {imageMetadata && (
-              <div className="mt-4">
-                {imageMetadata.freestyle && (
-                  <p>
-                    <strong>Freestyle:</strong> {imageMetadata.freestyle}
-                  </p>
-                )}
-                {imageMetadata.prompt && (
-                  <p>
-                    <strong>Prompt:</strong> {imageMetadata.prompt}
-                  </p>
-                )}
-                {imageMetadata.style && (
-                  <p>
-                    <strong>Style:</strong> {imageMetadata.style}
-                  </p>
-                )}
-                {imageMetadata.model && (
-                  <p>
-                    <strong>Model:</strong> {imageMetadata.model}
-                  </p>
-                )}
-                {imageMetadata.timestamp?.seconds && (
-                  <p>
-                    <strong>Timestamp:</strong>{" "}
-                    {new Date(
-                      imageMetadata.timestamp.seconds * 1000
-                    ).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {isShareModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="relative bg-white p-4 max-w-md w-full rounded-lg">
-            <button
-              className="absolute top-2 right-2 p-2 bg-gray-200 rounded-full"
-              onClick={toggleShareModal}
-            >
-              <X size={24} />
-            </button>
-            <div className="flex flex-col items-center">
-              <h2 className="text-lg font-semibold mb-4">Share this Image</h2>
-              <div className="flex gap-4">
-                <FacebookShareButton url={currentPageUrl}>
-                  <FacebookIcon size={32} />
-                </FacebookShareButton>
-                <TwitterShareButton url={currentPageUrl}>
-                  <TwitterIcon size={32} />
-                </TwitterShareButton>
-                <LinkedinShareButton url={currentPageUrl}>
-                  <LinkedinIcon size={32} />
-                </LinkedinShareButton>
-                <EmailShareButton url={currentPageUrl}>
-                  <EmailIcon size={32} />
-                </EmailShareButton>
+            <div className="absolute inset-0 flex items-center justify-center cursor-pointer select-none">
+              {image.caption && (
+                <div className="bg-[#000] bg-opacity-50 text-white text-sm rounded-md text-center h-[40%] w-[90%] overflow-hidden flex justify-center items-center">
+                  {image.caption}
+                </div>
+              )}
+            </div>
+            <div className="p-2">
+              <p className="font-bold text-sm">{image.freestyle.length > 100
+                ? `${image.freestyle.substring(0, 100)}...`
+                : image.freestyle}</p>
+              <div className="flex gap-2 flex-wrap mt-2">
+                {image.tags?.map((tag: string, index: number) => (
+                  <span
+                    key={index}
+                    className="text-sm bg-gray-200 rounded-md px-2 py-1"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
-}
+};
+
+export default ImageListPage;

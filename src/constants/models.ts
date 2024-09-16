@@ -1,12 +1,30 @@
-export const models = [
+import { model } from "@/types/model";
+
+export type SelectModel = {
+    id: number;
+    value: model;
+    label: string;
+};
+
+export const models: SelectModel[] = [
     {
         id: 1,
-        value: "Firework",
-        label: "Firework Stability",
+        value: "dall-e",
+        label: "DALL-E (OpenAI)"
     },
     {
         id: 2,
-        value: "Dalle",
-        label: "DALL-E (OpenAI)"
+        value: "stable-diffusion-xl",
+        label: "Stable Diffusion-XL"
+    },
+    {
+        id: 3,
+        value: "stability-sd3-turbo",
+        label: "Stability SD3-turbo"
+    },
+    {
+        id: 4,
+        value: "playground-v2",
+        label: "Playground V2"
     },
 ]
