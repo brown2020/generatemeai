@@ -15,19 +15,21 @@ import { generateImage } from "@/actions/generateImage";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
-import { models } from "@/constants/models";
+import { models, SelectModel } from "@/constants/models";
+import { model } from "@/types/model";
+import { creditsToMinus } from "@/utils/credits";
 
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
+  const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key)
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
   const [imagePrompt, setImagePrompt] = useState<string>("");
   const [imageStyle, setImageStyle] = useState<string>("");
-  const [model, setModel] = useState<string>("Firework");
-  const [overlayText, setOverlayText] = useState<string>("");
+  const [model, setModel] = useState<model>("dall-e");
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
@@ -72,7 +74,7 @@ export default function GenerateImage() {
     try {
       setLoading(true);
       const prompt: string = generatePrompt(imagePrompt, imageStyle);
-      const response = await generateImage(prompt, uid, fireworksAPIKey, openAPIKey, useCredits, credits, (model == 'Firework'), overlayText);
+      const response = await generateImage(prompt, uid, openAPIKey, fireworksAPIKey, stabilityAPIKey, useCredits, credits, model);
 
       if (response?.error) {
         toast.error(response.error);
@@ -85,7 +87,7 @@ export default function GenerateImage() {
       }
 
       if (useCredits) {
-        await minusCredits(Number(process.env.NEXT_PUBLIC_CREDITS_PER_IMAGE) || 2);
+        await minusCredits(creditsToMinus(model));
       }
 
       setGeneratedImage(downloadURL);
@@ -132,22 +134,12 @@ export default function GenerateImage() {
           />
         </div>
         <div>
-          <div>Text Overlay (optional)</div>
-          <TextareaAutosize
-            minRows={1}
-            value={overlayText || ""}
-            placeholder="Add text to overlay on the image"
-            onChange={(e) => setOverlayText(e.target.value)}
-            className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
-          />
-        </div>
-        <div>
           <div>Use</div>
           <Select
             isClearable={true}
             isSearchable={true}
             name="model"
-            onChange={(v) => setModel(v ? v.value : "")}
+            onChange={(v) => setModel(v ? (v as SelectModel).value : "dall-e")}
             defaultValue={models[0]}
             options={models}
             styles={selectStyles}

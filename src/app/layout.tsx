@@ -33,6 +33,7 @@ export default function RootLayout({
             <BottomBar />
           </div>
         </ClientProvider>
+
       </body>
     </html>
   );

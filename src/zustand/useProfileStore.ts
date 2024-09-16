@@ -12,6 +12,7 @@ export interface ProfileType {
   credits: number;
   fireworks_api_key: string;
   openai_api_key: string;
+  stability_api_key: string;
   selectedAvatar: string;
   selectedTalkingPhoto: string;
   useCredits: boolean;
@@ -26,6 +27,7 @@ const defaultProfile: ProfileType = {
   credits: 0,
   fireworks_api_key: "",
   openai_api_key: "",
+  stability_api_key: "",
   selectedAvatar: "",
   selectedTalkingPhoto: "",
   useCredits: true
@@ -161,6 +163,7 @@ function createNewProfile(
     credits: 1000,
     fireworks_api_key: "",
     openai_api_key: "",
+    stability_api_key: "",
     selectedAvatar: "",
     selectedTalkingPhoto: "",
     useCredits: true
