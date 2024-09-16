@@ -45,7 +45,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                setImageData({...data, ownerUid: data.uid || null});
+                setImageData({ ...data, ownerUid: data.uid || null });
                 setIsSharable(data.isSharable ?? false);
                 setTags(data.tags ?? []);
                 setCaption(data.caption ?? '');
@@ -61,13 +61,13 @@ const ImagePage = ({ params: { id } }: Params) => {
     const handleDownload = async () => {
         const container = document.getElementById('image-container');
         if (!container) return;
-    
+
         try {
             const dataUrl = await domtoimage.toPng(container);
-    
+
             const currentDate = new Date().toISOString().split('T')[0];
             const fileName = `${imageData.freestyle}_${currentDate}.png`;
-    
+
             const link = document.createElement('a');
             link.href = dataUrl;
             link.download = fileName;
@@ -165,7 +165,7 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     };
 
-    if (!imageData) return <div>Loading...</div>;
+    if (!imageData) return <div></div>;
 
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
@@ -181,14 +181,13 @@ const ImagePage = ({ params: { id } }: Params) => {
                     width={512}
                 />
                 {caption && (
-                    <div className="absolute inset-0 flex items-center justify-center cursor-default">
-                        <div className="bg-[#000] bg-opacity-50 text-white text-xl md:text-3xl rounded-md text-center h-[40%] md:h-[30%] w-[90%] md:w-[80%] overflow-hidden flex justify-center items-center select-none">
+                    <div className="absolute inset-0 flex items-end justify-center cursor-default">
+                        <div className="bg-[#000] bg-opacity-50 text-white text-xl md:text-3xl rounded-md text-center mb-4 h-[40%] md:h-[30%] w-[90%] md:w-[80%] overflow-hidden flex justify-center items-center select-none">
                             {caption}
                         </div>
                     </div>
                 )}
             </div>
-
 
             {isSharable && (
                 <div className="flex gap-4 mt-4 justify-center">
