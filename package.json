@@ -11,7 +11,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^0.0.60",
     "@stripe/react-stripe-js": "^2.8.0",
-    "ai": "^3.3.39",
+    "ai": "^3.3.40",
     "cookies-next": "^4.2.1",
     "dom-to-image": "^2.6.0",
     "dotenv": "^16.4.5",
@@ -37,7 +37,7 @@
     "@types/dom-to-image": "^2.6.7",
     "@types/lodash": "^4.17.7",
     "@types/node": "^22.5.5",
-    "@types/react": "^18.3.6",
+    "@types/react": "^18.3.7",
     "@types/react-dom": "^18",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.11",
