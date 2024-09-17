@@ -36,6 +36,7 @@ function delay(ms: number) {
 
 const ImagePage = ({ params: { id } }: Params) => {
     const router = useRouter();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [imageData, setImageData] = useState<any>(null);
     const [isOwner, setIsOwner] = useState<boolean>(false);
     const [isSharable, setIsSharable] = useState<boolean>(false);
@@ -102,7 +103,7 @@ const ImagePage = ({ params: { id } }: Params) => {
         if (id) {
             fetchImageData();
         }
-    }, [id, uid, authPending, refreshCounter]);
+    }, [id, uid, authPending, refreshCounter, isOwner]);
 
     const handleDownload = async () => {
         const container = document.getElementById('image-container');
