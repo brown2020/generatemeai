@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../../firebase/firebaseClient";
-import { doc, getDoc, runTransaction, updateDoc } from "firebase/firestore";
+import { doc, getDoc, runTransaction, updateDoc, deleteDoc } from "firebase/firestore";
 import {
     FacebookShareButton,
     TwitterShareButton,
@@ -17,11 +17,16 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
 import domtoimage from 'dom-to-image'
+import { useRouter } from "next/navigation";
 
 type Params = { params: { id: string } };
 
+function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const ImagePage = ({ params: { id } }: Params) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const router = useRouter()
     const [imageData, setImageData] = useState<any>(null);
     const [isSharable, setIsSharable] = useState<boolean>(false);
     const [newTag, setNewTag] = useState('');
@@ -35,20 +40,38 @@ const ImagePage = ({ params: { id } }: Params) => {
     useEffect(() => {
         const fetchImageData = async () => {
             let docRef;
+            let isOwner = false;
 
             if (uid && !authPending) {
                 docRef = doc(db, "profiles", uid, "covers", id);
-            } else {
-                docRef = doc(db, "publicImages", id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setImageData({ ...data });
+                    setIsSharable(data.isSharable ?? false);
+                    setTags(data.tags ?? []);
+                    setCaption(data.caption ?? '');
+                    isOwner = true;
+                }
             }
 
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setImageData({ ...data, ownerUid: data.uid || null });
-                setIsSharable(data.isSharable ?? false);
-                setTags(data.tags ?? []);
-                setCaption(data.caption ?? '');
+            if (!isOwner) {
+                docRef = doc(db, "publicImages", id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setImageData({ ...data });
+                    setIsSharable(data.isSharable ?? false);
+                    setTags(data.tags ?? []);
+                    setCaption(data.caption ?? '');
+                } else {
+                    setImageData(false);
+                    setIsSharable(false);
+                    setTags([]);
+                    setCaption('');
+                }
             }
         };
 
@@ -66,7 +89,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             const dataUrl = await domtoimage.toPng(container);
 
             const currentDate = new Date().toISOString().split('T')[0];
-            const fileName = `${imageData.freestyle}_${currentDate}.png`;
+            const fileName = `${imageData?.freestyle}_${currentDate}.png`;
 
             const link = document.createElement('a');
             link.href = dataUrl;
@@ -94,7 +117,6 @@ const ImagePage = ({ params: { id } }: Params) => {
                     }
                     transaction.set(publicImagesDocRef, { ...coversDocSnap.data(), isSharable: true });
                     transaction.update(coversDocRef, { isSharable: true });
-
                 });
             } else {
                 await runTransaction(db, async (transaction) => {
@@ -165,17 +187,41 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     };
 
-    if (!imageData) return <div></div>;
+    const handleDelete = async () => {
+        if (!imageData || !uid) return;
+
+        if (window.confirm("Are you sure you want to delete this image?")) {
+            try {
+                const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
+
+                await deleteDoc(docRef);
+
+                if (uid) {
+                    const publicImagesDocRef = doc(db, "publicImages", id);
+                    await deleteDoc(publicImagesDocRef);
+                }
+
+                toast.success("Image deleted successfully");
+                delay(1000).then(() => {
+                    router.push('/images')
+                })
+            } catch (error) {
+                toast.error("Error deleting image: " + error);
+            }
+        }
+    };
+
+    if (imageData == false) return <div className="text-center text-3xl mt-10">The image does not exist or is private.</div>;
 
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
     return (
         <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
-            <div className="relative inline-block" id="image-container">
+            {imageData?.downloadUrl && <div className="relative inline-block" id="image-container">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     className="block h-full w-full object-cover"
-                    src={imageData.downloadUrl}
+                    src={imageData?.downloadUrl}
                     alt="Visual Result"
                     height={512}
                     width={512}
@@ -187,7 +233,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                         </div>
                     </div>
                 )}
-            </div>
+            </div>}
 
             {isSharable && (
                 <div className="flex gap-4 mt-4 justify-center">
@@ -223,6 +269,15 @@ const ImagePage = ({ params: { id } }: Params) => {
             )}
 
             {uid && (
+                <button
+                    className="btn-primary2 h-12 flex items-center justify-center mx-3"
+                    onClick={handleDelete}
+                >
+                    Delete
+                </button>
+            )}
+
+            {uid && (
                 <div className="mt-4 w-full p-3 py-0">
                     <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
                     <textarea
@@ -243,12 +298,12 @@ const ImagePage = ({ params: { id } }: Params) => {
 
             <div className="mt-4 w-1/2 p-3 py-0">
                 <h2 className="text-2xl mb-3 font-bold">Metadata: </h2>
-                {imageData.freestyle && <p><strong>Freestyle:</strong> {imageData.freestyle}</p>}
-                {imageData.prompt && <p><strong>Prompt:</strong> {imageData.prompt}</p>}
-                {imageData.style && <p><strong>Style:</strong> {imageData.style}</p>}
-                {imageData.model && <p><strong>Model:</strong> {imageData.model}</p>}
-                {imageData.timestamp?.seconds && (
-                    <p><strong>Timestamp:</strong> {new Date(imageData.timestamp.seconds * 1000).toLocaleString()}</p>
+                {imageData?.freestyle && <p><strong>Freestyle:</strong> {imageData?.freestyle}</p>}
+                {imageData?.prompt && <p><strong>Prompt:</strong> {imageData?.prompt}</p>}
+                {imageData?.style && <p><strong>Style:</strong> {imageData?.style}</p>}
+                {imageData?.model && <p><strong>Model:</strong> {imageData?.model}</p>}
+                {imageData?.timestamp?.seconds && (
+                    <p><strong>Timestamp:</strong> {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}</p>
                 )}
                 {uid && (
                     <div className="mt-4">
