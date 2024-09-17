@@ -331,7 +331,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             {imageData && <div className="mt-4 w-1/2 p-3 py-0">
                 <h2 className="text-2xl mb-3 font-bold">Metadata: </h2>
                 {imageData?.freestyle && <p><strong>Freestyle:</strong> {imageData?.freestyle}</p>}
-                {imageData?.prompt && <p><strong>Prompt:</strong> {imageData?.prompt}</p>}
+                {/* {imageData?.prompt && <p><strong>Prompt:</strong> {imageData?.prompt}</p>} */}
                 {imageData?.style && <p><strong>Style:</strong> {imageData?.style}</p>}
                 {imageData?.model && <p><strong>Model:</strong> {imageData?.model}</p>}
                 {imageData?.timestamp?.seconds && (
