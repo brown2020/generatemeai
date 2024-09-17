@@ -54,23 +54,23 @@ const ImagePage = ({ params: { id } }: Params) => {
                     setCaption(data.caption ?? '');
                     setIsOwner(true);
                 }
-            }
+            } else {
+                if (!isOwner) {
+                    docRef = doc(db, "publicImages", id);
+                    const docSnap = await getDoc(docRef);
 
-            if (!isOwner) {
-                docRef = doc(db, "publicImages", id);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setImageData({ ...data });
-                    setIsSharable(data.isSharable ?? false);
-                    setTags(data.tags ?? []);
-                    setCaption(data.caption ?? '');
-                } else {
-                    setImageData(false);
-                    setIsSharable(false);
-                    setTags([]);
-                    setCaption('');
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setImageData({ ...data });
+                        setIsSharable(data.isSharable ?? false);
+                        setTags(data.tags ?? []);
+                        setCaption(data.caption ?? '');
+                    } else {
+                        setImageData(false);
+                        setIsSharable(false);
+                        setTags([]);
+                        setCaption('');
+                    }
                 }
             }
         };
@@ -217,7 +217,7 @@ const ImagePage = ({ params: { id } }: Params) => {
 
     return (
         <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
-            {imageData?.downloadUrl && <div className="relative inline-block" id="image-container">
+            {imageData && <div className="relative inline-block" id="image-container">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     className="block h-full w-full object-cover"
@@ -235,7 +235,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 )}
             </div>}
 
-            {isSharable && (
+            {imageData && isSharable && (
                 <div className="flex gap-4 mt-4 justify-center">
                     <FacebookShareButton url={currentPageUrl}>
                         <FacebookIcon size={48} />
@@ -252,13 +252,13 @@ const ImagePage = ({ params: { id } }: Params) => {
                 </div>
             )}
 
-            <button
+            {imageData && <button
                 className="btn-primary2 h-12 flex items-center justify-center mx-3"
                 onClick={handleDownload}
             >
                 Download
             </button>
-
+            }
             {uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
@@ -268,7 +268,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 </button>
             )}
 
-            {uid && isOwner && (
+            {imageData && uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
                     onClick={handleDelete}
@@ -277,7 +277,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 </button>
             )}
 
-            {uid && isOwner && (
+            {imageData && uid && isOwner && (
                 <div className="mt-4 w-full p-3 py-0">
                     <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
                     <textarea
@@ -296,7 +296,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 </div>
             )}
 
-            <div className="mt-4 w-1/2 p-3 py-0">
+            {imageData && <div className="mt-4 w-1/2 p-3 py-0">
                 <h2 className="text-2xl mb-3 font-bold">Metadata: </h2>
                 {imageData?.freestyle && <p><strong>Freestyle:</strong> {imageData?.freestyle}</p>}
                 {imageData?.prompt && <p><strong>Prompt:</strong> {imageData?.prompt}</p>}
@@ -338,9 +338,9 @@ const ImagePage = ({ params: { id } }: Params) => {
                         </div>
                     </div>
                 )}
-            </div>
+            </div>}
             <br />
-            {!isOwner && (
+            {imageData && !isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
                     onClick={() => { router.push('/generate') }}
