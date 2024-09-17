@@ -28,3 +28,7 @@ export const models: SelectModel[] = [
         label: "Playground V2"
     },
 ]
+
+export const findModelByValue = (searchValue: model): SelectModel | undefined => {
+    return models.find(model => model.value === searchValue);
+}

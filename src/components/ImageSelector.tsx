@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase/firebaseClient";
-import { collection, query, getDocs } from "firebase/firestore";
+import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 
 const ImageListPage = () => {
@@ -17,7 +17,7 @@ const ImageListPage = () => {
   useEffect(() => {
     const fetchImages = async () => {
       if (uid && !authPending) {
-        const q = query(collection(db, "profiles", uid, "covers"));
+        const q = query(collection(db, "profiles", uid, "covers"), orderBy("timestamp", "desc"));
         const querySnapshot = await getDocs(q);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fetchedImages: any[] = [];
