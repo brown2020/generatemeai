@@ -28,6 +28,7 @@ function delay(ms: number) {
 const ImagePage = ({ params: { id } }: Params) => {
     const router = useRouter()
     const [imageData, setImageData] = useState<any>(null);
+    const [isOwner, setIsOwner] = useState<boolean>(false);
     const [isSharable, setIsSharable] = useState<boolean>(false);
     const [newTag, setNewTag] = useState('');
     const [tags, setTags] = useState<string[]>([]);
@@ -40,7 +41,6 @@ const ImagePage = ({ params: { id } }: Params) => {
     useEffect(() => {
         const fetchImageData = async () => {
             let docRef;
-            let isOwner = false;
 
             if (uid && !authPending) {
                 docRef = doc(db, "profiles", uid, "covers", id);
@@ -52,7 +52,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                     setIsSharable(data.isSharable ?? false);
                     setTags(data.tags ?? []);
                     setCaption(data.caption ?? '');
-                    isOwner = true;
+                    setIsOwner(true);
                 }
             }
 
@@ -259,7 +259,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 Download
             </button>
 
-            {uid && (
+            {uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
                     onClick={toggleSharable}
@@ -268,7 +268,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 </button>
             )}
 
-            {uid && (
+            {uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
                     onClick={handleDelete}
@@ -277,7 +277,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 </button>
             )}
 
-            {uid && (
+            {uid && isOwner && (
                 <div className="mt-4 w-full p-3 py-0">
                     <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
                     <textarea
@@ -305,7 +305,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 {imageData?.timestamp?.seconds && (
                     <p><strong>Timestamp:</strong> {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}</p>
                 )}
-                {uid && (
+                {uid && isOwner && (
                     <div className="mt-4">
                         <h3 className="text-xl mb-2 font-bold">Tags:</h3>
                         <div className="flex flex-wrap gap-2">
@@ -340,6 +340,14 @@ const ImagePage = ({ params: { id } }: Params) => {
                 )}
             </div>
             <br />
+            {!isOwner && (
+                <button
+                    className="btn-primary2 h-12 flex items-center justify-center mx-3"
+                    onClick={() => { router.push('/generate') }}
+                >
+                    Next: Generate Your Image
+                </button>
+            )}
             <canvas ref={canvasRef} className="hidden" />
         </div>
     );
