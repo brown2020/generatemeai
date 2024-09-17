@@ -100,3 +100,7 @@ export const artStyles = [
     label: "Traditional Chinese Painting",
   },
 ];
+
+export const findArtByValue = (searchValue: string) => {
+  return artStyles.find(art => art.value === searchValue);
+}
