@@ -5,7 +5,7 @@ import { db } from "../firebase/firebaseClient";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 30;
 
 const ImageListPage = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
