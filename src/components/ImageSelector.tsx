@@ -121,7 +121,7 @@ const ImageListPage = () => {
           </div>
         ))}
       </div>
-      {paginatedImages?.length > 0 && <div className="flex justify-center gap-2 my-4">
+      {paginatedImages?.length > 0 && totalPages > 1 && <div className="flex justify-center gap-2 my-4">
         <button
           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
