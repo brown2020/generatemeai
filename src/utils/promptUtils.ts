@@ -3,7 +3,8 @@
 export const generatePrompt = (
   visual: string = "An inspiring scene",
   artStyle?: string,
-  useCase?: string
+  colorScheme?: string,
+  lighting?: string  
 ): string => {
   let promptDesign = visual;
 
@@ -11,11 +12,15 @@ export const generatePrompt = (
     promptDesign += `\n\nPainted in the following artistic style: ${artStyle}`;
   }
 
-  if (useCase) {
-    promptDesign += useCase;
+  promptDesign += `\n\nThe image should be inspiring and beautiful without words. No text or logos.`;
+
+  if (colorScheme && colorScheme != 'None') {
+    promptDesign += `\n\nUse this for color scheme: ${colorScheme}`
   }
 
-  promptDesign += `\n\nThe image should be inspiring and beautiful without words. No text or logos.`;
+  if (lighting && lighting != 'None') {
+    promptDesign += `\n\nUse this for lighting: ${lighting}`
+  }
 
   return promptDesign;
 };
