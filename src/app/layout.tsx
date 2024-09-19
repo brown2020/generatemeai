@@ -4,9 +4,11 @@ import { ClientProvider } from "@/components/ClientProvider";
 import Header from "@/components/Header";
 import BottomBar from "@/components/BottomBar";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Generate.me",
-  description: "Image generation demo",
+  description: "Generate.me is a cutting-edge platform that turns your ideas into stunning visuals using AI models like DALL-E, Stable Diffusion, and more. Join today and start creating beautiful images effortlessly.",
+  keywords: "AI image generation, create images with AI, DALL-E, Stable Diffusion, AI art generator, artistic styles, AI image creation, generate art, creative AI platform",
+  canonical: "https://www.generate.me/",
 };
 
 export default function RootLayout({
