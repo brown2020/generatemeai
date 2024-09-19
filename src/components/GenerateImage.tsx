@@ -15,25 +15,32 @@ import { generateImage } from "@/actions/generateImage";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
-import { models, SelectModel } from "@/constants/models";
+import { findModelByValue, models, SelectModel } from "@/constants/models";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
 import { colors } from "@/constants/colors";
 import { lightings } from "@/constants/lighting";
+import { useSearchParams } from "next/navigation";
 
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
+  const searchterm = useSearchParams()
+  const freestyleSearchParam = searchterm.get('freestyle');
+  const styleSearchParam = searchterm.get('style')
+  const modelSearchParam = searchterm.get('model')
+  const colorSearchParam = searchterm.get('color')
+  const lightingSearchParam = searchterm.get('lighting')
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key)
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
-  const [imagePrompt, setImagePrompt] = useState<string>("");
-  const [imageStyle, setImageStyle] = useState<string>("");
-  const [model, setModel] = useState<model>("dall-e");
-  const [colorScheme, setColorScheme] = useState<string>("None");
-  const [lighting, setLighting] = useState<string>("None");
+  const [imagePrompt, setImagePrompt] = useState<string>(freestyleSearchParam || "");
+  const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
+  const [model, setModel] = useState<model>(modelSearchParam as model || "dall-e");
+  const [colorScheme, setColorScheme] = useState<string>(colorSearchParam || "None");
+  const [lighting, setLighting] = useState<string>(lightingSearchParam || "None");
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
@@ -45,6 +52,7 @@ export default function GenerateImage() {
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
+
 
   const colorValues = colors.map(color => color.value);
   const lightingValues = lightings.map(lightingss => lightingss.value)
@@ -107,6 +115,8 @@ export default function GenerateImage() {
         downloadUrl: downloadURL,
         model: model,
         prompt,
+        lighting,
+        colorScheme
       }, prompt, downloadURL);
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -140,6 +150,7 @@ export default function GenerateImage() {
             onChange={(v) => setImageStyle(v ? v.value : "")}
             options={artStyles}
             styles={selectStyles}
+            defaultInputValue={styleSearchParam || ''}
           />
         </div>
         <div>
@@ -149,7 +160,7 @@ export default function GenerateImage() {
             isSearchable={true}
             name="model"
             onChange={(v) => setModel(v ? (v as SelectModel).value : "dall-e")}
-            defaultValue={models[0]}
+            defaultValue={findModelByValue(modelSearchParam as model || 'dall-e')}
             options={models}
             styles={selectStyles}
           />
