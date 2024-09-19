@@ -40,6 +40,11 @@ const ImagePage = ({ params: { id } }: Params) => {
     const authPending = useAuthStore((s) => s.authPending);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [refreshCounter, setRefreshCounter] = useState<number>(0);
+    const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
+    const [password, setPassword] = useState<string>('');
+    const [enteredPassword, setEnteredPassword] = useState<string>('');
+    const [isPasswordProtected, setIsPasswordProtected] = useState<boolean>(false);
+    const [passwordVerified, setPasswordVerified] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchImageData = async () => {
@@ -68,6 +73,9 @@ const ImagePage = ({ params: { id } }: Params) => {
                         setIsSharable(data?.isSharable ?? false);
                         setTags(data?.tags ?? []);
                         setCaption(data?.caption ?? '');
+                        if (data?.password) {
+                            setIsPasswordProtected(true);
+                        }
                     } else {
                         setImageData(false);
                         setIsSharable(false);
@@ -117,16 +125,17 @@ const ImagePage = ({ params: { id } }: Params) => {
                     if (!coversDocSnap.exists()) {
                         throw new Error("Document does not exist in covers");
                     }
-                    transaction.set(publicImagesDocRef, { ...coversDocSnap.data(), isSharable: true });
+                    transaction.set(publicImagesDocRef, { ...coversDocSnap.data(), isSharable: true, password: password });
                     transaction.update(coversDocRef, { isSharable: true });
                 });
+                setShowPasswordModal(false)
             } else {
                 await runTransaction(db, async (transaction) => {
                     const publicImagesDocSnap = await transaction.get(publicImagesDocRef);
                     if (!publicImagesDocSnap.exists()) {
                         throw new Error("Document does not exist in publicImages");
                     }
-                    transaction.set(coversDocRef, { ...publicImagesDocSnap.data(), isSharable: false });
+                    transaction.set(coversDocRef, { ...publicImagesDocSnap.data(), isSharable: false, password: '' });
                     transaction.delete(publicImagesDocRef);
                 });
             }
@@ -232,6 +241,29 @@ const ImagePage = ({ params: { id } }: Params) => {
 
     if (imageData == false) return <div className="text-center text-3xl mt-10">The image does not exist or is private.</div>;
 
+    const handlePasswordSubmit = () => {
+        if (enteredPassword === imageData?.password) {
+            setPasswordVerified(true);
+        } else {
+            toast.error("Invalid password");
+        }
+    };
+
+    if (isPasswordProtected && !passwordVerified && !isOwner) {
+        return (
+            <div className="flex flex-col items-center mt-5">
+                <h2 className="text-xl mb-4">This image is password-protected. Please enter the password to view:</h2>
+                <input
+                    type="password"
+                    value={enteredPassword}
+                    onChange={(e) => setEnteredPassword(e.target.value)}
+                    className="p-2 border rounded mb-4"
+                />
+                <button onClick={handlePasswordSubmit} className="btn-primary2">Submit</button>
+            </div>
+        );
+    }
+    
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
     return (
@@ -281,7 +313,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             {uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-                    onClick={toggleSharable}
+                    onClick={() => {isSharable ? toggleSharable() : setShowPasswordModal(true)}}
                 >
                     {isSharable ? "Make Private" : "Make Sharable"}
                 </button>
@@ -371,6 +403,32 @@ const ImagePage = ({ params: { id } }: Params) => {
                 >
                     Try again
                 </button>
+            )}
+
+            {showPasswordModal && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
+                    <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
+                        <h2 className="text-xl font-semibold mb-4">Make Sharable with Password (Optional)</h2>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter password (optional)"
+                            className="w-full p-2 border rounded mb-4"
+                        />
+                        <div className="flex justify-end">
+                            <button
+                                className="btn-secondary mr-2"
+                                onClick={() => setShowPasswordModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button className="btn-primary" onClick={toggleSharable}>
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
             <canvas ref={canvasRef} className="hidden" />
             <br />
