@@ -18,6 +18,8 @@ import toast from "react-hot-toast";
 import { models, SelectModel } from "@/constants/models";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
+import { colors } from "@/constants/colors";
+import { lightings } from "@/constants/lighting";
 
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
@@ -30,15 +32,22 @@ export default function GenerateImage() {
   const [imagePrompt, setImagePrompt] = useState<string>("");
   const [imageStyle, setImageStyle] = useState<string>("");
   const [model, setModel] = useState<model>("dall-e");
+  const [colorScheme, setColorScheme] = useState<string>("None");
+  const [lighting, setLighting] = useState<string>("None");
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
     downloadUrl: "",
     prompt: "",
     model: model,
+    colorScheme,
+    lighting
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
+
+  const colorValues = colors.map(color => color.value);
+  const lightingValues = lightings.map(lightingss => lightingss.value)
 
   useEffect(() => {
     setPromptData((prevData) => ({
@@ -73,7 +82,7 @@ export default function GenerateImage() {
 
     try {
       setLoading(true);
-      const prompt: string = generatePrompt(imagePrompt, imageStyle);
+      const prompt: string = generatePrompt(imagePrompt, imageStyle, colorScheme, lighting);
       const response = await generateImage(prompt, uid, openAPIKey, fireworksAPIKey, stabilityAPIKey, useCredits, credits, model);
 
       if (response?.error) {
@@ -113,7 +122,7 @@ export default function GenerateImage() {
   return (
     <div className="flex flex-col items-center w-full p-4 bg-white">
       {/* Input Section */}
-      <div className="flex flex-col w-full max-w-lg space-y-4">
+      <div className="flex flex-col w-full max-w-xl space-y-4">
         <TextareaAutosize
           autoFocus
           minRows={2}
@@ -145,6 +154,39 @@ export default function GenerateImage() {
             styles={selectStyles}
           />
         </div>
+
+        <div className="flex space-x-4 items-center">
+          <div>Colors:</div>
+          <div className="relative flex items-center space-x-2">
+            {colorValues.map((option) => (
+              <div
+                key={option}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""}`}
+                onClick={() => setColorScheme(option)}
+                title={option}
+              >
+                <span>{option}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex space-x-4 items-center">
+          <div>Lighting:</div>
+          <div className="relative flex items-center space-x-2">
+            {lightingValues.map((option) => (
+              <div
+                key={option}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""}`}
+                onClick={() => setLighting(option)}
+                title={option}
+              >
+                <span>{option}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button
           className="btn btn-blue h-10 flex items-center justify-center disabled:opacity-50"
           disabled={loading}
@@ -153,6 +195,8 @@ export default function GenerateImage() {
               ...promptData,
               freestyle: imagePrompt,
               style: imageStyle,
+              colorScheme,
+              lighting,
             });
             handleGenerateSDXL(e);
           }}
