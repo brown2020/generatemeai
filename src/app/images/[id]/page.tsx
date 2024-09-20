@@ -15,10 +15,13 @@ import {
 } from "react-share";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
-import { X } from "lucide-react";
+import { X, Sparkle } from "lucide-react";
 import domtoimage from 'dom-to-image'
 import { useRouter } from "next/navigation";
 import TextareaAutosize from 'react-textarea-autosize';
+import { suggestTags } from "@/actions/suggestTags";
+import useProfileStore from "@/zustand/useProfileStore";
+import { error } from "console";
 
 type Params = { params: { id: string } };
 
@@ -45,6 +48,10 @@ const ImagePage = ({ params: { id } }: Params) => {
     const [enteredPassword, setEnteredPassword] = useState<string>('');
     const [isPasswordProtected, setIsPasswordProtected] = useState<boolean>(false);
     const [passwordVerified, setPasswordVerified] = useState<boolean>(false);
+    const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
+    const useCredits = useProfileStore((s) => s.profile.useCredits);
+    const credits = useProfileStore((s) => s.profile.credits);
+    const minusCredits = useProfileStore((state) => state.minusCredits);
 
     useEffect(() => {
         const fetchImageData = async () => {
@@ -147,19 +154,21 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     };
 
-    const handleAddTag = async () => {
-        if (!newTag.trim() || !imageData) return;
+    const handleAddTag = async (showToast: boolean = true, tagsArray: string[] | null = null) => {
+        if ((!tagsArray || !imageData) && (!newTag.trim() || !imageData)) return;
+
+        let newTagValue = tagsArray || newTag.trim() 
 
         try {
-            const updatedTags = [...tags, newTag.trim()];
+            const updatedTags = tagsArray ? tags.concat(newTagValue) : [...tags, newTagValue];
             const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
 
             await updateDoc(docRef, { tags: updatedTags });
-            setTags(updatedTags);
+            setTags(updatedTags as string[]);
             setNewTag('');
-            toast.success("Tag added successfully");
+            if (showToast) toast.success("Tag added successfully");
         } catch (error) {
-            toast.error("Error adding tag: " + error);
+            if (showToast) toast.error("Error adding tag: " + error);
         }
     };
 
@@ -177,6 +186,22 @@ const ImagePage = ({ params: { id } }: Params) => {
             toast.error("Error removing tag: " + error);
         }
     };
+
+    const handleSuggestions = async () => {
+        try {
+            let suggestions = await suggestTags(imageData?.freestyle, tags, openAPIKey, useCredits, credits)
+            suggestions = suggestions.split(",")
+            if (suggestions.length >= 1) {
+                if (useCredits) {
+                    minusCredits(1)
+                }
+                await handleAddTag(false, suggestions)
+                toast.success('Tags add succesfully')
+            }
+        } catch (err) {
+            toast.error('Error adding tags: ' + err)
+        }
+    }
 
     const handleCaptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCaption(event.target.value)
@@ -263,7 +288,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             </div>
         );
     }
-    
+
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
     return (
@@ -313,7 +338,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             {uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-                    onClick={() => {isSharable ? toggleSharable() : setShowPasswordModal(true)}}
+                    onClick={() => { isSharable ? toggleSharable() : setShowPasswordModal(true) }}
                 >
                     {isSharable ? "Make Private" : "Make Sharable"}
                 </button>
@@ -365,10 +390,13 @@ const ImagePage = ({ params: { id } }: Params) => {
                                 className="p-2 mt-2 border border-gray-300 rounded-l-md"
                             />
                             <button
-                                onClick={handleAddTag}
+                                onClick={() => handleAddTag()}
                                 className="btn-primary2 px-2 py-[0.65rem] pr-4 text-sm rounded-l-md"
                             >
                                 Add Tag
+                            </button>
+                            <button className="btn-primary2 px-2 py-[0.52rem] pr-4 text-sm rounded-3xl text-primary ml-1" onClick={handleSuggestions}>
+                                <Sparkle></Sparkle> Suggestions
                             </button>
                         </div>
                     </div>
@@ -399,7 +427,35 @@ const ImagePage = ({ params: { id } }: Params) => {
             {imageData && uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
-                    onClick={() => { router.push(`/generate?freestyle=${imageData?.freestyle}&style=${imageData?.style}&model=${imageData?.model}&color=${imageData?.colorScheme}&lighting=${imageData?.lighting}`) }}
+                    onClick={() => {
+                        if (imageData) {
+                            const { freestyle, style, model, colorScheme, lighting } = imageData;
+
+                            const addQueryParam = (key: string, value: string) => {
+                                if (value) {
+                                    return `${key}=${encodeURIComponent(value)}`;
+                                }
+                                return null;
+                            };
+
+                            const queryParams = [
+                                addQueryParam('freestyle', freestyle),
+                                addQueryParam('style', style),
+                                addQueryParam('model', model),
+                                addQueryParam('color', colorScheme),
+                                addQueryParam('lighting', lighting)
+                            ].filter(Boolean)
+
+                            if (queryParams.length > 0) {
+                                const queryString = queryParams.join('&');
+                                router.push(`/generate?${queryString}`);
+                            } else {
+                                console.warn("No valid parameters to pass in the URL");
+                            }
+                        } else {
+                            console.warn("imageData is not available");
+                        }
+                    }}
                 >
                     Try again
                 </button>

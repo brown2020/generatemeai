@@ -15,12 +15,18 @@ export default function HomePage() {
         const imageQuery = query(
           collection(db, "publicImages"),
           orderBy("timestamp", "desc"),
-          limit(15)
+          limit(30)
         );
-        const querySnapshot = await getDocs(imageQuery);
-        const images = querySnapshot.docs.map((doc) => doc.data().downloadUrl as string);
         
-        setBackgroundImages(images);
+        const imageSnapshot = await getDocs(imageQuery);
+        const filteredImages = imageSnapshot.docs.filter(doc => {
+          const data = doc.data();
+          return !data.password || data.password === '';
+        });
+        
+        const images = filteredImages.map((doc) => doc.data().downloadUrl as string);
+        
+        if(images.length >= 15) setBackgroundImages(images);
       } catch (error) {
         console.error("Error fetching images from Firestore:", error);
       }
