@@ -224,7 +224,6 @@ export default function GenerateImage() {
             value={tagInputValue}
             options={suggestedTags.map((tag) => ({ label: tag, value: tag }))}
             onChange={(newTags) => {
-              console.log(newTags)
               setTags(newTags.map((tag) => tag.value));
               settagInputValue(newTags as [{label: string, value: string}])
             }
