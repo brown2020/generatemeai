@@ -5,12 +5,15 @@ import { db } from "../firebase/firebaseClient";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 
+const ITEMS_PER_PAGE = 30;
+
 const ImageListPage = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [images, setImages] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const uid = useAuthStore((s) => s.uid);
   const authPending = useAuthStore((s) => s.authPending);
 
@@ -52,6 +55,11 @@ const ImageListPage = () => {
   };
 
   const filteredImages = handleSearch();
+  const totalPages = Math.ceil(filteredImages.length / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedImages = filteredImages.slice(startIndex, endIndex);
 
   return (
     <div className="flex flex-col w-[98%] mx-auto h-full gap-2">
@@ -76,7 +84,7 @@ const ImageListPage = () => {
         ))}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {filteredImages.map((image) => (
+        {paginatedImages.map((image) => (
           <div
             key={image.id}
             className="relative cursor-pointer"
@@ -113,6 +121,25 @@ const ImageListPage = () => {
           </div>
         ))}
       </div>
+      {paginatedImages?.length > 0 && totalPages > 1 && <div className="flex justify-center gap-2 my-4">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className={`px-4 py-2 rounded-md text-white ${currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} transition duration-150 ease-in-out`}
+        >
+          Previous
+        </button>
+        <span className="flex items-center px-4 py-2 text-gray-700">
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className={`px-4 py-2 rounded-md text-white ${currentPage === totalPages ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} transition duration-150 ease-in-out`}
+        >
+          Next
+        </button>
+      </div>}
     </div>
   );
 };

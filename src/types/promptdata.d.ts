@@ -8,4 +8,7 @@ export type PromptDataType = {
   timestamp?: Timestamp;
   id?: string;
   model: string;
+  colorScheme?: string;
+  lighting?: string;
+  tags: string[];
 };

@@ -49,7 +49,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading && !uid && pathname != '/' && !pathname.includes('images/')) {
+    if (!loading && !uid && pathname != '/' && !pathname.includes('images/') && !pathname.includes('/about') && !pathname.includes('/terms') && !pathname.includes('/privacy')) {
       router.push("/")
     }
   }, [loading, pathname, router, uid])
