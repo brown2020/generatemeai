@@ -21,7 +21,6 @@ import { useRouter } from "next/navigation";
 import TextareaAutosize from 'react-textarea-autosize';
 import { suggestTags } from "@/actions/suggestTags";
 import useProfileStore from "@/zustand/useProfileStore";
-import { error } from "console";
 
 type Params = { params: { id: string } };
 
@@ -157,7 +156,7 @@ const ImagePage = ({ params: { id } }: Params) => {
     const handleAddTag = async (showToast: boolean = true, tagsArray: string[] | null = null) => {
         if ((!tagsArray || !imageData) && (!newTag.trim() || !imageData)) return;
 
-        let newTagValue = tagsArray || newTag.trim() 
+        let newTagValue = tagsArray || newTag.trim()
 
         try {
             const updatedTags = tagsArray ? tags.concat(newTagValue) : [...tags, newTagValue];
@@ -367,36 +366,39 @@ const ImagePage = ({ params: { id } }: Params) => {
                 )}
                 {uid && isOwner && (
                     <div className="mt-4">
-                        <h3 className="text-xl mb-2 font-bold">Tags:</h3>
-                        <div className="flex flex-wrap gap-2">
+                        <h3 className="text-xl mb-3 font-semibold text-gray-800">Tags:</h3>
+                        <div className="flex flex-wrap gap-2 mb-4">
                             {tags.map((tag, index) => (
-                                <div key={index} className="flex items-center gap-2 bg-gray-100 border border-gray-300 rounded px-2 py-1">
-                                    <span className="flex-1">{tag}</span>
+                                <div key={index} className="flex items-center gap-2 bg-gray-200 border border-gray-400 rounded-md px-3 py-1 transition hover:bg-gray-300">
+                                    <span className="text-gray-700">{tag}</span>
                                     <button
                                         onClick={() => handleRemoveTag(tag)}
-                                        className="text-gray-500 hover:text-gray-700"
+                                        className="text-gray-500 hover:text-red-600"
                                     >
                                         <X size={16} />
                                     </button>
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-2 flex items-center">
+                        <div className="flex items-center">
                             <input
                                 type="text"
                                 value={newTag}
                                 onChange={(e) => setNewTag(e.target.value)}
                                 placeholder="Add new tag"
-                                className="p-2 mt-2 border border-gray-300 rounded-l-md"
+                                className="p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                             />
                             <button
                                 onClick={() => handleAddTag()}
-                                className="btn-primary2 px-2 py-[0.65rem] pr-4 text-sm rounded-l-md"
+                                className="px-4 py-3 text-sm rounded-r-md bg-blue-600 text-white hover:bg-blue-700 transition"
                             >
                                 Add Tag
                             </button>
-                            <button className="btn-primary2 px-2 py-[0.52rem] pr-4 text-sm rounded-3xl text-primary ml-1" onClick={handleSuggestions}>
-                                <Sparkle></Sparkle> Suggestions
+                            <button
+                                className="ml-2 flex items-center px-3 py-2 text-sm rounded-full border border-blue-500 text-blue-500 hover:bg-blue-100 transition"
+                                onClick={handleSuggestions}
+                            >
+                                <Sparkle className="mr-1" /> Suggestions
                             </button>
                         </div>
                     </div>
@@ -429,7 +431,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
                     onClick={() => {
                         if (imageData) {
-                            const { freestyle, style, model, colorScheme, lighting } = imageData;
+                            const { freestyle, style, model, colorScheme, lighting, tags } = imageData;
 
                             const addQueryParam = (key: string, value: string) => {
                                 if (value) {
@@ -443,7 +445,8 @@ const ImagePage = ({ params: { id } }: Params) => {
                                 addQueryParam('style', style),
                                 addQueryParam('model', model),
                                 addQueryParam('color', colorScheme),
-                                addQueryParam('lighting', lighting)
+                                addQueryParam('lighting', lighting),
+                                addQueryParam('tags', tags.join(","))
                             ].filter(Boolean)
 
                             if (queryParams.length > 0) {
