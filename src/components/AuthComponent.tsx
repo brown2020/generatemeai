@@ -103,7 +103,7 @@ export default function AuthComponent() {
   return (
     <>
       {uid && (
-        <button onClick={showModal} className="btn-secondary max-w-md mx-auto">
+        <button onClick={showModal} className="btn-secondary max-w-md mx-auto text-white">
           You are signed in
         </button>
       )}

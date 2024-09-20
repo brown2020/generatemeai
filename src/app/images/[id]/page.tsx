@@ -15,17 +15,11 @@ import {
 } from "react-share";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
-import { X } from "lucide-react";
+import { X, Sparkle } from "lucide-react";
 import domtoimage from 'dom-to-image'
 import { useRouter } from "next/navigation";
-import Select from 'react-select';
 import TextareaAutosize from 'react-textarea-autosize';
-import { findModelByValue, models, SelectModel } from '@/constants/models';
-import { artStyles, findArtByValue } from '@/constants/artStyles';
-import { selectStyles } from '@/constants/selectStyles';
-import { model } from "@/types/model";
-import { generateImage } from "@/actions/generateImage";
-import { generatePrompt } from "@/utils/promptUtils";
+import { suggestTags } from "@/actions/suggestTags";
 import useProfileStore from "@/zustand/useProfileStore";
 
 type Params = { params: { id: string } };
@@ -43,19 +37,20 @@ const ImagePage = ({ params: { id } }: Params) => {
     const [newTag, setNewTag] = useState('');
     const [tags, setTags] = useState<string[]>([]);
     const [caption, setCaption] = useState<string>('');
-    const [loading, setLoading] = useState<boolean>(false);
-    const [imagePrompt, setImagePrompt] = useState<string>(imageData?.freestyle || '');
-    const [imageStyle, setImageStyle] = useState<string>(imageData?.style || '');
-    const [imageModel, setImageModel] = useState<model>(imageData?.model);
+    const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
     const uid = useAuthStore((s) => s.uid);
     const authPending = useAuthStore((s) => s.authPending);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
+    const [refreshCounter, setRefreshCounter] = useState<number>(0);
+    const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
+    const [password, setPassword] = useState<string>('');
+    const [enteredPassword, setEnteredPassword] = useState<string>('');
+    const [isPasswordProtected, setIsPasswordProtected] = useState<boolean>(false);
+    const [passwordVerified, setPasswordVerified] = useState<boolean>(false);
     const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
-    const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key)
     const useCredits = useProfileStore((s) => s.profile.useCredits);
     const credits = useProfileStore((s) => s.profile.credits);
-    const [refreshCounter, setRefreshCounter] = useState<number>(0);
+    const minusCredits = useProfileStore((state) => state.minusCredits);
 
     useEffect(() => {
         const fetchImageData = async () => {
@@ -72,9 +67,6 @@ const ImagePage = ({ params: { id } }: Params) => {
                     setTags(data?.tags ?? []);
                     setCaption(data?.caption ?? '');
                     setIsOwner(true);
-                    setImagePrompt(data?.freestyle || '');
-                    setImageStyle(data?.style || '');
-                    setImageModel(data?.model);
                 }
             } else {
                 if (!isOwner) {
@@ -87,9 +79,9 @@ const ImagePage = ({ params: { id } }: Params) => {
                         setIsSharable(data?.isSharable ?? false);
                         setTags(data?.tags ?? []);
                         setCaption(data?.caption ?? '');
-                        setImagePrompt(data?.freestyle || '');
-                        setImageStyle(data?.style || '');
-                        setImageModel(data?.model);
+                        if (data?.password) {
+                            setIsPasswordProtected(true);
+                        }
                     } else {
                         setImageData(false);
                         setIsSharable(false);
@@ -139,16 +131,17 @@ const ImagePage = ({ params: { id } }: Params) => {
                     if (!coversDocSnap.exists()) {
                         throw new Error("Document does not exist in covers");
                     }
-                    transaction.set(publicImagesDocRef, { ...coversDocSnap.data(), isSharable: true });
+                    transaction.set(publicImagesDocRef, { ...coversDocSnap.data(), isSharable: true, password: password });
                     transaction.update(coversDocRef, { isSharable: true });
                 });
+                setShowPasswordModal(false)
             } else {
                 await runTransaction(db, async (transaction) => {
                     const publicImagesDocSnap = await transaction.get(publicImagesDocRef);
                     if (!publicImagesDocSnap.exists()) {
                         throw new Error("Document does not exist in publicImages");
                     }
-                    transaction.set(coversDocRef, { ...publicImagesDocSnap.data(), isSharable: false });
+                    transaction.set(coversDocRef, { ...publicImagesDocSnap.data(), isSharable: false, password: '' });
                     transaction.delete(publicImagesDocRef);
                 });
             }
@@ -160,19 +153,21 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     };
 
-    const handleAddTag = async () => {
-        if (!newTag.trim() || !imageData) return;
+    const handleAddTag = async (showToast: boolean = true, tagsArray: string[] | null = null) => {
+        if ((!tagsArray || !imageData) && (!newTag.trim() || !imageData)) return;
+
+        const newTagValue = tagsArray || newTag.trim()
 
         try {
-            const updatedTags = [...tags, newTag.trim()];
+            const updatedTags = tagsArray ? tags.concat(newTagValue) : [...tags, newTagValue];
             const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
 
             await updateDoc(docRef, { tags: updatedTags });
-            setTags(updatedTags);
+            setTags(updatedTags as string[]);
             setNewTag('');
-            toast.success("Tag added successfully");
+            if (showToast) toast.success("Tag added successfully");
         } catch (error) {
-            toast.error("Error adding tag: " + error);
+            if (showToast) toast.error("Error adding tag: " + error);
         }
     };
 
@@ -191,50 +186,56 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
     };
 
-    const handleRegenerateImage = async () => {
-        if (!imageData) return;
+    const handleSuggestions = async () => {
+        try {
+            let suggestions = await suggestTags(imageData?.freestyle, tags, openAPIKey, useCredits, credits)
+            suggestions = suggestions.split(",")
+            if (suggestions.length >= 1) {
+                if (useCredits) {
+                    minusCredits(1)
+                }
+                await handleAddTag(false, suggestions)
+                toast.success('Tags add succesfully')
+            }
+        } catch (err) {
+            toast.error('Error adding tags: ' + err)
+        }
+    }
 
-        setLoading(true);
+    const handleCaptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setCaption(event.target.value)
+
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current)
+        }
+
+        debounceTimeout.current = setTimeout(() => {
+            handleRegenerateImage(event.target.value)
+        }, 1000)
+    }
+
+    useEffect(() => {
+        return () => {
+            if (debounceTimeout.current) {
+                clearTimeout(debounceTimeout.current)
+            }
+        }
+    }, [])
+
+    const handleRegenerateImage = async (captionValue: string) => {
+        if (!imageData) return;
 
         try {
             const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
 
-            if ((imageData?.freestyle != imagePrompt) || (imageData?.style != imageStyle) || (imageData?.model != imageModel)) {
-                const prompt: string = generatePrompt(imagePrompt, imageStyle);
-                const response = await generateImage(prompt, uid, openAPIKey, fireworksAPIKey, stabilityAPIKey, useCredits, credits, imageModel);
-
-                if (response?.error) {
-                    toast.error(response.error);
-                    return;
-                }
-
-                const downloadURL = response?.imageUrl;
-                if (!downloadURL) {
-                    throw new Error("Error generating image");
-                }
-
-                await updateDoc(docRef, {
-                    downloadUrl: downloadURL,
-                    freestyle: imagePrompt,
-                    prompt: prompt,
-                    model: imageModel,
-                    style: imageStyle
-                });
-            } 
-            
-            if (imageData?.caption != caption) {
-                await updateDoc(docRef, {
-                    caption: caption || ''
-                });
-            }
+            await updateDoc(docRef, {
+                caption: captionValue || ''
+            });
 
             setRefreshCounter(refreshCounter + 1)
-
             toast.success("Image regenerated successfully");
         } catch (error) {
             toast.error("Error regenerating image: " + error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -263,6 +264,29 @@ const ImagePage = ({ params: { id } }: Params) => {
     };
 
     if (imageData == false) return <div className="text-center text-3xl mt-10">The image does not exist or is private.</div>;
+
+    const handlePasswordSubmit = () => {
+        if (enteredPassword === imageData?.password) {
+            setPasswordVerified(true);
+        } else {
+            toast.error("Invalid password");
+        }
+    };
+
+    if (isPasswordProtected && !passwordVerified && !isOwner) {
+        return (
+            <div className="flex flex-col items-center mt-5">
+                <h2 className="text-xl mb-4">This image is password-protected. Please enter the password to view:</h2>
+                <input
+                    type="password"
+                    value={enteredPassword}
+                    onChange={(e) => setEnteredPassword(e.target.value)}
+                    className="p-2 border rounded mb-4"
+                />
+                <button onClick={handlePasswordSubmit} className="btn-primary2">Submit</button>
+            </div>
+        );
+    }
 
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
@@ -313,7 +337,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             {uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-                    onClick={toggleSharable}
+                    onClick={() => { isSharable ? toggleSharable() : setShowPasswordModal(true) }}
                 >
                     {isSharable ? "Make Private" : "Make Sharable"}
                 </button>
@@ -335,38 +359,46 @@ const ImagePage = ({ params: { id } }: Params) => {
                 {/* {imageData?.prompt && <p><strong>Prompt:</strong> {imageData?.prompt}</p>} */}
                 {imageData?.style && <p><strong>Style:</strong> {imageData?.style}</p>}
                 {imageData?.model && <p><strong>Model:</strong> {imageData?.model}</p>}
+                {imageData?.colorScheme && <p><strong>Color:</strong> {imageData?.colorScheme}</p>}
+                {imageData?.lighting && <p><strong>Lighting:</strong> {imageData?.lighting}</p>}
                 {imageData?.timestamp?.seconds && (
                     <p><strong>Timestamp:</strong> {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}</p>
                 )}
                 {uid && isOwner && (
                     <div className="mt-4">
-                        <h3 className="text-xl mb-2 font-bold">Tags:</h3>
-                        <div className="flex flex-wrap gap-2">
+                        <h3 className="text-xl mb-3 font-semibold text-gray-800">Tags:</h3>
+                        <div className="flex flex-wrap gap-2 mb-4">
                             {tags.map((tag, index) => (
-                                <div key={index} className="flex items-center gap-2 bg-gray-100 border border-gray-300 rounded px-2 py-1">
-                                    <span className="flex-1">{tag}</span>
+                                <div key={index} className="flex items-center gap-2 bg-gray-200 border border-gray-400 rounded-md px-3 py-1 transition hover:bg-gray-300">
+                                    <span className="text-gray-700">{tag}</span>
                                     <button
                                         onClick={() => handleRemoveTag(tag)}
-                                        className="text-gray-500 hover:text-gray-700"
+                                        className="text-gray-500 hover:text-red-600"
                                     >
                                         <X size={16} />
                                     </button>
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-2 flex items-center">
+                        <div className="flex items-center">
                             <input
                                 type="text"
                                 value={newTag}
                                 onChange={(e) => setNewTag(e.target.value)}
                                 placeholder="Add new tag"
-                                className="p-2 mt-2 border border-gray-300 rounded-l-md"
+                                className="p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                             />
                             <button
-                                onClick={handleAddTag}
-                                className="btn-primary2 px-2 py-[0.65rem] pr-4 text-sm rounded-l-md"
+                                onClick={() => handleAddTag()}
+                                className="px-4 py-3 text-sm rounded-r-md bg-blue-600 text-white hover:bg-blue-700 transition"
                             >
                                 Add Tag
+                            </button>
+                            <button
+                                className="ml-2 flex items-center px-3 py-2 text-sm rounded-full border border-blue-500 text-blue-500 hover:bg-blue-100 transition"
+                                onClick={handleSuggestions}
+                            >
+                                <Sparkle className="mr-1" /> Suggestions
                             </button>
                         </div>
                     </div>
@@ -378,49 +410,11 @@ const ImagePage = ({ params: { id } }: Params) => {
                     <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
                     <TextareaAutosize
                         value={caption}
-                        onChange={(e) => setCaption(e.target.value)}
+                        onChange={handleCaptionChange}
                         placeholder="Enter caption"
                         className="p-2 border border-gray-300 rounded-md w-full"
                     />
                 </div>
-            )}
-
-            {imageData && uid && isOwner && (
-                <div className="mt-4 w-full p-3 py-0">
-                    <h2 className="text-2xl mb-3 font-bold">Edit Prompt and Model:</h2>
-                    <TextareaAutosize
-                        value={imagePrompt}
-                        onChange={(e) => setImagePrompt(e.target.value)}
-                        placeholder="Edit prompt"
-                        className="p-2 border border-gray-300 rounded-md w-full mb-4"
-                        minRows={2}
-                    />
-                    <Select
-                        isClearable={true}
-                        isSearchable={true}
-                        name="model"
-                        onChange={(v) => setImageModel(v ? (v as SelectModel).value : "dall-e")}
-                        defaultValue={findModelByValue(imageModel)}
-                        options={models}
-                        styles={selectStyles}
-                        className="mb-4"
-                    />
-                    <Select
-                        value={findArtByValue(imageStyle)}
-                        onChange={(selectedOption) => setImageStyle(selectedOption?.value || '')}
-                        options={artStyles}
-                        className="mb-4"
-                        styles={selectStyles}
-                    />
-                    <button
-                        onClick={handleRegenerateImage}
-                        className={`btn-primary2 h-12 mt-2 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={loading}
-                    >
-                        {loading ? 'Regenerating...' : 'Regenerate Image'}
-                    </button>
-                </div>
-
             )}
 
             {imageData && !isOwner && (
@@ -430,6 +424,70 @@ const ImagePage = ({ params: { id } }: Params) => {
                 >
                     Next: Generate Your Image
                 </button>
+            )}
+
+            {imageData && uid && isOwner && (
+                <button
+                    className="btn-primary2 h-12 flex items-center justify-center mx-3"
+                    onClick={() => {
+                        if (imageData) {
+                            const { freestyle, style, model, colorScheme, lighting, tags } = imageData;
+
+                            const addQueryParam = (key: string, value: string) => {
+                                if (value) {
+                                    return `${key}=${encodeURIComponent(value)}`;
+                                }
+                                return null;
+                            };
+
+                            const queryParams = [
+                                addQueryParam('freestyle', freestyle),
+                                addQueryParam('style', style),
+                                addQueryParam('model', model),
+                                addQueryParam('color', colorScheme),
+                                addQueryParam('lighting', lighting),
+                                addQueryParam('tags', tags.join(","))
+                            ].filter(Boolean)
+
+                            if (queryParams.length > 0) {
+                                const queryString = queryParams.join('&');
+                                router.push(`/generate?${queryString}`);
+                            } else {
+                                console.warn("No valid parameters to pass in the URL");
+                            }
+                        } else {
+                            console.warn("imageData is not available");
+                        }
+                    }}
+                >
+                    Try again
+                </button>
+            )}
+
+            {showPasswordModal && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
+                    <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
+                        <h2 className="text-xl font-semibold mb-4">Make Sharable with Password (Optional)</h2>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter password (optional)"
+                            className="w-full p-2 border rounded mb-4"
+                        />
+                        <div className="flex justify-end">
+                            <button
+                                className="btn-secondary mr-2"
+                                onClick={() => setShowPasswordModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button className="btn-primary" onClick={toggleSharable}>
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
             <canvas ref={canvasRef} className="hidden" />
             <br />

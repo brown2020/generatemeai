@@ -15,30 +15,62 @@ import { generateImage } from "@/actions/generateImage";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
-import { models, SelectModel } from "@/constants/models";
+import { findModelByValue, models, SelectModel } from "@/constants/models";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
+import { colors } from "@/constants/colors";
+import { lightings } from "@/constants/lighting";
+import { useSearchParams } from "next/navigation";
+import CreatableSelect from "react-select/creatable";
+import { suggestTags } from "@/actions/suggestTags";
 
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
+  const searchterm = useSearchParams();
+  const freestyleSearchParam = searchterm.get("freestyle");
+  const styleSearchParam = searchterm.get("style");
+  const modelSearchParam = searchterm.get("model");
+  const colorSearchParam = searchterm.get("color");
+  const lightingSearchParam = searchterm.get("lighting");
+  const tagsSearchParam = searchterm.get("tags")?.split(",")
+
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
-  const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key)
+  const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
-  const [imagePrompt, setImagePrompt] = useState<string>("");
-  const [imageStyle, setImageStyle] = useState<string>("");
-  const [model, setModel] = useState<model>("dall-e");
+  const [imagePrompt, setImagePrompt] = useState<string>(
+    freestyleSearchParam || ""
+  );
+  const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
+  const [model, setModel] = useState<model>(
+    (modelSearchParam as model) || "dall-e"
+  );
+  const [colorScheme, setColorScheme] = useState<string>(
+    colorSearchParam || "None"
+  );
+  const [lighting, setLighting] = useState<string>(
+    lightingSearchParam || "None"
+  );
+  const [tags, setTags] = useState<string[]>(tagsSearchParam as unknown as string[] || []);
+  const [tagInputValue, settagInputValue] = useState(tagsSearchParam ? tagsSearchParam.map(str => { return { label: str, value: str } }) : [])
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
     downloadUrl: "",
     prompt: "",
     model: model,
+    colorScheme,
+    lighting,
+    tags: tags,
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
+
+  const colorValues = colors.map((color) => color.value);
+  const lightingValues = lightings.map((lightingss) => lightingss.value);
 
   useEffect(() => {
     setPromptData((prevData) => ({
@@ -47,6 +79,19 @@ export default function GenerateImage() {
       freestyle: "",
     }));
   }, []);
+
+  const handleTagSuggestions = async (prompt: string) => {
+    let suggestions = await suggestTags(prompt, tags, openAPIKey, useCredits, credits);
+
+    if (suggestions.error) {
+      return
+    }
+
+    suggestions = suggestions.split(",")
+    if (suggestions.length >= 1) {
+      setSuggestedTags(suggestions);
+    }
+  };
 
   async function saveHistory(
     promptData: PromptDataType,
@@ -63,6 +108,7 @@ export default function GenerateImage() {
       prompt: prompt,
       id: docRef.id,
       timestamp: Timestamp.now(),
+      tags,
     };
     setPromptData(p);
     await setDoc(docRef, p);
@@ -73,8 +119,22 @@ export default function GenerateImage() {
 
     try {
       setLoading(true);
-      const prompt: string = generatePrompt(imagePrompt, imageStyle);
-      const response = await generateImage(prompt, uid, openAPIKey, fireworksAPIKey, stabilityAPIKey, useCredits, credits, model);
+      const prompt: string = generatePrompt(
+        imagePrompt,
+        imageStyle,
+        colorScheme,
+        lighting
+      );
+      const response = await generateImage(
+        prompt,
+        uid,
+        openAPIKey,
+        fireworksAPIKey,
+        stabilityAPIKey,
+        useCredits,
+        credits,
+        model
+      );
 
       if (response?.error) {
         toast.error(response.error);
@@ -91,14 +151,20 @@ export default function GenerateImage() {
       }
 
       setGeneratedImage(downloadURL);
-      await saveHistory({
-        ...promptData,
-        freestyle: imagePrompt,
-        style: imageStyle,
-        downloadUrl: downloadURL,
-        model: model,
+      await saveHistory(
+        {
+          ...promptData,
+          freestyle: imagePrompt,
+          style: imageStyle,
+          downloadUrl: downloadURL,
+          model: model,
+          prompt,
+          lighting,
+          colorScheme,
+        },
         prompt,
-      }, prompt, downloadURL);
+        downloadURL
+      );
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error generating image:", error.message);
@@ -112,14 +178,16 @@ export default function GenerateImage() {
 
   return (
     <div className="flex flex-col items-center w-full p-4 bg-white">
-      {/* Input Section */}
-      <div className="flex flex-col w-full max-w-lg space-y-4">
+      <div className="flex flex-col w-full max-w-xl space-y-4">
         <TextareaAutosize
           autoFocus
           minRows={2}
           value={imagePrompt || ""}
           placeholder="Describe an image"
-          onChange={(e) => setImagePrompt(e.target.value)}
+          onChange={(e) => {
+            setImagePrompt(e.target.value);
+            handleTagSuggestions(e.target.value);
+          }}
           className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
         />
         <div>
@@ -131,6 +199,7 @@ export default function GenerateImage() {
             onChange={(v) => setImageStyle(v ? v.value : "")}
             options={artStyles}
             styles={selectStyles}
+            defaultInputValue={styleSearchParam || ""}
           />
         </div>
         <div>
@@ -140,11 +209,63 @@ export default function GenerateImage() {
             isSearchable={true}
             name="model"
             onChange={(v) => setModel(v ? (v as SelectModel).value : "dall-e")}
-            defaultValue={models[0]}
+            defaultValue={findModelByValue(
+              modelSearchParam as model || "dall-e"
+            )}
             options={models}
             styles={selectStyles}
           />
         </div>
+
+        <div>
+          <div>Tags (optional)</div>
+          <CreatableSelect
+            isMulti
+            value={tagInputValue}
+            options={suggestedTags.map((tag) => ({ label: tag, value: tag }))}
+            onChange={(newTags) => {
+              setTags(newTags.map((tag) => tag.value));
+              settagInputValue(newTags as [{label: string, value: string}])
+            }
+            }
+            placeholder="Add or select tags"
+          />
+        </div>
+
+        <div className="flex space-x-4 items-center">
+          <div>Colors:</div>
+          <div className="relative flex items-center space-x-2">
+            {colorValues.map((option) => (
+              <div
+                key={option}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
+                  }`}
+                onClick={() => setColorScheme(option)}
+                title={option}
+              >
+                <span>{option}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex space-x-4 items-center">
+          <div>Lighting:</div>
+          <div className="relative flex items-center space-x-2">
+            {lightingValues.map((option) => (
+              <div
+                key={option}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
+                  }`}
+                onClick={() => setLighting(option)}
+                title={option}
+              >
+                <span>{option}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button
           className="btn btn-blue h-10 flex items-center justify-center disabled:opacity-50"
           disabled={loading}
@@ -153,6 +274,9 @@ export default function GenerateImage() {
               ...promptData,
               freestyle: imagePrompt,
               style: imageStyle,
+              colorScheme,
+              lighting,
+              tags,
             });
             handleGenerateSDXL(e);
           }}
