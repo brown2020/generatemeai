@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import "./globals.css";
 import { ClientProvider } from "@/components/ClientProvider";
 import Header from "@/components/Header";
