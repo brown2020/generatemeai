@@ -10,4 +10,5 @@ export type PromptDataType = {
   model: string;
   colorScheme?: string;
   lighting?: string;
+  tags: string[];
 };

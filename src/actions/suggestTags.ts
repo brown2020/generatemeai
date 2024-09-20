@@ -17,7 +17,7 @@ export const suggestTags = async (freestyle: string, tags: string[], openAPIKey:
             model: 'gpt-4',
             messages: [
                 { role: 'system', content: 'For all response reply just the answer without giving any description.' },
-                { role: 'user', content: `Using this image created with the prompt: ${freestyle}\n\nSuggest tags for the image. It shouldn't be from this list: ${tags}. Please list the tags in this format: separate all tags with commas, that's it, nothing else, and don't use a full stop at the end. Provide only suggest 5, no explanation.\n\n` }
+                { role: 'user', content: `Using this prompt that image created with\n\nthe prompt: ${freestyle}\n\nSuggest tags for the image. It shouldn't be from this list: ${tags}. Please list the tags in this format: separate all tags with commas, that's it, nothing else, and don't use a full stop at the end. Provide only suggest 6, no explanation.\n\n` }
             ],
             max_tokens: 200,
             temperature: 0.7,
