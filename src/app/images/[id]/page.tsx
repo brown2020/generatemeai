@@ -156,7 +156,7 @@ const ImagePage = ({ params: { id } }: Params) => {
     const handleAddTag = async (showToast: boolean = true, tagsArray: string[] | null = null) => {
         if ((!tagsArray || !imageData) && (!newTag.trim() || !imageData)) return;
 
-        let newTagValue = tagsArray || newTag.trim()
+        const newTagValue = tagsArray || newTag.trim()
 
         try {
             const updatedTags = tagsArray ? tags.concat(newTagValue) : [...tags, newTagValue];

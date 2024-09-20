@@ -17,7 +17,7 @@ export default function AboutPage() {
       {/* About Section */}
       <div className="bg-white shadow-md p-8 rounded-lg">
         <p className="text-lg text-gray-700 leading-relaxed">
-          Welcome to <strong>Generate.me</strong>, an innovative platform that brings your imagination to life through cutting-edge AI models. Whether you're an artist, a creator, or simply someone with a spark of inspiration, Generate.me empowers you to describe your vision and watch it materialize as stunning images. With multiple state-of-the-art AI engines like <strong>DALL-E, Stable Diffusion, Stability SD3-Turbo, Playground V2, and Vertex Imagen AI</strong> integrated into the platform, the possibilities are endless.
+          Welcome to <strong>Generate.me</strong>, an innovative platform that brings your imagination to life through cutting-edge AI models. Whether you&apos;re an artist, a creator, or simply someone with a spark of inspiration, Generate.me empowers you to describe your vision and watch it materialize as stunning images. With multiple state-of-the-art AI engines like <strong>DALL-E, Stable Diffusion, Stability SD3-Turbo, Playground V2, and Vertex Imagen AI</strong> integrated into the platform, the possibilities are endless.
         </p>
         <p className="mt-4 text-lg text-gray-700">
           <span className="font-bold">Explore Artistic Styles:</span> Generate.me offers a diverse range of artistic styles to suit your creative needs, from <strong>Ancient Egyptian art</strong> to <strong>Renaissance masterpieces</strong>. Let your creativity flow as you blend historical and modern artistic movements to create truly unique visuals.
@@ -26,7 +26,7 @@ export default function AboutPage() {
           <span className="font-bold">Customizable and Shareable:</span> Every image you generate is stored on your profile, where you can <strong>add tags</strong>, <strong>search and filter</strong> your images, and <strong>regenerate</strong> them using the same or edited prompts. You can also make your images <strong>sharable</strong> and easily <strong>download</strong> or <strong>share</strong> them with your friends, community, or social media followers.
         </p>
         <p className="mt-4 text-lg text-gray-700">
-          Whether you're experimenting with different styles, refining your ideas, or simply enjoying the process of creation, Generate.me is here to help you unleash your creative potential. Join the growing community of creators and start generating today!
+          Whether you&apos;re experimenting with different styles, refining your ideas, or simply enjoying the process of creation, Generate.me is here to help you unleash your creative potential. Join the growing community of creators and start generating today!
         </p>
       </div>
 
@@ -37,7 +37,7 @@ export default function AboutPage() {
           <li><strong>Describe Your Image:</strong> Start by typing a detailed description of the image you want to generate. The more specific you are, the better the AI can understand your vision.</li>
           <li><strong>Choose Your Model:</strong> Select from a variety of advanced AI models including DALL-E, Stable Diffusion, Stability SD3-Turbo, Playground V2, or Vertex Imagen AI. Each model has its own strengths in terms of style and detail.</li>
           <li><strong>Select Artistic Style:</strong> Add an artistic flair by choosing from different styles such as Ancient Egyptian, Prehistoric Art, Renaissance Art, and more. This step allows you to tailor your image to your preferred aesthetic.</li>
-          <li><strong>Generate Your Image:</strong> Once you're happy with your description and selections, hit the 'Generate' button. The AI will process your request and create a unique image based on your input.</li>
+          <li><strong>Generate Your Image:</strong> Once you&apos;re happy with your description and selections, hit the &apos;Generate&apos; button. The AI will process your request and create a unique image based on your input.</li>
           <li><strong>Manage Your Images:</strong> All images you generate will be saved to your profile. Here, you can add custom tags, search, filter, and edit or regenerate your images. You can also download your creations and make them sharable.</li>
           <li><strong>Share Your Work:</strong> Share your art with the world! You can generate a sharable link or directly share to social media from within the platform.</li>
         </ol>
