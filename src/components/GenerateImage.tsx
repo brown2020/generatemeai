@@ -23,6 +23,7 @@ import { lightings } from "@/constants/lighting";
 import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
+import { Mic, StopCircle } from "lucide-react";
 
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
@@ -43,6 +44,7 @@ export default function GenerateImage() {
   const [imagePrompt, setImagePrompt] = useState<string>(
     freestyleSearchParam || ""
   );
+  const [audioPrompt, setAudioPrompt] = useState<string>("");
   const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
   const [model, setModel] = useState<model>(
     (modelSearchParam as model) || "dall-e"
@@ -68,6 +70,7 @@ export default function GenerateImage() {
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
+  const [isRecording, setIsRecording] = useState<boolean>(false);
 
   const colorValues = colors.map((color) => color.value);
   const lightingValues = lightings.map((lightingss) => lightingss.value);
@@ -80,14 +83,42 @@ export default function GenerateImage() {
     }));
   }, []);
 
+  const startAudioRecording = () => {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      console.log("Voice recording started...");
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setAudioPrompt(transcript);
+      setImagePrompt(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Error occurred in recognition: ", event.error);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      console.log("Voice recording ended.");
+    };
+
+    recognition.start();
+  };
+
   const handleTagSuggestions = async (prompt: string) => {
     let suggestions = await suggestTags(prompt, tags, openAPIKey, useCredits, credits);
 
     if (suggestions.error) {
-      return
+      return;
     }
 
-    suggestions = suggestions.split(",")
+    suggestions = suggestions.split(",");
     if (suggestions.length >= 1) {
       setSuggestedTags(suggestions);
     }
@@ -120,7 +151,7 @@ export default function GenerateImage() {
     try {
       setLoading(true);
       const prompt: string = generatePrompt(
-        imagePrompt,
+        audioPrompt || imagePrompt,
         imageStyle,
         colorScheme,
         lighting
@@ -178,18 +209,28 @@ export default function GenerateImage() {
 
   return (
     <div className="flex flex-col items-center w-full p-4 bg-white">
-      <div className="flex flex-col w-full max-w-xl space-y-4">
+      <div className="flex flex-col w-full max-w-xl space-y-4 relative">
         <TextareaAutosize
           autoFocus
-          minRows={2}
+          minRows={3}
           value={imagePrompt || ""}
-          placeholder="Describe an image"
+          placeholder="Describe an image or use voice input"
           onChange={(e) => {
             setImagePrompt(e.target.value);
             handleTagSuggestions(e.target.value);
           }}
           className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
         />
+        
+        <button
+          className={`absolute top-10 right-2 w-10 h-10 flex items-center justify-center rounded-full 
+            ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
+          onClick={isRecording ? () => { setIsRecording(false); } : startAudioRecording}
+          title={isRecording ? "Stop Recording" : "Start Recording"}
+        >
+          {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
+        </button>
+
         <div>
           <div>Artistic Style (optional)</div>
           <Select
@@ -226,8 +267,7 @@ export default function GenerateImage() {
             onChange={(newTags) => {
               setTags(newTags.map((tag) => tag.value));
               settagInputValue(newTags as [{label: string, value: string}])
-            }
-            }
+            }}
             placeholder="Add or select tags"
           />
         </div>
@@ -238,8 +278,7 @@ export default function GenerateImage() {
             {colorValues.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""}`}
                 onClick={() => setColorScheme(option)}
                 title={option}
               >
@@ -255,8 +294,7 @@ export default function GenerateImage() {
             {lightingValues.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""}`}
                 onClick={() => setLighting(option)}
                 title={option}
               >
@@ -272,7 +310,7 @@ export default function GenerateImage() {
           onClick={(e) => {
             setPromptData({
               ...promptData,
-              freestyle: imagePrompt,
+              freestyle: audioPrompt || imagePrompt,
               style: imageStyle,
               colorScheme,
               lighting,
@@ -285,7 +323,6 @@ export default function GenerateImage() {
         </button>
       </div>
 
-      {/* Generated Image Section */}
       <div className="w-full max-w-2xl mt-6">
         {generatedImage ? (
           <img
