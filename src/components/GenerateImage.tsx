@@ -25,6 +25,36 @@ import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
 import { Mic, StopCircle } from "lucide-react";
 
+interface Window {
+  SpeechRecognition: typeof SpeechRecognition;
+  webkitSpeechRecognition: typeof SpeechRecognition;
+}
+
+declare class SpeechRecognition {
+  lang: string;
+  interimResults: boolean;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: {
+    [key: number]: {
+      [key: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
   const searchterm = useSearchParams();
@@ -83,34 +113,41 @@ export default function GenerateImage() {
     }));
   }, []);
 
-  const startAudioRecording = () => {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  const startAudioRecording = (): void => {
+    const SpeechRecognition = window.SpeechRecognition || (window as Window).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      console.error("SpeechRecognition API is not supported in this browser.");
+      return;
+    }
+  
+    const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-
-    recognition.onstart = () => {
+  
+    recognition.onstart = (): void => {
       setIsRecording(true);
       console.log("Voice recording started...");
     };
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
+  
+    recognition.onresult = (event: SpeechRecognitionEvent): void => {
+      const transcript: string = event.results[0][0].transcript;
       setAudioPrompt(transcript);
       setImagePrompt(transcript);
     };
-
-    recognition.onerror = (event) => {
+  
+    recognition.onerror = (event: SpeechRecognitionErrorEvent): void => {
       console.error("Error occurred in recognition: ", event.error);
     };
-
-    recognition.onend = () => {
+  
+    recognition.onend = (): void => {
       setIsRecording(false);
       console.log("Voice recording ended.");
     };
-
+  
     recognition.start();
   };
-
+  
   const handleTagSuggestions = async (prompt: string) => {
     let suggestions = await suggestTags(prompt, tags, openAPIKey, useCredits, credits);
 
