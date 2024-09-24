@@ -13,7 +13,7 @@ interface RequestBody {
     samples?: number;
     steps?: number;
     seed?: number;
-    style_preset?: any;
+    style_preset?: string;
     safety_check?: boolean;
     sampler?: string;
 }
@@ -95,7 +95,6 @@ export async function POST(req: NextRequest) {
                     samples: 1,
                     steps: 30,
                     seed: 0,
-                    style_preset: null,
                     safety_check: false,
                     prompt: message!,
                 };
@@ -151,7 +150,6 @@ export async function POST(req: NextRequest) {
                     samples: 1,
                     steps: 30,
                     seed: 0,
-                    style_preset: null,
                     safety_check: false,
                     prompt: message!,
                 };
@@ -170,7 +168,9 @@ export async function POST(req: NextRequest) {
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: headers,
-            body: (model !== 'stability-sd3-turbo' && !img) ? JSON.stringify(requestBody) : formData,
+            body: (model !== 'stability-sd3-turbo' && !img) 
+                ? JSON.stringify(requestBody) 
+                : (formData),
         });
 
         if (!response.ok) {

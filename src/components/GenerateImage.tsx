@@ -24,17 +24,6 @@ import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
 import { Image, Mic, StopCircle, XCircle } from "lucide-react";
 
-declare class SpeechRecognition {
-  lang: string;
-  interimResults: boolean;
-  onstart: (() => void) | null;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-}
-
 interface SpeechRecognitionEvent extends Event {
   results: {
     [key: number]: {
