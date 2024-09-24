@@ -11,7 +11,6 @@ import { artStyles } from "@/constants/artStyles";
 import { selectStyles } from "@/constants/selectStyles";
 import Select from "react-select";
 import { PulseLoader } from "react-spinners";
-import { generateImage } from "@/actions/generateImage";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
@@ -23,23 +22,7 @@ import { lightings } from "@/constants/lighting";
 import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
-import { Mic, StopCircle } from "lucide-react";
-
-interface Window {
-  SpeechRecognition: typeof SpeechRecognition;
-  webkitSpeechRecognition: typeof SpeechRecognition;
-}
-
-declare class SpeechRecognition {
-  lang: string;
-  interimResults: boolean;
-  onstart: (() => void) | null;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-}
+import { Image, Mic, StopCircle, XCircle } from "lucide-react";
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -77,7 +60,7 @@ export default function GenerateImage() {
   const [audioPrompt, setAudioPrompt] = useState<string>("");
   const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
   const [model, setModel] = useState<model>(
-    (modelSearchParam as model) || "dall-e"
+    (modelSearchParam as model) || "playground-v2"
   );
   const [colorScheme, setColorScheme] = useState<string>(
     colorSearchParam || "None"
@@ -101,6 +84,7 @@ export default function GenerateImage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
   const colorValues = colors.map((color) => color.value);
   const lightingValues = lightings.map((lightingss) => lightingss.value);
@@ -113,41 +97,35 @@ export default function GenerateImage() {
     }));
   }, []);
 
-  const startAudioRecording = (): void => {
-    const SpeechRecognition = window.SpeechRecognition || (window as Window).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      console.error("SpeechRecognition API is not supported in this browser.");
-      return;
-    }
-  
-    const recognition = new SpeechRecognition();
+  const startAudioRecording = () => {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-  
-    recognition.onstart = (): void => {
+
+    recognition.onstart = () => {
       setIsRecording(true);
       console.log("Voice recording started...");
     };
-  
-    recognition.onresult = (event: SpeechRecognitionEvent): void => {
-      const transcript: string = event.results[0][0].transcript;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
       setAudioPrompt(transcript);
       setImagePrompt(transcript);
     };
-  
-    recognition.onerror = (event: SpeechRecognitionErrorEvent): void => {
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error("Error occurred in recognition: ", event.error);
     };
-  
-    recognition.onend = (): void => {
+
+    recognition.onend = () => {
       setIsRecording(false);
       console.log("Voice recording ended.");
     };
-  
+
     recognition.start();
   };
-  
+
+
   const handleTagSuggestions = async (prompt: string) => {
     let suggestions = await suggestTags(prompt, tags, openAPIKey, useCredits, credits);
 
@@ -187,31 +165,42 @@ export default function GenerateImage() {
 
     try {
       setLoading(true);
+
       const prompt: string = generatePrompt(
         audioPrompt || imagePrompt,
         imageStyle,
         colorScheme,
         lighting
       );
-      const response = await generateImage(
-        prompt,
-        uid,
-        openAPIKey,
-        fireworksAPIKey,
-        stabilityAPIKey,
-        useCredits,
-        credits,
-        model
-      );
 
-      if (response?.error) {
-        toast.error(response.error);
-        return;
+      const formData = new FormData();
+      formData.append('message', prompt);
+      formData.append('uid', uid);
+      formData.append('openAPIKey', openAPIKey);
+      formData.append('fireworksAPIKey', fireworksAPIKey);
+      formData.append('stabilityAPIKey', stabilityAPIKey);
+      formData.append('useCredits', useCredits.toString());
+      formData.append('credits', credits.toString());
+      formData.append('model', model);
+      if (uploadedImage) {
+        formData.append('imageField', uploadedImage);
       }
 
-      const downloadURL = response?.imageUrl;
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        toast.error(result.error || 'Failed to generate image.');
+        throw new Error(result.error || 'Failed to generate image.');
+      }
+
+      const downloadURL = result?.imageUrl;
       if (!downloadURL) {
-        throw new Error("Error generating image");
+        throw new Error('Error generating image');
       }
 
       if (useCredits) {
@@ -219,6 +208,7 @@ export default function GenerateImage() {
       }
 
       setGeneratedImage(downloadURL);
+
       await saveHistory(
         {
           ...promptData,
@@ -235,21 +225,22 @@ export default function GenerateImage() {
       );
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error("Error generating image:", error.message);
+        console.error('Error generating image:', error.message);
       } else {
-        console.error("An unknown error occurred during image generation.");
+        console.error('An unknown error occurred during image generation.');
       }
     } finally {
       setLoading(false);
     }
   };
 
+
   return (
     <div className="flex flex-col items-center w-full p-4 bg-white">
       <div className="flex flex-col w-full max-w-xl space-y-4 relative">
         <TextareaAutosize
           autoFocus
-          minRows={3}
+          minRows={4}
           value={imagePrompt || ""}
           placeholder="Describe an image or use voice input"
           onChange={(e) => {
@@ -258,15 +249,72 @@ export default function GenerateImage() {
           }}
           className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
         />
-        
+
         <button
-          className={`absolute top-10 right-2 w-10 h-10 flex items-center justify-center rounded-full 
+          className={`absolute top-[4rem] right-3 w-10 h-10 flex items-center justify-center rounded-full 
             ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
           onClick={isRecording ? () => { setIsRecording(false); } : startAudioRecording}
           title={isRecording ? "Stop Recording" : "Start Recording"}
         >
           {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
         </button>
+
+        {model != 'dall-e' &&
+          <button
+            className="absolute top-[4rem] right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
+            onClick={() => {
+              const fileInput = document.getElementById("imageUpload") as HTMLInputElement | null;
+              if (fileInput) {
+                fileInput.click();
+              } else {
+                console.error("Element with ID 'imageUpload' not found.");
+              }
+            }}
+            title="Upload Image"
+          >
+            <Image size={20} />
+          </button>
+        }
+
+        <input
+          type="file"
+          accept="image/*"
+          id="imageUpload"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            if (e.target.files) {
+              setUploadedImage(e.target.files[0]);
+            }
+          }}
+        />
+
+        {model != 'dall-e' && uploadedImage && (
+          <div className="mt-4 relative">
+            <img
+              src={URL.createObjectURL(uploadedImage)}
+              alt="Uploaded"
+              className="w-32 h-32 object-cover rounded-md border-2 border-blue-600"
+            />
+            <button
+              className="absolute top-0 left-0 bg-red-600 text-white rounded-full p-1"
+              onClick={() => {
+                setUploadedImage(null);
+
+                const fileInput = document.getElementById("imageUpload") as HTMLInputElement | null;
+
+                if (fileInput) {
+                  fileInput.value = "";
+                } else {
+                  console.error("Element with ID 'imageUpload' not found.");
+                }
+              }}
+              title="Delete Image"
+            >
+              <XCircle size={16} />
+            </button>
+
+          </div>
+        )}
 
         <div>
           <div>Artistic Style (optional)</div>
@@ -286,9 +334,9 @@ export default function GenerateImage() {
             isClearable={true}
             isSearchable={true}
             name="model"
-            onChange={(v) => setModel(v ? (v as SelectModel).value : "dall-e")}
+            onChange={(v) => setModel(v ? (v as SelectModel).value : "playground-v2")}
             defaultValue={findModelByValue(
-              modelSearchParam as model || "dall-e"
+              modelSearchParam as model || "playground-v2"
             )}
             options={models}
             styles={selectStyles}
@@ -303,7 +351,7 @@ export default function GenerateImage() {
             options={suggestedTags.map((tag) => ({ label: tag, value: tag }))}
             onChange={(newTags) => {
               setTags(newTags.map((tag) => tag.value));
-              settagInputValue(newTags as [{label: string, value: string}])
+              settagInputValue(newTags as [{ label: string, value: string }])
             }}
             placeholder="Add or select tags"
           />

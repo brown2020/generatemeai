@@ -25,18 +25,27 @@ const ImageListPage = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fetchedImages: any[] = [];
         const tagsSet: Set<string> = new Set();
-
+  
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           fetchedImages.push({ id: doc.id, ...data });
-          data.tags?.forEach((tag: string) => tagsSet.add(tag));
+          
+          if (Array.isArray(data.tags)) {
+            data.tags.forEach((tag: string) => {
+              tag = tag.trim().toLowerCase()
+              if (!tagsSet.has(tag)) {
+                console.log(tag)
+                tagsSet.add(tag);
+              }
+            });
+          }
         });
-
+  
         setImages(fetchedImages);
         setAllTags(Array.from(tagsSet));
       }
     };
-
+  
     fetchImages();
   }, [uid, authPending]);
 
