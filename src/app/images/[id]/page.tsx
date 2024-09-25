@@ -337,7 +337,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             {uid && isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-                    onClick={() => { isSharable ? toggleSharable() : setShowPasswordModal(true) }}
+                    onClick={() => { if (isSharable) { toggleSharable(); return } setShowPasswordModal(true) }}
                 >
                     {isSharable ? "Make Private" : "Make Sharable"}
                 </button>
