@@ -22,7 +22,7 @@ import { lightings } from "@/constants/lighting";
 import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
-import { Image, Mic, StopCircle, XCircle } from "lucide-react";
+import { Image as ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -272,7 +272,7 @@ export default function GenerateImage() {
             }}
             title="Upload Image"
           >
-            <Image size={20} />
+            <ImageIcon size={20} />
           </button>
         }
 

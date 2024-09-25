@@ -35,7 +35,9 @@ export default function AuthComponent() {
 
   const signInWithGoogle = async () => {
     if (!acceptTerms) {
-      formRef.current && formRef.current.reportValidity();
+      if (formRef.current) {
+        formRef.current.reportValidity();
+      }
       return;
     }
 
