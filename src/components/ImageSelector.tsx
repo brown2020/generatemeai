@@ -7,9 +7,17 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 
 const ITEMS_PER_PAGE = 30;
 
+interface ImageData {
+  downloadUrl: string | undefined;
+  caption: string;
+  id: string;
+  timestamp: string;
+  freestyle?: string;
+  tags?: string[];
+}
+
 const ImageListPage = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [images, setImages] = useState<any[]>([]);
+  const [images, setImages] = useState<ImageData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -22,17 +30,17 @@ const ImageListPage = () => {
       if (uid && !authPending) {
         const q = query(collection(db, "profiles", uid, "covers"), orderBy("timestamp", "desc"));
         const querySnapshot = await getDocs(q);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fetchedImages: any[] = [];
+        const fetchedImages: ImageData[] = [];
         const tagsSet: Set<string> = new Set();
   
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          fetchedImages.push({ id: doc.id, ...data });
+          const image: ImageData = { id: doc.id, ...data } as ImageData;
+          fetchedImages.push(image);
           
           if (Array.isArray(data.tags)) {
             data.tags.forEach((tag: string) => {
-              tag = tag.trim().toLowerCase()
+              tag = tag.trim().toLowerCase();
               if (!tagsSet.has(tag)) {
                 tagsSet.add(tag);
               }
@@ -49,10 +57,17 @@ const ImageListPage = () => {
   }, [uid, authPending]);
 
   const handleSearch = () => {
+    const formattedSelectedTags = selectedTags.map(tag => tag.trim().toLowerCase());
+
     const filteredImages = images.filter(image =>
       image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (selectedTags.length === 0 || selectedTags.every(tag => image.tags?.includes(tag)))
+      (formattedSelectedTags.length === 0 || 
+        formattedSelectedTags.every(tag => 
+          image.tags?.map(t => t.trim().toLowerCase()).includes(tag)
+        )
+      )
     );
+
     return filteredImages;
   };
 
@@ -98,7 +113,6 @@ const ImageListPage = () => {
             className="relative cursor-pointer"
             onClick={() => window.location.href = `/images/${image.id}`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image.downloadUrl}
               alt="Visual Result"
@@ -112,7 +126,7 @@ const ImageListPage = () => {
               )}
             </div>
             <div className="p-2">
-              <p className="font-bold text-sm">{image.freestyle.length > 100
+              <p className="font-bold text-sm">{image.freestyle && image.freestyle.length > 100
                 ? `${image.freestyle.substring(0, 100)}...`
                 : image.freestyle}</p>
               <div className="flex gap-2 flex-wrap mt-2">

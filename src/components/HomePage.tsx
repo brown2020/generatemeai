@@ -84,7 +84,7 @@ export default function HomePage() {
         </h2>
 
         <h2 className="text-xl md:text-2xl md:px-9">
-          Sign in to use this image generation demo.
+          Sign in to use this image generation.
         </h2>
 
         <AuthComponent />
