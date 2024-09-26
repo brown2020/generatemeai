@@ -52,9 +52,13 @@ export default function AuthComponent() {
     } catch (error) {
       if (isFirebaseError(error)) {
         if (error.code === "auth/account-exists-with-different-credential") {
-          toast.error("An account with the same email exists with a different sign-in provider.");
+          toast.error(
+            "An account with the same email exists with a different sign-in provider."
+          );
         } else {
-          toast.error("Something went wrong signing in with Apple\n" + error.message);
+          toast.error(
+            "Something went wrong signing in with Apple\n" + error.message
+          );
         }
       }
     } finally {
@@ -76,9 +80,13 @@ export default function AuthComponent() {
     } catch (error) {
       if (isFirebaseError(error)) {
         if (error.code === "auth/account-exists-with-different-credential") {
-          toast.error("An account with the same email exists with a different sign-in provider.");
+          toast.error(
+            "An account with the same email exists with a different sign-in provider."
+          );
         } else {
-          toast.error("Something went wrong signing in with Apple\n" + error.message);
+          toast.error(
+            "Something went wrong signing in with Apple\n" + error.message
+          );
         }
       }
     } finally {
@@ -100,9 +108,13 @@ export default function AuthComponent() {
     } catch (error) {
       if (isFirebaseError(error)) {
         if (error.code === "auth/account-exists-with-different-credential") {
-          toast.error("An account with the same email exists with a different sign-in provider.");
+          toast.error(
+            "An account with the same email exists with a different sign-in provider."
+          );
         } else {
-          toast.error("Something went wrong signing in with Apple\n" + error.message);
+          toast.error(
+            "Something went wrong signing in with Apple\n" + error.message
+          );
         }
       }
     } finally {
@@ -242,11 +254,11 @@ export default function AuthComponent() {
                   logo={microsoftLogo}
                   onClick={signInWithMicrosoft}
                 /> */}
-                <AuthButton
+                {/* <AuthButton
                   label="Continue with Apple"
                   logo={appleLogo}
                   onClick={signInWithApple}
-                />
+                /> */}
 
                 <div className="flex items-center justify-center w-full h-12">
                   <hr className="flex-grow h-px bg-gray-400 border-0" />
@@ -310,8 +322,15 @@ export default function AuthComponent() {
   );
 }
 
-function isFirebaseError(error: unknown): error is { code: string; message: string } {
-  return typeof error === "object" && error !== null && "code" in error && "message" in error;
+function isFirebaseError(
+  error: unknown
+): error is { code: string; message: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    "message" in error
+  );
 }
 
 function AuthButton({
@@ -330,7 +349,12 @@ function AuthButton({
       onClick={onClick}
     >
       <div className="w-6 h-6 relative">
-        <Image src={logo} alt={`${label} logo`} layout="fill" objectFit="contain" />
+        <Image
+          src={logo}
+          alt={`${label} logo`}
+          layout="fill"
+          objectFit="contain"
+        />
       </div>
       <span className="flex-grow text-center">{label}</span>
     </button>
