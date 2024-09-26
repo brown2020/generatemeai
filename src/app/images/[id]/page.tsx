@@ -293,7 +293,6 @@ const ImagePage = ({ params: { id } }: Params) => {
     return (
         <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
             {imageData && <div className="relative inline-block" id="image-container">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     className="block h-full w-full object-cover"
                     src={imageData?.downloadUrl}
