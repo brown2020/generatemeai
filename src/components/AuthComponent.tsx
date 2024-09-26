@@ -3,18 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import {
   GoogleAuthProvider,
+  OAuthProvider,
   sendSignInLinkToEmail,
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import google_ctn from "@/app/assets/google_ctn.svg";
 
-import Image from "next/image";
 import Link from "next/link";
 import { MailIcon, XIcon } from "lucide-react";
 import { PulseLoader } from "react-spinners";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
+import toast from "react-hot-toast";
+
+import googleLogo from "@/app/assets/google.svg";
+import microsoftLogo from "@/app/assets/microsoft.svg";
+import appleLogo from "@/app/assets/apple.svg";
+import Image from "next/image";
 
 export default function AuthComponent() {
   const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
@@ -44,8 +49,60 @@ export default function AuthComponent() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error signing in:", error);
+    } catch (error: any) {
+      if (error.code === "auth/account-exists-with-different-credential") {
+        toast.error("An account with the same email exists with a different sign-in provider.")
+      } else {
+        toast.error("Something went wrong signing in with Apple\n", error)
+      }
+    } finally {
+      hideModal();
+    }
+  };
+
+  const signInWithMicrosoft = async () => {
+    if (!acceptTerms) {
+      if (formRef.current) {
+        formRef.current.reportValidity();
+      }
+      return;
+    }
+
+    try {
+      const provider = new OAuthProvider("microsoft.com");
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      if (error.code === "auth/account-exists-with-different-credential") {
+        toast.error(
+          "An account with the same email exists with a different sign-in provider."
+        );
+      } else {
+        toast.error("Something went wrong signing in with Apple\n", error)
+      }
+    } finally {
+      hideModal();
+    }
+  };
+
+  const signInWithApple = async () => {
+    if (!acceptTerms) {
+      if (formRef.current) {
+        formRef.current.reportValidity();
+      }
+      return;
+    }
+
+    try {
+      const provider = new OAuthProvider("apple.com");
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      if (error.code === "auth/account-exists-with-different-credential") {
+        toast.error(
+          "An account with the same email exists with a different sign-in provider."
+        );
+      } else {
+        toast.error("Something went wrong signing in with Apple\n", error)
+      }
     } finally {
       hideModal();
     }
@@ -170,19 +227,22 @@ export default function AuthComponent() {
               >
                 <div className="text-3xl text-center pb-3">Sign In</div>
 
-                <button
-                  type="button"
-                  className="w-full overflow-hidden"
+                <AuthButton
+                  label="Continue with Google"
+                  logo={googleLogo}
                   onClick={signInWithGoogle}
-                >
-                  <Image
-                    src={google_ctn.src}
-                    alt="Google Logo"
-                    className="object-cover w-full"
-                    width={100}
-                    height={20}
-                  />
-                </button>
+                />
+                <AuthButton
+                  label="Continue with Microsoft"
+                  logo={microsoftLogo}
+                  onClick={signInWithMicrosoft}
+                />
+                <AuthButton
+                  label="Continue with Apple"
+                  logo={appleLogo}
+                  onClick={signInWithApple}
+                />
+
                 <div className="flex items-center justify-center w-full h-12">
                   <hr className="flex-grow h-px bg-gray-400 border-0" />
                   <span className="px-3">or</span>
@@ -204,16 +264,16 @@ export default function AuthComponent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="input-primary"
+                  className="input-primary mt-2"
                 />
                 <button
                   type="submit"
                   className="btn-primary"
                   disabled={!email || !name}
                 >
-                  <div className="flex items-center gap-2 h-10">
-                    <MailIcon size={30} />
-                    <div className="text-xl">Continue with Email</div>
+                  <div className="flex items-center gap-2 h-8">
+                    <MailIcon size={20} />
+                    <div className="text-lg">Continue with Email</div>
                   </div>
                 </button>
                 <label className="flex items-center space-x-2 pl-1">
@@ -242,5 +302,28 @@ export default function AuthComponent() {
         </div>
       )}
     </>
+  );
+}
+
+function AuthButton({
+  label,
+  logo,
+  onClick,
+}: {
+  label: string;
+  logo: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-2 w-full px-4 py-2 border rounded-md hover:bg-gray-100"
+      onClick={onClick}
+    >
+      <div className="w-6 h-6 relative">
+        <Image src={logo} alt={`${label} logo`} layout="fill" objectFit="contain" />
+      </div>
+      <span className="flex-grow text-center">{label}</span>
+    </button>
   );
 }
