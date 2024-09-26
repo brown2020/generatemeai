@@ -37,8 +37,6 @@ export default function AuthComponent() {
   const modalRef = useRef<HTMLDivElement>(null);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(true); // State to control Google Sign-In visibility
 
-  const [showGoogleLogin, setShowGoogleLogin] = useState(true); // State to control visibility
-
   const showModal = () => setIsVisible(true);
   const hideModal = () => setIsVisible(false);
 
