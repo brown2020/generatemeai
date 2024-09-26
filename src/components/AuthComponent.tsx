@@ -49,11 +49,13 @@ export default function AuthComponent() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      if (error.code === "auth/account-exists-with-different-credential") {
-        toast.error("An account with the same email exists with a different sign-in provider.")
-      } else {
-        toast.error("Something went wrong signing in with Apple\n", error)
+    } catch (error) {
+      if (isFirebaseError(error)) {
+        if (error.code === "auth/account-exists-with-different-credential") {
+          toast.error("An account with the same email exists with a different sign-in provider.");
+        } else {
+          toast.error("Something went wrong signing in with Apple\n" + error.message);
+        }
       }
     } finally {
       hideModal();
@@ -71,13 +73,13 @@ export default function AuthComponent() {
     try {
       const provider = new OAuthProvider("microsoft.com");
       await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      if (error.code === "auth/account-exists-with-different-credential") {
-        toast.error(
-          "An account with the same email exists with a different sign-in provider."
-        );
-      } else {
-        toast.error("Something went wrong signing in with Apple\n", error)
+    } catch (error) {
+      if (isFirebaseError(error)) {
+        if (error.code === "auth/account-exists-with-different-credential") {
+          toast.error("An account with the same email exists with a different sign-in provider.");
+        } else {
+          toast.error("Something went wrong signing in with Apple\n" + error.message);
+        }
       }
     } finally {
       hideModal();
@@ -95,13 +97,13 @@ export default function AuthComponent() {
     try {
       const provider = new OAuthProvider("apple.com");
       await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      if (error.code === "auth/account-exists-with-different-credential") {
-        toast.error(
-          "An account with the same email exists with a different sign-in provider."
-        );
-      } else {
-        toast.error("Something went wrong signing in with Apple\n", error)
+    } catch (error) {
+      if (isFirebaseError(error)) {
+        if (error.code === "auth/account-exists-with-different-credential") {
+          toast.error("An account with the same email exists with a different sign-in provider.");
+        } else {
+          toast.error("Something went wrong signing in with Apple\n" + error.message);
+        }
       }
     } finally {
       hideModal();
@@ -210,7 +212,7 @@ export default function AuthComponent() {
                     sign-in process.
                   </div>
                   <div>
-                    Waiting for your to click the sign-in link.{" "}
+                    Waiting for you to click the sign-in link.{" "}
                     <span>
                       {" "}
                       <PulseLoader color="#000000" size={6} />
@@ -306,6 +308,10 @@ export default function AuthComponent() {
       )}
     </>
   );
+}
+
+function isFirebaseError(error: unknown): error is { code: string; message: string } {
+  return typeof error === "object" && error !== null && "code" in error && "message" in error;
 }
 
 function AuthButton({
