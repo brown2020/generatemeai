@@ -360,7 +360,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 {imageData?.model && <p><strong>Model:</strong> {imageData?.model}</p>}
                 {imageData?.colorScheme && <p><strong>Color:</strong> {imageData?.colorScheme}</p>}
                 {imageData?.lighting && <p><strong>Lighting:</strong> {imageData?.lighting}</p>}
-                {imageData?.imageReference && <p><strong>Image Reference Used: </strong> <img className="w-32 h-32 object-cover rounded-md border-2 border-black-600" src={imageData?.imageReference}></img></p>}
+                {imageData?.imageReference && <p><strong>Image Reference Used: </strong> <img className="w-32 h-32 object-cover rounded-md border-2 border-black-600" src={imageData?.imageReference} alt="image reference used"></img></p>}
                 {imageData?.timestamp?.seconds && (
                     <p><strong>Timestamp:</strong> {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}</p>
                 )}
