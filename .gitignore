@@ -29,6 +29,7 @@ yarn-error.log*
 .env*.local
 .env
 service_key.json
+/public/.well-known
 
 # vercel
 .vercel
