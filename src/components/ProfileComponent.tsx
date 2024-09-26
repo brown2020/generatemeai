@@ -3,7 +3,7 @@
 import Link from "next/link";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useEffect, useState } from "react";
-import { isIOSReactNativeWebView } from "@/utils/platform"; // Import the platform detection
+import { isIOSReactNativeWebView } from "@/utils/platform"; // Import the platform check function
 
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
@@ -16,22 +16,20 @@ export default function ProfileComponent() {
     profile.stability_api_key
   );
   const [useCredits, setUseCredits] = useState(profile.useCredits);
-  const [showCreditsPurchase, setShowCreditsPurchase] = useState(true); // State to control visibility
+  const [showCreditsSection, setShowCreditsSection] = useState(true); // State to control visibility of credits section
 
   useEffect(() => {
     setFireworksApiKey(profile.fireworks_api_key);
     setOpenaiApiKey(profile.openai_api_key);
     setStabilityAPIKey(profile.stability_api_key);
+
+    // Hide credits section if in iOS WebView
+    setShowCreditsSection(!isIOSReactNativeWebView());
   }, [
     profile.fireworks_api_key,
     profile.openai_api_key,
     profile.stability_api_key,
   ]);
-
-  useEffect(() => {
-    // Hide the credits purchase section if in a React Native WebView on iOS
-    setShowCreditsPurchase(!isIOSReactNativeWebView());
-  }, []);
 
   const handleApiKeyChange = async () => {
     if (
@@ -56,15 +54,14 @@ export default function ProfileComponent() {
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
     setUseCredits(e.target.value === "credits");
-    await updateProfile({ useCredits: e.target.value == "credits" });
+    await updateProfile({ useCredits: e.target.value === "credits" });
   };
 
   const areApiKeysAvailable = fireworksApiKey && openaiApiKey;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Conditionally render the credits purchase section */}
-      {showCreditsPurchase && (
+      {showCreditsSection && ( // Conditionally render the credits section
         <div className="flex flex-col sm:flex-row px-5 py-3 gap-3 border border-gray-500 rounded-md">
           <div className="flex gap-2 w-full items-center">
             <div className="flex-1">
