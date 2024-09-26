@@ -34,7 +34,6 @@ const ImageListPage = () => {
             data.tags.forEach((tag: string) => {
               tag = tag.trim().toLowerCase()
               if (!tagsSet.has(tag)) {
-                console.log(tag)
                 tagsSet.add(tag);
               }
             });
