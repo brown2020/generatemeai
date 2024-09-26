@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import TextareaAutosize from "react-textarea-autosize";
@@ -17,8 +16,8 @@ import toast from "react-hot-toast";
 import { findModelByValue, models, SelectModel } from "@/constants/models";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
-import { colors } from "@/constants/colors";
-import { lightings } from "@/constants/lighting";
+import { colors, getColorFromLabel } from "@/constants/colors";
+import { getLightingFromLabel, lightings } from "@/constants/lightings";
 import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
@@ -48,7 +47,6 @@ export default function GenerateImage() {
   const lightingSearchParam = searchterm.get("lighting");
   const tagsSearchParam = searchterm.get("tags")?.split(",");
   const imageReferenceSearchParam = searchterm.get("imageReference");
-
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
@@ -75,8 +73,8 @@ export default function GenerateImage() {
   const [tagInputValue, settagInputValue] = useState(
     tagsSearchParam
       ? tagsSearchParam.map((str) => {
-          return { label: str, value: str };
-        })
+        return { label: str, value: str };
+      })
       : []
   );
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -86,8 +84,8 @@ export default function GenerateImage() {
     downloadUrl: "",
     prompt: "",
     model: model,
-    colorScheme,
-    lighting,
+    colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
+    lighting: getLightingFromLabel(lighting) || lightings[0].value,
     tags: tags,
   });
   const [loading, setLoading] = useState<boolean>(false);
@@ -95,8 +93,8 @@ export default function GenerateImage() {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
-  const colorValues = colors.map((color) => color.value);
-  const lightingValues = lightings.map((lightingss) => lightingss.value);
+  const colorLabels = colors.map((color: { value: string; label: string }) => color.label);
+  const lightingLabels = lightings.map((lightingss: { value: string; label: string }) => lightingss.label);
 
   const loadImageFromUrl = async (url: string) => {
     const response = await fetch(url);
@@ -197,8 +195,8 @@ export default function GenerateImage() {
       const prompt: string = generatePrompt(
         audioPrompt || imagePrompt,
         imageStyle,
-        colorScheme,
-        lighting
+        getColorFromLabel(colorScheme) || colors[0].value,
+        getLightingFromLabel(lighting) || lightings[0].value
       );
 
       const formData = new FormData();
@@ -231,7 +229,7 @@ export default function GenerateImage() {
         throw new Error("Error generating image");
       }
 
-      const imageReference = result?.imageReference;
+      const imageReference = result?.imageReference || '';
 
       if (useCredits) {
         await minusCredits(creditsToMinus(model));
@@ -247,8 +245,8 @@ export default function GenerateImage() {
           downloadUrl: downloadURL,
           model: model,
           prompt,
-          lighting,
-          colorScheme,
+          lighting: getLightingFromLabel(lighting) || lightings[0].value,
+          colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
           imageReference
         },
         prompt,
@@ -286,8 +284,8 @@ export default function GenerateImage() {
           onClick={
             isRecording
               ? () => {
-                  setIsRecording(false);
-                }
+                setIsRecording(false);
+              }
               : startAudioRecording
           }
           title={isRecording ? "Stop Recording" : "Start Recording"}
@@ -401,12 +399,11 @@ export default function GenerateImage() {
         <div className="flex space-x-4 items-center">
           <div>Colors:</div>
           <div className="relative flex items-center space-x-2 overflow-scroll">
-            {colorValues.map((option) => (
+            {colorLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
-                  colorScheme === option ? "bg-gray-200" : ""
-                }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
+                  }`}
                 onClick={() => setColorScheme(option)}
                 title={option}
               >
@@ -419,12 +416,11 @@ export default function GenerateImage() {
         <div className="flex space-x-4 items-center">
           <div>Lighting:</div>
           <div className="relative flex items-center space-x-2 overflow-scroll">
-            {lightingValues.map((option) => (
+            {lightingLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
-                  lighting === option ? "bg-gray-200" : ""
-                }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
+                  }`}
                 onClick={() => setLighting(option)}
                 title={option}
               >
@@ -442,8 +438,8 @@ export default function GenerateImage() {
               ...promptData,
               freestyle: audioPrompt || imagePrompt,
               style: imageStyle,
-              colorScheme,
-              lighting,
+              colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
+              lighting: getLightingFromLabel(lighting) || lightings[0].value,
               tags,
             });
             handleGenerateSDXL(e);
@@ -456,7 +452,7 @@ export default function GenerateImage() {
       <div className="w-full max-w-2xl mt-6">
         {generatedImage ? (
           <img
-            className="object-cover w-full h-auto rounded-md"
+            className="object-cover rounded-md"
             src={generatedImage}
             alt="Generated visualization"
           />
