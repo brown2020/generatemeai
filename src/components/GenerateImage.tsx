@@ -383,7 +383,7 @@ export default function GenerateImage() {
 
         <div className="flex space-x-4 items-center">
           <div>Colors:</div>
-          <div className="relative flex items-center space-x-2">
+          <div className="relative flex items-center space-x-2 overflow-scroll">
             {colorValues.map((option) => (
               <div
                 key={option}
@@ -401,7 +401,7 @@ export default function GenerateImage() {
 
         <div className="flex space-x-4 items-center">
           <div>Lighting:</div>
-          <div className="relative flex items-center space-x-2">
+          <div className="relative flex items-center space-x-2 overflow-scroll">
             {lightingValues.map((option) => (
               <div
                 key={option}
