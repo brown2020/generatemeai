@@ -22,7 +22,7 @@ import { lightings } from "@/constants/lighting";
 import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
-import { Image, Mic, StopCircle, XCircle } from "lucide-react";
+import { ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -46,7 +46,7 @@ export default function GenerateImage() {
   const modelSearchParam = searchterm.get("model");
   const colorSearchParam = searchterm.get("color");
   const lightingSearchParam = searchterm.get("lighting");
-  const tagsSearchParam = searchterm.get("tags")?.split(",")
+  const tagsSearchParam = searchterm.get("tags")?.split(",");
 
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
@@ -68,8 +68,16 @@ export default function GenerateImage() {
   const [lighting, setLighting] = useState<string>(
     lightingSearchParam || "None"
   );
-  const [tags, setTags] = useState<string[]>(tagsSearchParam as unknown as string[] || []);
-  const [tagInputValue, settagInputValue] = useState(tagsSearchParam ? tagsSearchParam.map(str => { return { label: str, value: str } }) : [])
+  const [tags, setTags] = useState<string[]>(
+    (tagsSearchParam as unknown as string[]) || []
+  );
+  const [tagInputValue, settagInputValue] = useState(
+    tagsSearchParam
+      ? tagsSearchParam.map((str) => {
+          return { label: str, value: str };
+        })
+      : []
+  );
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
@@ -98,7 +106,8 @@ export default function GenerateImage() {
   }, []);
 
   const startAudioRecording = () => {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    const recognition = new (window.SpeechRecognition ||
+      window.webkitSpeechRecognition)();
     recognition.lang = "en-US";
     recognition.interimResults = false;
 
@@ -125,9 +134,14 @@ export default function GenerateImage() {
     recognition.start();
   };
 
-
   const handleTagSuggestions = async (prompt: string) => {
-    let suggestions = await suggestTags(prompt, tags, openAPIKey, useCredits, credits);
+    let suggestions = await suggestTags(
+      prompt,
+      tags,
+      openAPIKey,
+      useCredits,
+      credits
+    );
 
     if (suggestions.error) {
       return;
@@ -174,33 +188,33 @@ export default function GenerateImage() {
       );
 
       const formData = new FormData();
-      formData.append('message', prompt);
-      formData.append('uid', uid);
-      formData.append('openAPIKey', openAPIKey);
-      formData.append('fireworksAPIKey', fireworksAPIKey);
-      formData.append('stabilityAPIKey', stabilityAPIKey);
-      formData.append('useCredits', useCredits.toString());
-      formData.append('credits', credits.toString());
-      formData.append('model', model);
+      formData.append("message", prompt);
+      formData.append("uid", uid);
+      formData.append("openAPIKey", openAPIKey);
+      formData.append("fireworksAPIKey", fireworksAPIKey);
+      formData.append("stabilityAPIKey", stabilityAPIKey);
+      formData.append("useCredits", useCredits.toString());
+      formData.append("credits", credits.toString());
+      formData.append("model", model);
       if (uploadedImage) {
-        formData.append('imageField', uploadedImage);
+        formData.append("imageField", uploadedImage);
       }
 
-      const response = await fetch('/api/generate-image', {
-        method: 'POST',
+      const response = await fetch("/api/generate-image", {
+        method: "POST",
         body: formData,
       });
 
       const result = await response.json();
 
       if (!response.ok || result.error) {
-        toast.error(result.error || 'Failed to generate image.');
-        throw new Error(result.error || 'Failed to generate image.');
+        toast.error(result.error || "Failed to generate image.");
+        throw new Error(result.error || "Failed to generate image.");
       }
 
       const downloadURL = result?.imageUrl;
       if (!downloadURL) {
-        throw new Error('Error generating image');
+        throw new Error("Error generating image");
       }
 
       if (useCredits) {
@@ -225,15 +239,14 @@ export default function GenerateImage() {
       );
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error('Error generating image:', error.message);
+        console.error("Error generating image:", error.message);
       } else {
-        console.error('An unknown error occurred during image generation.');
+        console.error("An unknown error occurred during image generation.");
       }
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="flex flex-col items-center w-full p-4 bg-white">
@@ -253,17 +266,25 @@ export default function GenerateImage() {
         <button
           className={`absolute top-[4rem] right-3 w-10 h-10 flex items-center justify-center rounded-full 
             ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
-          onClick={isRecording ? () => { setIsRecording(false); } : startAudioRecording}
+          onClick={
+            isRecording
+              ? () => {
+                  setIsRecording(false);
+                }
+              : startAudioRecording
+          }
           title={isRecording ? "Stop Recording" : "Start Recording"}
         >
           {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
         </button>
 
-        {model != 'dall-e' &&
+        {model != "dall-e" && (
           <button
             className="absolute top-[4rem] right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
             onClick={() => {
-              const fileInput = document.getElementById("imageUpload") as HTMLInputElement | null;
+              const fileInput = document.getElementById(
+                "imageUpload"
+              ) as HTMLInputElement | null;
               if (fileInput) {
                 fileInput.click();
               } else {
@@ -272,9 +293,9 @@ export default function GenerateImage() {
             }}
             title="Upload Image"
           >
-            <Image size={20} />
+            <ImageIcon size={20} />
           </button>
-        }
+        )}
 
         <input
           type="file"
@@ -288,7 +309,7 @@ export default function GenerateImage() {
           }}
         />
 
-        {model != 'dall-e' && uploadedImage && (
+        {model != "dall-e" && uploadedImage && (
           <div className="mt-4 relative">
             <img
               src={URL.createObjectURL(uploadedImage)}
@@ -300,7 +321,9 @@ export default function GenerateImage() {
               onClick={() => {
                 setUploadedImage(null);
 
-                const fileInput = document.getElementById("imageUpload") as HTMLInputElement | null;
+                const fileInput = document.getElementById(
+                  "imageUpload"
+                ) as HTMLInputElement | null;
 
                 if (fileInput) {
                   fileInput.value = "";
@@ -312,7 +335,6 @@ export default function GenerateImage() {
             >
               <XCircle size={16} />
             </button>
-
           </div>
         )}
 
@@ -334,9 +356,11 @@ export default function GenerateImage() {
             isClearable={true}
             isSearchable={true}
             name="model"
-            onChange={(v) => setModel(v ? (v as SelectModel).value : "playground-v2")}
+            onChange={(v) =>
+              setModel(v ? (v as SelectModel).value : "playground-v2")
+            }
             defaultValue={findModelByValue(
-              modelSearchParam as model || "playground-v2"
+              (modelSearchParam as model) || "playground-v2"
             )}
             options={models}
             styles={selectStyles}
@@ -351,7 +375,7 @@ export default function GenerateImage() {
             options={suggestedTags.map((tag) => ({ label: tag, value: tag }))}
             onChange={(newTags) => {
               setTags(newTags.map((tag) => tag.value));
-              settagInputValue(newTags as [{ label: string, value: string }])
+              settagInputValue(newTags as [{ label: string; value: string }]);
             }}
             placeholder="Add or select tags"
           />
@@ -363,7 +387,9 @@ export default function GenerateImage() {
             {colorValues.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""}`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  colorScheme === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setColorScheme(option)}
                 title={option}
               >
@@ -379,7 +405,9 @@ export default function GenerateImage() {
             {lightingValues.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""}`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  lighting === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setLighting(option)}
                 title={option}
               >
