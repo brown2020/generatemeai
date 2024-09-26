@@ -361,6 +361,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 {imageData?.model && <p><strong>Model:</strong> {imageData?.model}</p>}
                 {imageData?.colorScheme && <p><strong>Color:</strong> {imageData?.colorScheme}</p>}
                 {imageData?.lighting && <p><strong>Lighting:</strong> {imageData?.lighting}</p>}
+                {imageData?.imageReference && <p><strong>Image Reference Used: </strong> <img className="w-32 h-32 object-cover rounded-md border-2 border-black-600" src={imageData?.imageReference}></img></p>}
                 {imageData?.timestamp?.seconds && (
                     <p><strong>Timestamp:</strong> {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}</p>
                 )}
@@ -386,11 +387,11 @@ const ImagePage = ({ params: { id } }: Params) => {
                                 value={newTag}
                                 onChange={(e) => setNewTag(e.target.value)}
                                 placeholder="Add new tag"
-                                className="p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                className="p-2 py-[0.58rem] border border-gray-300 rounded-l-md focus:outline-none focus:drop-shadow-none focus:shadow-none"
                             />
                             <button
                                 onClick={() => handleAddTag()}
-                                className="px-4 py-3 text-sm rounded-r-md bg-blue-600 text-white hover:bg-blue-700 transition"
+                                className="px-4 py-[0.78rem] mt-0 text-sm btn-primary2 rounded-none rounded-r-lg"
                             >
                                 Add Tag
                             </button>
@@ -431,7 +432,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
                     onClick={() => {
                         if (imageData) {
-                            const { freestyle, style, model, colorScheme, lighting, tags } = imageData;
+                            const { freestyle, style, model, colorScheme, lighting, tags, imageReference } = imageData;
 
                             const addQueryParam = (key: string, value: string) => {
                                 if (value) {
@@ -446,7 +447,8 @@ const ImagePage = ({ params: { id } }: Params) => {
                                 addQueryParam('model', model),
                                 addQueryParam('color', colorScheme),
                                 addQueryParam('lighting', lighting),
-                                addQueryParam('tags', tags.join(","))
+                                addQueryParam('tags', tags.join(",")),
+                                addQueryParam('imageReference', imageReference)
                             ].filter(Boolean)
 
                             if (queryParams.length > 0) {

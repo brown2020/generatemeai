@@ -11,4 +11,5 @@ export type PromptDataType = {
   colorScheme?: string;
   lighting?: string;
   tags: string[];
+  imageReference?: string;
 };
