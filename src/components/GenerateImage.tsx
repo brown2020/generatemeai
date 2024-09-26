@@ -22,7 +22,7 @@ import { lightings } from "@/constants/lighting";
 import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
-import { ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
+import { Image as ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -47,6 +47,7 @@ export default function GenerateImage() {
   const colorSearchParam = searchterm.get("color");
   const lightingSearchParam = searchterm.get("lighting");
   const tagsSearchParam = searchterm.get("tags")?.split(",");
+  const imageReferenceSearchParam = searchterm.get("imageReference");
 
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
@@ -96,6 +97,19 @@ export default function GenerateImage() {
 
   const colorValues = colors.map((color) => color.value);
   const lightingValues = lightings.map((lightingss) => lightingss.value);
+
+  const loadImageFromUrl = async (url: string) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const file = new File([blob], "default-image.jpg", { type: blob.type });
+    setUploadedImage(file);
+  };
+
+  useEffect(() => {
+    if (imageReferenceSearchParam) {
+      loadImageFromUrl(imageReferenceSearchParam);
+    }
+  }, [imageReferenceSearchParam]);
 
   useEffect(() => {
     setPromptData((prevData) => ({
@@ -168,7 +182,7 @@ export default function GenerateImage() {
       prompt: prompt,
       id: docRef.id,
       timestamp: Timestamp.now(),
-      tags,
+      tags
     };
     setPromptData(p);
     await setDoc(docRef, p);
@@ -217,6 +231,8 @@ export default function GenerateImage() {
         throw new Error("Error generating image");
       }
 
+      const imageReference = result?.imageReference;
+
       if (useCredits) {
         await minusCredits(creditsToMinus(model));
       }
@@ -233,6 +249,7 @@ export default function GenerateImage() {
           prompt,
           lighting,
           colorScheme,
+          imageReference
         },
         prompt,
         downloadURL
@@ -383,7 +400,7 @@ export default function GenerateImage() {
 
         <div className="flex space-x-4 items-center">
           <div>Colors:</div>
-          <div className="relative flex items-center space-x-2">
+          <div className="relative flex items-center space-x-2 overflow-scroll">
             {colorValues.map((option) => (
               <div
                 key={option}
@@ -401,7 +418,7 @@ export default function GenerateImage() {
 
         <div className="flex space-x-4 items-center">
           <div>Lighting:</div>
-          <div className="relative flex items-center space-x-2">
+          <div className="relative flex items-center space-x-2 overflow-scroll">
             {lightingValues.map((option) => (
               <div
                 key={option}

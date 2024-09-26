@@ -209,7 +209,27 @@ export async function POST(req: NextRequest) {
             expires: '03-17-2125',
         });
 
-        return NextResponse.json({ imageUrl }, { status: 200 });
+        let imageReference
+
+        if (img) {
+            imageReference = Buffer.from(await img.arrayBuffer());
+
+            const fileName = `image-references/${uid}/${Date.now()}.jpg`;
+            const file = adminBucket.file(fileName);
+    
+            await file.save(imageReference, {
+                contentType: 'image/jpeg',
+            });
+
+            const [imageUrl] = await file.getSignedUrl({
+                action: 'read',
+                expires: '03-17-2125'
+            })
+
+            imageReference = imageUrl
+        }
+
+        return NextResponse.json({ imageUrl, imageReference }, { status: 200 });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
         console.error('Error generating image:', error);
