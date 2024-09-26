@@ -35,7 +35,10 @@ export default function AuthComponent() {
 
   const signInWithGoogle = async () => {
     if (!acceptTerms) {
-      formRef.current && formRef.current.reportValidity();
+      if (formRef.current) {
+        formRef.current.reportValidity();
+      }
+
       return;
     }
 
@@ -103,7 +106,10 @@ export default function AuthComponent() {
   return (
     <>
       {uid && (
-        <button onClick={showModal} className="btn-secondary max-w-md mx-auto text-white">
+        <button
+          onClick={showModal}
+          className="btn-secondary max-w-md mx-auto text-white"
+        >
           You are signed in
         </button>
       )}
