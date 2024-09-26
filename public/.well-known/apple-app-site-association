@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "XF84UGYX27.me.generate.app",
+        "paths": [
+          "*"
+        ]
+      }
+    ]
+  }
+}
