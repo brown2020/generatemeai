@@ -237,11 +237,11 @@ export default function AuthComponent() {
                   logo={googleLogo}
                   onClick={signInWithGoogle}
                 />
-                <AuthButton
+                {/* <AuthButton
                   label="Continue with Microsoft"
                   logo={microsoftLogo}
                   onClick={signInWithMicrosoft}
-                />
+                /> */}
                 <AuthButton
                   label="Continue with Apple"
                   logo={appleLogo}
