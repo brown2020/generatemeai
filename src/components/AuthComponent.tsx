@@ -242,11 +242,11 @@ export default function AuthComponent() {
                   logo={microsoftLogo}
                   onClick={signInWithMicrosoft}
                 /> */}
-                <AuthButton
+                {/* <AuthButton
                   label="Continue with Apple"
                   logo={appleLogo}
                   onClick={signInWithApple}
-                />
+                /> */}
 
                 <div className="flex items-center justify-center w-full h-12">
                   <hr className="flex-grow h-px bg-gray-400 border-0" />
