@@ -15,7 +15,7 @@ import {
 } from "react-share";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
-import { X, Sparkle } from "lucide-react";
+import { X, Sparkle, Plus } from "lucide-react";
 import domtoimage from 'dom-to-image'
 import { useRouter } from "next/navigation";
 import TextareaAutosize from 'react-textarea-autosize';
@@ -352,7 +352,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             )}
 
 
-            {imageData && <div className="mt-4 w-1/2 p-3 py-0">
+            {imageData && <div className="mt-4 p-3 py-0">
                 <h2 className="text-2xl mb-3 font-bold">Metadata: </h2>
                 {imageData?.freestyle && <p><strong>Freestyle:</strong> {imageData?.freestyle}</p>}
                 {/* {imageData?.prompt && <p><strong>Prompt:</strong> {imageData?.prompt}</p>} */}
@@ -365,7 +365,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                     <p><strong>Timestamp:</strong> {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}</p>
                 )}
                 {uid && isOwner && (
-                    <div className="mt-4">
+                    <div className="mt-4 overflow-x-scroll w-full">
                         <h3 className="text-xl mb-3 font-semibold text-gray-800">Tags:</h3>
                         <div className="flex flex-wrap gap-2 mb-4">
                             {tags.map((tag, index) => (
@@ -390,9 +390,9 @@ const ImagePage = ({ params: { id } }: Params) => {
                             />
                             <button
                                 onClick={() => handleAddTag()}
-                                className="px-4 py-[0.78rem] mt-0 text-sm btn-primary2 rounded-none rounded-r-lg"
+                                className="px-5 md:px-2 h-[2.76rem] mt-0 text-sm btn-primary2 rounded-none rounded-r-lg"
                             >
-                                Add Tag
+                                Add <Plus />
                             </button>
                             <button
                                 className="ml-2 flex items-center px-3 py-2 text-sm rounded-full border border-blue-500 text-blue-500 hover:bg-blue-100 transition"
