@@ -37,6 +37,9 @@ interface SpeechRecognitionErrorEvent extends Event {
   error: string;
 }
 
+// Import the server action
+import { generateImage } from "@/actions/generateImage";
+
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
   const searchterm = useSearchParams();
@@ -56,7 +59,7 @@ export default function GenerateImage() {
   const [imagePrompt, setImagePrompt] = useState<string>(
     freestyleSearchParam || ""
   );
-  const [audioPrompt, setAudioPrompt] = useState<string>("");
+
   const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
   const [model, setModel] = useState<model>(
     (modelSearchParam as model) || "playground-v2"
@@ -73,8 +76,8 @@ export default function GenerateImage() {
   const [tagInputValue, settagInputValue] = useState(
     tagsSearchParam
       ? tagsSearchParam.map((str) => {
-        return { label: str, value: str };
-      })
+          return { label: str, value: str };
+        })
       : []
   );
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -93,8 +96,12 @@ export default function GenerateImage() {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
-  const colorLabels = colors.map((color: { value: string; label: string }) => color.label);
-  const lightingLabels = lightings.map((lightingss: { value: string; label: string }) => lightingss.label);
+  const colorLabels = colors.map(
+    (color: { value: string; label: string }) => color.label
+  );
+  const lightingLabels = lightings.map(
+    (lightingss: { value: string; label: string }) => lightingss.label
+  );
 
   const loadImageFromUrl = async (url: string) => {
     const response = await fetch(url);
@@ -130,7 +137,6 @@ export default function GenerateImage() {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
-      setAudioPrompt(transcript);
       setImagePrompt(transcript);
     };
 
@@ -180,7 +186,7 @@ export default function GenerateImage() {
       prompt: prompt,
       id: docRef.id,
       timestamp: Timestamp.now(),
-      tags
+      tags,
     };
     setPromptData(p);
     await setDoc(docRef, p);
@@ -212,24 +218,17 @@ export default function GenerateImage() {
         formData.append("imageField", uploadedImage);
       }
 
-      const response = await fetch("/api/generate-image", {
-        method: "POST",
-        body: formData,
-      });
+      // Call the server action instead of the API route
+      const result = await generateImage(formData);
 
-      const result = await response.json();
-
-      if (!response.ok || result.error) {
-        toast.error(result.error || "Failed to generate image.");
-        throw new Error(result.error || "Failed to generate image.");
+      // Updated error handling
+      if (!result || !result.imageUrl) {
+        toast.error("Failed to generate image.");
+        throw new Error("Failed to generate image.");
       }
 
-      const downloadURL = result?.imageUrl;
-      if (!downloadURL) {
-        throw new Error("Error generating image");
-      }
-
-      const imageReference = result?.imageReference || '';
+      const downloadURL = result.imageUrl;
+      const imageReference = result.imageReference || "";
 
       if (useCredits) {
         await minusCredits(creditsToMinus(model));
@@ -247,7 +246,7 @@ export default function GenerateImage() {
           prompt,
           lighting: getLightingFromLabel(lighting) || lightings[0].value,
           colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
-          imageReference
+          imageReference,
         },
         prompt,
         downloadURL
@@ -278,25 +277,25 @@ export default function GenerateImage() {
             }}
             className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
           />
-          
+
           <button
             className={`absolute bottom-4 right-3 w-10 h-10 flex items-center justify-center rounded-full 
               ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
             onClick={
-              isRecording
-                ? () => setIsRecording(false)
-                : startAudioRecording
+              isRecording ? () => setIsRecording(false) : startAudioRecording
             }
             title={isRecording ? "Stop Recording" : "Start Recording"}
           >
             {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
           </button>
-  
+
           {model !== "dall-e" && (
             <button
               className="absolute bottom-4 right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
               onClick={() => {
-                const fileInput = document.getElementById("imageUpload") as HTMLInputElement | null;
+                const fileInput = document.getElementById(
+                  "imageUpload"
+                ) as HTMLInputElement | null;
                 if (fileInput) {
                   fileInput.click();
                 } else {
@@ -309,7 +308,7 @@ export default function GenerateImage() {
             </button>
           )}
         </div>
-  
+
         <input
           type="file"
           accept="image/*"
@@ -400,8 +399,9 @@ export default function GenerateImage() {
             {colorLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  colorScheme === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setColorScheme(option)}
                 title={option}
               >
@@ -417,8 +417,9 @@ export default function GenerateImage() {
             {lightingLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  lighting === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setLighting(option)}
                 title={option}
               >
