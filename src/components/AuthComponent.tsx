@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   GoogleAuthProvider,
-  OAuthProvider,
+  // OAuthProvider,
   sendSignInLinkToEmail,
   signInWithPopup,
   signOut,
@@ -17,9 +17,10 @@ import { auth } from "@/firebase/firebaseClient";
 import toast from "react-hot-toast";
 
 import googleLogo from "@/app/assets/google.svg";
-import microsoftLogo from "@/app/assets/microsoft.svg";
-import appleLogo from "@/app/assets/apple.svg";
+// import microsoftLogo from "@/app/assets/microsoft.svg";
+// import appleLogo from "@/app/assets/apple.svg";
 import Image from "next/image";
+import { isIOSReactNativeWebView } from "@/utils/platform";
 
 export default function AuthComponent() {
   const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
@@ -34,9 +35,15 @@ export default function AuthComponent() {
   const formRef = useRef<HTMLFormElement>(null);
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [showGoogleSignIn, setShowGoogleSignIn] = useState(true); // State to control Google Sign-In visibility
 
   const showModal = () => setIsVisible(true);
   const hideModal = () => setIsVisible(false);
+
+  useEffect(() => {
+    // Hide Google Sign-In button and the divider if in a React Native WebView on iOS
+    setShowGoogleSignIn(!isIOSReactNativeWebView());
+  }, []);
 
   const signInWithGoogle = async () => {
     if (!acceptTerms) {
@@ -52,9 +59,13 @@ export default function AuthComponent() {
     } catch (error) {
       if (isFirebaseError(error)) {
         if (error.code === "auth/account-exists-with-different-credential") {
-          toast.error("An account with the same email exists with a different sign-in provider.");
+          toast.error(
+            "An account with the same email exists with a different sign-in provider."
+          );
         } else {
-          toast.error("Something went wrong signing in with Apple\n" + error.message);
+          toast.error(
+            "Something went wrong signing in with Google\n" + error.message
+          );
         }
       }
     } finally {
@@ -62,53 +73,61 @@ export default function AuthComponent() {
     }
   };
 
-  const signInWithMicrosoft = async () => {
-    if (!acceptTerms) {
-      if (formRef.current) {
-        formRef.current.reportValidity();
-      }
-      return;
-    }
+  // const signInWithMicrosoft = async () => {
+  //   if (!acceptTerms) {
+  //     if (formRef.current) {
+  //       formRef.current.reportValidity();
+  //     }
+  //     return;
+  //   }
 
-    try {
-      const provider = new OAuthProvider("microsoft.com");
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      if (isFirebaseError(error)) {
-        if (error.code === "auth/account-exists-with-different-credential") {
-          toast.error("An account with the same email exists with a different sign-in provider.");
-        } else {
-          toast.error("Something went wrong signing in with Apple\n" + error.message);
-        }
-      }
-    } finally {
-      hideModal();
-    }
-  };
+  //   try {
+  //     const provider = new OAuthProvider("microsoft.com");
+  //     await signInWithPopup(auth, provider);
+  //   } catch (error) {
+  //     if (isFirebaseError(error)) {
+  //       if (error.code === "auth/account-exists-with-different-credential") {
+  //         toast.error(
+  //           "An account with the same email exists with a different sign-in provider."
+  //         );
+  //       } else {
+  //         toast.error(
+  //           "Something went wrong signing in with Microsoft\n" + error.message
+  //         );
+  //       }
+  //     }
+  //   } finally {
+  //     hideModal();
+  //   }
+  // };
 
-  const signInWithApple = async () => {
-    if (!acceptTerms) {
-      if (formRef.current) {
-        formRef.current.reportValidity();
-      }
-      return;
-    }
+  // const signInWithApple = async () => {
+  //   if (!acceptTerms) {
+  //     if (formRef.current) {
+  //       formRef.current.reportValidity();
+  //     }
+  //     return;
+  //   }
 
-    try {
-      const provider = new OAuthProvider("apple.com");
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      if (isFirebaseError(error)) {
-        if (error.code === "auth/account-exists-with-different-credential") {
-          toast.error("An account with the same email exists with a different sign-in provider.");
-        } else {
-          toast.error("Something went wrong signing in with Apple\n" + error.message);
-        }
-      }
-    } finally {
-      hideModal();
-    }
-  };
+  //   try {
+  //     const provider = new OAuthProvider("apple.com");
+  //     await signInWithPopup(auth, provider);
+  //   } catch (error) {
+  //     if (isFirebaseError(error)) {
+  //       if (error.code === "auth/account-exists-with-different-credential") {
+  //         toast.error(
+  //           "An account with the same email exists with a different sign-in provider."
+  //         );
+  //       } else {
+  //         toast.error(
+  //           "Something went wrong signing in with Apple\n" + error.message
+  //         );
+  //       }
+  //     }
+  //   } finally {
+  //     hideModal();
+  //   }
+  // };
 
   const handleSignOut = async () => {
     try {
@@ -231,28 +250,22 @@ export default function AuthComponent() {
                 className="flex flex-col gap-2"
               >
                 <div className="text-3xl text-center pb-3">Sign In</div>
-
-                <AuthButton
-                  label="Continue with Google"
-                  logo={googleLogo}
-                  onClick={signInWithGoogle}
-                />
-                {/* <AuthButton
-                  label="Continue with Microsoft"
-                  logo={microsoftLogo}
-                  onClick={signInWithMicrosoft}
-                /> */}
-                {/* <AuthButton
-                  label="Continue with Apple"
-                  logo={appleLogo}
-                  onClick={signInWithApple}
-                /> */}
-
-                <div className="flex items-center justify-center w-full h-12">
-                  <hr className="flex-grow h-px bg-gray-400 border-0" />
-                  <span className="px-3">or</span>
-                  <hr className="flex-grow h-px bg-gray-400 border-0" />
-                </div>
+                
+                {/* Conditionally render Google Sign-In and divider */}
+                {showGoogleSignIn && (
+                  <>
+                    <AuthButton
+                      label="Continue with Google"
+                      logo={googleLogo}
+                      onClick={signInWithGoogle}
+                    />
+                    <div className="flex items-center justify-center w-full h-12">
+                      <hr className="flex-grow h-px bg-gray-400 border-0" />
+                      <span className="px-3">or</span>
+                      <hr className="flex-grow h-px bg-gray-400 border-0" />
+                    </div>
+                  </>
+                )}
 
                 <input
                   id="name"
@@ -262,7 +275,6 @@ export default function AuthComponent() {
                   placeholder="Enter your name"
                   className="input-primary"
                 />
-
                 <input
                   id="email"
                   type="email"
@@ -310,8 +322,15 @@ export default function AuthComponent() {
   );
 }
 
-function isFirebaseError(error: unknown): error is { code: string; message: string } {
-  return typeof error === "object" && error !== null && "code" in error && "message" in error;
+function isFirebaseError(
+  error: unknown
+): error is { code: string; message: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    "message" in error
+  );
 }
 
 function AuthButton({
@@ -330,7 +349,12 @@ function AuthButton({
       onClick={onClick}
     >
       <div className="w-6 h-6 relative">
-        <Image src={logo} alt={`${label} logo`} layout="fill" objectFit="contain" />
+        <Image
+          src={logo}
+          alt={`${label} logo`}
+          layout="fill"
+          objectFit="contain"
+        />
       </div>
       <span className="flex-grow text-center">{label}</span>
     </button>
