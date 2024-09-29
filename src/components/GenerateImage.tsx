@@ -193,7 +193,7 @@ export default function GenerateImage() {
       setLoading(true);
 
       const prompt: string = generatePrompt(
-        audioPrompt || imagePrompt,
+        imagePrompt,
         imageStyle,
         getColorFromLabel(colorScheme) || colors[0].value,
         getLightingFromLabel(lighting) || lightings[0].value
@@ -266,52 +266,50 @@ export default function GenerateImage() {
   return (
     <div className="flex flex-col items-center w-full p-4 bg-white">
       <div className="flex flex-col w-full max-w-xl space-y-4 relative">
-        <TextareaAutosize
-          autoFocus
-          minRows={4}
-          value={imagePrompt || ""}
-          placeholder="Describe an image or use voice input"
-          onChange={(e) => {
-            setImagePrompt(e.target.value);
-            handleTagSuggestions(e.target.value);
-          }}
-          className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
-        />
-
-        <button
-          className={`absolute top-[4rem] right-3 w-10 h-10 flex items-center justify-center rounded-full 
-            ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
-          onClick={
-            isRecording
-              ? () => {
-                setIsRecording(false);
-              }
-              : startAudioRecording
-          }
-          title={isRecording ? "Stop Recording" : "Start Recording"}
-        >
-          {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
-        </button>
-
-        {model != "dall-e" && (
-          <button
-            className="absolute top-[4rem] right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
-            onClick={() => {
-              const fileInput = document.getElementById(
-                "imageUpload"
-              ) as HTMLInputElement | null;
-              if (fileInput) {
-                fileInput.click();
-              } else {
-                console.error("Element with ID 'imageUpload' not found.");
-              }
+        <div className="relative">
+          <TextareaAutosize
+            autoFocus
+            minRows={4}
+            value={imagePrompt || ""}
+            placeholder="Describe an image or use voice input"
+            onChange={(e) => {
+              setImagePrompt(e.target.value);
+              handleTagSuggestions(e.target.value);
             }}
-            title="Upload Image"
+            className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
+          />
+          
+          <button
+            className={`absolute bottom-4 right-3 w-10 h-10 flex items-center justify-center rounded-full 
+              ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
+            onClick={
+              isRecording
+                ? () => setIsRecording(false)
+                : startAudioRecording
+            }
+            title={isRecording ? "Stop Recording" : "Start Recording"}
           >
-            <ImageIcon size={20} />
+            {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
           </button>
-        )}
-
+  
+          {model !== "dall-e" && (
+            <button
+              className="absolute bottom-4 right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
+              onClick={() => {
+                const fileInput = document.getElementById("imageUpload") as HTMLInputElement | null;
+                if (fileInput) {
+                  fileInput.click();
+                } else {
+                  console.error("Element with ID 'imageUpload' not found.");
+                }
+              }}
+              title="Upload Image"
+            >
+              <ImageIcon size={20} />
+            </button>
+          )}
+        </div>
+  
         <input
           type="file"
           accept="image/*"
@@ -436,7 +434,7 @@ export default function GenerateImage() {
           onClick={(e) => {
             setPromptData({
               ...promptData,
-              freestyle: audioPrompt || imagePrompt,
+              freestyle: imagePrompt,
               style: imageStyle,
               colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
               lighting: getLightingFromLabel(lighting) || lightings[0].value,
