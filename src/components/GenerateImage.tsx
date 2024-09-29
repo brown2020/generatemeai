@@ -22,6 +22,7 @@ import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
 import { Image as ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
+import { imageCategories } from "@/constants/imageCategories"; // Import imageCategories
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -95,6 +96,7 @@ export default function GenerateImage() {
   const [generatedImage, setGeneratedImage] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // State for the selected image category
 
   const colorLabels = colors.map(
     (color: { value: string; label: string }) => color.label
@@ -202,7 +204,8 @@ export default function GenerateImage() {
         imagePrompt,
         imageStyle,
         getColorFromLabel(colorScheme) || colors[0].value,
-        getLightingFromLabel(lighting) || lightings[0].value
+        getLightingFromLabel(lighting) || lightings[0].value,
+        selectedCategory // Pass the selected category to the prompt generation
       );
 
       const formData = new FormData();
@@ -376,6 +379,23 @@ export default function GenerateImage() {
             )}
             options={models}
             styles={selectStyles}
+          />
+        </div>
+
+        <div>
+          <div>Image Category (optional)</div>
+          <Select
+            isClearable={true}
+            isSearchable={true}
+            name="category"
+            onChange={(v) => setSelectedCategory(v ? v.value : null)} // Set the selected category
+            options={imageCategories.map((category) => ({
+              id: category.id,
+              label: category.type,
+              value: category.type,
+            }))}
+            styles={selectStyles}
+            placeholder="Select image category"
           />
         </div>
 
