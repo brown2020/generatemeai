@@ -250,7 +250,7 @@ export default function AuthComponent() {
                 className="flex flex-col gap-2"
               >
                 <div className="text-3xl text-center pb-3">Sign In</div>
-
+                
                 {/* Conditionally render Google Sign-In and divider */}
                 {showGoogleSignIn && (
                   <>
