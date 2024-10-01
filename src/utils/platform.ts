@@ -7,7 +7,7 @@ export function isIOSReactNativeWebView(): boolean {
   const userAgent = window.navigator.userAgent || "";
 
   // Check if the device is running iOS
-  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+  const isIOS = /iPhone|Android|iPad|iPod/i.test(userAgent);
 
   // Check if we are in a React Native WebView
   const isReactNativeWebView = typeof window.ReactNativeWebView !== "undefined";
