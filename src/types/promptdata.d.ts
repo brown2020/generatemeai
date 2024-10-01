@@ -12,4 +12,5 @@ export type PromptDataType = {
   lighting?: string;
   tags: string[];
   imageReference?: string;
+  imageCategory?: string;
 };

@@ -1,1 +1,1 @@
-export type model = 'dall-e' | 'stable-diffusion-xl' | 'stability-sd3-turbo' | 'playground-v2';
+export type model = 'dall-e' | 'stable-diffusion-xl' | 'stability-sd3-turbo' | 'playground-v2' | 'bria.ai' | 'picsart';
