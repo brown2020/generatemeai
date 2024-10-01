@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import TextareaAutosize from 'react-textarea-autosize';
 import { suggestTags } from "@/actions/suggestTags";
 import useProfileStore from "@/zustand/useProfileStore";
+import { creditsToMinus } from "@/utils/credits";
 
 type Params = { params: { id: string } };
 
@@ -47,7 +48,11 @@ const ImagePage = ({ params: { id } }: Params) => {
     const [enteredPassword, setEnteredPassword] = useState<string>('');
     const [isPasswordProtected, setIsPasswordProtected] = useState<boolean>(false);
     const [passwordVerified, setPasswordVerified] = useState<boolean>(false);
-    const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
+    const [showColorPicker, setShowColorPicker] = useState(false);
+    const [selectedColor, setSelectedColor] = useState("#ffffff");
+    const openAPIKey = useProfileStore((s) => s.profile.openai_api_key) || process.env.OPENAI_API_KEY!;
+    const briaApiKey = useProfileStore((s) => s.profile.bria_api_key) || process.env.BRIA_AI_API_KEY!;
+    const picsartApiKey = useProfileStore((s) => s.profile.picsart_api_key) || process.env.PICSART_API_KEY!;
     const useCredits = useProfileStore((s) => s.profile.useCredits);
     const credits = useProfileStore((s) => s.profile.credits);
     const minusCredits = useProfileStore((state) => state.minusCredits);
@@ -288,6 +293,71 @@ const ImagePage = ({ params: { id } }: Params) => {
         );
     }
 
+    const removeBackground = async (color: string) => {
+        const imageUrl = imageData?.downloadUrl;
+    
+        const formData = new FormData();
+        formData.append('file', await fetch(imageUrl).then(res => res.blob()), 'image.png');
+        formData.append('bg_color', color);
+    
+        try {
+            const result = await fetch('https://engine.prod.bria-api.com/v1/background/remove', {
+                method: 'POST',
+                headers: {
+                    'api_token': briaApiKey,
+                },
+                body: formData,
+            });
+    
+            if (result.ok) {
+                if (useCredits) {
+                    minusCredits(creditsToMinus('bria.ai'))
+                }
+
+                const bgRemovedImageUrl = (await result.json())?.result_url;
+    
+                const picsArtFormData = new FormData();
+                picsArtFormData.append("image_url", bgRemovedImageUrl);
+                picsArtFormData.append("output_type", "cutout");
+                picsArtFormData.append("format", "PNG");
+                picsArtFormData.append("bg_color", color || "white");
+    
+                const picsArtResponse = await fetch("https://api.picsart.io/tools/1.0/removebg", {
+                    method: "POST",
+                    headers: {
+                        "x-picsart-api-key": picsartApiKey,
+                    },
+                    body: picsArtFormData,
+                });
+    
+                if (picsArtResponse.ok) {
+                    if (useCredits) {
+                        minusCredits(creditsToMinus('picsart'))
+                    }
+
+                    const finalImageUrl = (await picsArtResponse.json())?.data?.url;
+
+                    const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
+
+                    await updateDoc(docRef, {
+                        downloadUrl: finalImageUrl,
+                    });
+
+                    setRefreshCounter(refreshCounter + 1)
+
+                    toast.success("Background removed successfully!");
+                } else {
+                    throw new Error('Failed to process background removal via PicsArt API');
+                }
+            } else {
+                throw new Error('Failed to remove background via Bria API');
+            }
+        } catch (error) {
+            console.error('Error removing background:', error);
+            toast.error("Failed to remove background.");
+        }
+    };
+
     const currentPageUrl = `${window.location.origin}/image/${id}`;
 
     return (
@@ -361,6 +431,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 {imageData?.colorScheme && <p><strong>Color:</strong> {imageData?.colorScheme}</p>}
                 {imageData?.lighting && <p><strong>Lighting:</strong> {imageData?.lighting}</p>}
                 {imageData?.imageReference && <p><strong>Image Reference Used: </strong> <img className="w-32 h-32 object-cover rounded-md border-2 border-black-600" src={imageData?.imageReference} alt="image reference used"></img></p>}
+                {imageData?.imageCategory && <p><strong>Category:</strong> {imageData?.imageCategory}</p>}
                 {imageData?.timestamp?.seconds && (
                     <p><strong>Timestamp:</strong> {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}</p>
                 )}
@@ -417,6 +488,47 @@ const ImagePage = ({ params: { id } }: Params) => {
                 </div>
             )}
 
+            {imageData && uid && isOwner && (
+                <button
+                    className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
+                    onClick={() => setShowColorPicker(true)}
+                >
+                    Remove Background
+                </button>
+            )}
+
+            {showColorPicker && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
+                    <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
+                        <h2 className="text-xl font-semibold mb-4">Select a Background Color</h2>
+                        <input
+                            type="color"
+                            value={selectedColor}
+                            onChange={(e) => setSelectedColor(e.target.value)}
+                            className="w-full mb-4 h-10"
+                        />
+                        <div className="flex justify-end">
+                            <button
+                                className="btn-secondary mr-2"
+                                onClick={() => setShowColorPicker(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn-primary"
+                                onClick={() => {
+                                    setShowColorPicker(false);
+                                    removeBackground(selectedColor);
+                                }}
+                            >
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             {imageData && !isOwner && (
                 <button
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
@@ -431,7 +543,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                     className="btn-primary2 h-12 flex items-center justify-center mx-3"
                     onClick={() => {
                         if (imageData) {
-                            const { freestyle, style, model, colorScheme, lighting, tags, imageReference } = imageData;
+                            const { freestyle, style, model, colorScheme, lighting, tags, imageReference, imageCategory } = imageData;
 
                             const addQueryParam = (key: string, value: string) => {
                                 if (value) {
@@ -447,7 +559,8 @@ const ImagePage = ({ params: { id } }: Params) => {
                                 addQueryParam('color', colorScheme),
                                 addQueryParam('lighting', lighting),
                                 addQueryParam('tags', tags.join(",")),
-                                addQueryParam('imageReference', imageReference)
+                                addQueryParam('imageReference', imageReference),
+                                addQueryParam('imageCategory', imageCategory)
                             ].filter(Boolean)
 
                             if (queryParams.length > 0) {
