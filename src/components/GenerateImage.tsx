@@ -22,7 +22,7 @@ import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
 import { Image as ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
-import { imageCategories } from "@/constants/imageCategories"; // Import imageCategories
+import { imageCategories } from "@/constants/imageCategories";
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -51,6 +51,7 @@ export default function GenerateImage() {
   const lightingSearchParam = searchterm.get("lighting");
   const tagsSearchParam = searchterm.get("tags")?.split(",");
   const imageReferenceSearchParam = searchterm.get("imageReference");
+  const imageCategorySearchParam = searchterm.get("imageCategory");
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
@@ -82,6 +83,12 @@ export default function GenerateImage() {
       : []
   );
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [generatedImage, setGeneratedImage] = useState<string>("");
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>(imageCategorySearchParam || "");
+
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
@@ -90,13 +97,8 @@ export default function GenerateImage() {
     model: model,
     colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
     lighting: getLightingFromLabel(lighting) || lightings[0].value,
-    tags: tags,
+    tags: tags
   });
-  const [loading, setLoading] = useState<boolean>(false);
-  const [generatedImage, setGeneratedImage] = useState<string>("");
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // State for the selected image category
 
   const colorLabels = colors.map(
     (color: { value: string; label: string }) => color.label
@@ -189,6 +191,7 @@ export default function GenerateImage() {
       id: docRef.id,
       timestamp: Timestamp.now(),
       tags,
+      imageCategory: selectedCategory
     };
     setPromptData(p);
     await setDoc(docRef, p);
@@ -250,6 +253,7 @@ export default function GenerateImage() {
           lighting: getLightingFromLabel(lighting) || lightings[0].value,
           colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
           imageReference,
+          imageCategory: selectedCategory
         },
         prompt,
         downloadURL
@@ -388,12 +392,13 @@ export default function GenerateImage() {
             isClearable={true}
             isSearchable={true}
             name="category"
-            onChange={(v) => setSelectedCategory(v ? v.value : null)} // Set the selected category
+            onChange={(v) => setSelectedCategory(v ? v.value : '')}
             options={imageCategories.map((category) => ({
               id: category.id,
               label: category.type,
               value: category.type,
             }))}
+            defaultInputValue={imageCategorySearchParam || ""}
             styles={selectStyles}
             placeholder="Select image category"
           />
