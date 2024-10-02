@@ -13,7 +13,6 @@ export default function ProfileComponent() {
   const [openaiApiKey, setOpenaiApiKey] = useState(profile.openai_api_key);
   const [stabilityAPIKey, setStabilityAPIKey] = useState(profile.stability_api_key);
   const [briaApiKey, setBriaApiKey] = useState(profile.bria_api_key);
-  const [picsartApiKey, setPicsartApiKey] = useState(profile.picsart_api_key);
 
   const [useCredits, setUseCredits] = useState(profile.useCredits);
   const [showCreditsSection, setShowCreditsSection] = useState(true);
@@ -23,7 +22,6 @@ export default function ProfileComponent() {
     setOpenaiApiKey(profile.openai_api_key);
     setStabilityAPIKey(profile.stability_api_key);
     setBriaApiKey(profile.bria_api_key);
-    setPicsartApiKey(profile.picsart_api_key);
 
     setShowCreditsSection(!isIOSReactNativeWebView());
   }, [
@@ -31,7 +29,6 @@ export default function ProfileComponent() {
     profile.openai_api_key,
     profile.stability_api_key,
     profile.bria_api_key,
-    profile.picsart_api_key,
   ]);
 
   const handleApiKeyChange = async () => {
@@ -39,8 +36,7 @@ export default function ProfileComponent() {
       fireworksApiKey !== profile.fireworks_api_key ||
       openaiApiKey !== profile.openai_api_key ||
       stabilityAPIKey !== profile.stability_api_key ||
-      briaApiKey !== profile.bria_api_key ||
-      picsartApiKey !== profile.picsart_api_key
+      briaApiKey !== profile.bria_api_key
     ) {
       try {
         await updateProfile({
@@ -48,7 +44,6 @@ export default function ProfileComponent() {
           openai_api_key: openaiApiKey,
           stability_api_key: stabilityAPIKey,
           bria_api_key: briaApiKey,
-          picsart_api_key: picsartApiKey,
         });
         console.log("API keys updated successfully!");
       } catch (error) {
@@ -74,7 +69,7 @@ export default function ProfileComponent() {
     [showCreditsSection]
   );
 
-  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey && picsartApiKey;
+  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey;
 
   return (
     <div className="flex flex-col gap-4">
@@ -144,26 +139,13 @@ export default function ProfileComponent() {
           placeholder="Enter your Bria API Key"
         />
 
-        <label htmlFor="picsart-api-key" className="text-sm font-medium">
-          PicsArt API Key:
-        </label>
-        <input
-          type="text"
-          id="picsart-api-key"
-          value={picsartApiKey}
-          onChange={(e) => setPicsartApiKey(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 h-10"
-          placeholder="Enter your PicsArt API Key"
-        />
-
         <button
           onClick={handleApiKeyChange}
           disabled={
             fireworksApiKey === profile.fireworks_api_key &&
             openaiApiKey === profile.openai_api_key &&
             stabilityAPIKey === profile.stability_api_key &&
-            briaApiKey === profile.bria_api_key &&
-            picsartApiKey === profile.picsart_api_key
+            briaApiKey === profile.bria_api_key
           }
           className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 disabled:opacity-50"
         >

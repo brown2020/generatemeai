@@ -277,6 +277,6 @@ export async function generateImage(data: FormData) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error generating image:", errorMessage);
-    throw new Error(errorMessage);
+    return { error: errorMessage }
   }
 }
