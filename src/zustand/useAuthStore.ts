@@ -40,7 +40,7 @@ const defaultAuthState: AuthState = {
   isInvited: false,
   lastSignIn: null,
   premium: false,
-  credits: 0,
+  credits: 1000,
 };
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
