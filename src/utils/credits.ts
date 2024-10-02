@@ -15,8 +15,6 @@ export const creditsToMinus = (model: model): number => {
         return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_PLAYGROUND_V2_IMAGE, 4);
     } else if (model == 'bria.ai') {
         return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_BRIA_IMAGE, 4);
-    } else if (model == 'picsart') {
-        return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_PICSART_IMAGE, 4);
     }
 
     return 4;
