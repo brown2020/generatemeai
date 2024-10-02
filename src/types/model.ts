@@ -3,6 +3,5 @@ export type model =
   | "stable-diffusion-xl"
   | "stability-sd3-turbo"
   | "playground-v2"
-  | "playground-v2-5" // New model added
-  | "bria.ai"
-  | "picsart";
+  | "playground-v2-5"
+  | "bria.ai";
