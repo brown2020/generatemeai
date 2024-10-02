@@ -55,17 +55,15 @@ const ImagePage = ({ params: { id } }: Params) => {
   const [isPasswordProtected, setIsPasswordProtected] =
     useState<boolean>(false);
   const [passwordVerified, setPasswordVerified] = useState<boolean>(false);
-  //   const [showColorPicker, setShowColorPicker] = useState(false);
-  //   const [selectedColor, setSelectedColor] = useState("#ffffff");
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [selectedColor, setSelectedColor] = useState("#ffffff");
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const openAPIKey =
     useProfileStore((s) => s.profile.openai_api_key) ||
     process.env.OPENAI_API_KEY!;
   const briaApiKey =
     useProfileStore((s) => s.profile.bria_api_key) ||
     process.env.BRIA_AI_API_KEY!;
-  //   const picsartApiKey =
-  //     useProfileStore((s) => s.profile.picsart_api_key) ||
-  //     process.env.PICSART_API_KEY!;
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
@@ -85,6 +83,7 @@ const ImagePage = ({ params: { id } }: Params) => {
           setTags(data?.tags ?? []);
           setCaption(data?.caption ?? "");
           setIsOwner(true);
+          setBackgroundColor(data?.backgroundColor);
         }
       } else {
         if (!isOwner) {
@@ -97,6 +96,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             setIsSharable(data?.isSharable ?? false);
             setTags(data?.tags ?? []);
             setCaption(data?.caption ?? "");
+            setBackgroundColor(data?.backgroundColor);
             if (data?.password) {
               setIsPasswordProtected(true);
             }
@@ -346,7 +346,7 @@ const ImagePage = ({ params: { id } }: Params) => {
     );
   }
 
-  const removeBackground = async (color: string) => {
+  const removeBackground = async () => {
     const imageUrl = imageData?.downloadUrl;
 
     const formData = new FormData();
@@ -355,7 +355,6 @@ const ImagePage = ({ params: { id } }: Params) => {
       await fetch(imageUrl).then((res) => res.blob()),
       "image.png"
     );
-    formData.append("bg_color", color);
 
     try {
       const result = await fetch(
@@ -375,43 +374,6 @@ const ImagePage = ({ params: { id } }: Params) => {
         }
 
         const bgRemovedImageUrl = (await result.json())?.result_url;
-
-        // Commenting out the Picsart API part
-        /*
-                const picsArtFormData = new FormData();
-                picsArtFormData.append("image_url", bgRemovedImageUrl);
-                picsArtFormData.append("output_type", "cutout");
-                picsArtFormData.append("format", "PNG");
-                picsArtFormData.append("bg_color", color || "white");
-    
-                const picsArtResponse = await fetch("https://api.picsart.io/tools/1.0/removebg", {
-                    method: "POST",
-                    headers: {
-                        "x-picsart-api-key": picsartApiKey,
-                    },
-                    body: picsArtFormData,
-                });
-    
-                if (picsArtResponse.ok) {
-                    if (useCredits) {
-                        minusCredits(creditsToMinus('picsart'))
-                    }
-    
-                    const finalImageUrl = (await picsArtResponse.json())?.data?.url;
-    
-                    const docRef = uid ? doc(db, "profiles", uid, "covers", id) : doc(db, "publicImages", id);
-    
-                    await updateDoc(docRef, {
-                        downloadUrl: finalImageUrl,
-                    });
-    
-                    setRefreshCounter(refreshCounter + 1)
-    
-                    toast.success("Background removed successfully!");
-                } else {
-                    throw new Error('Failed to process background removal via PicsArt API');
-                }
-                */
 
         const docRef = uid
           ? doc(db, "profiles", uid, "covers", id)
@@ -433,12 +395,27 @@ const ImagePage = ({ params: { id } }: Params) => {
     }
   };
 
+  const changeBackground = async (color: string) => {
+    const docRef = uid
+      ? doc(db, "profiles", uid, "covers", id)
+      : doc(db, "publicImages", id);
+
+    await updateDoc(docRef, {
+      backgroundColor: color,
+    });
+
+    setBackgroundColor(color);
+
+    setRefreshCounter(refreshCounter + 1);
+    toast.success("Background color changed successfully");
+  }
+
   const currentPageUrl = `${window.location.origin}/image/${id}`;
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
       {imageData && (
-        <div className="relative inline-block" id="image-container">
+        <div className="relative inline-block" id="image-container" style={{ backgroundColor: backgroundColor }}>
           <img
             className="block h-full w-full object-cover"
             src={imageData?.downloadUrl}
@@ -614,18 +591,29 @@ const ImagePage = ({ params: { id } }: Params) => {
         </div>
       )}
 
-      {imageData && uid && isOwner && (
+      {imageData && uid && isOwner && imageData?.downloadUrl && imageData?.downloadUrl.includes('cloudfront.net') && (
         <button
           className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
           onClick={() => {
-            removeBackground("#000000");
+            setShowColorPicker(true);
+          }}
+        >
+          Change Background Color
+        </button>
+      )}
+
+      {imageData && uid && isOwner && imageData?.downloadUrl && imageData?.downloadUrl.includes('googleapis.com') && (
+        <button
+          className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
+          onClick={() => {
+            removeBackground();
           }}
         >
           Remove Background
         </button>
       )}
 
-      {/* {showColorPicker && (
+      {showColorPicker && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
             <h2 className="text-xl font-semibold mb-4">
@@ -648,7 +636,7 @@ const ImagePage = ({ params: { id } }: Params) => {
                 className="btn-primary"
                 onClick={() => {
                   setShowColorPicker(false);
-                  removeBackground(selectedColor);
+                  changeBackground(selectedColor);
                 }}
               >
                 Apply
@@ -656,7 +644,7 @@ const ImagePage = ({ params: { id } }: Params) => {
             </div>
           </div>
         </div>
-      )} */}
+      )}
 
       {imageData && !isOwner && (
         <button
