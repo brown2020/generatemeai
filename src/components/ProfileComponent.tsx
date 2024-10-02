@@ -71,22 +71,20 @@ export default function ProfileComponent() {
 
   return (
     <div className="flex flex-col gap-4">
-      {showCreditsSection && (
-        <div className="flex flex-col sm:flex-row px-5 py-3 gap-3 border border-gray-500 rounded-md">
-          <div className="flex gap-2 w-full items-center">
-            <div className="flex-1">Usage Credits: {Math.round(profile.credits)}</div>
-            <button
-              className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 flex-1 text-center"
-              onClick={handleBuyClick}
-            >
-              Buy 10,000 Credits
-            </button>
-          </div>
-          <div className="text-sm text-gray-600 mt-2">
-            You can either buy credits or add your own API keys for Fireworks and OpenAI.
-          </div>
+      <div className="flex flex-col sm:flex-row px-5 py-3 gap-3 border border-gray-500 rounded-md">
+        <div className="flex gap-2 w-full items-center">
+          <div className="flex-1">Usage Credits: {Math.round(profile.credits)}</div>
+          <button
+            className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 flex-1 text-center"
+            onClick={handleBuyClick}
+          >
+            Buy 10,000 Credits
+          </button>
         </div>
-      )}
+        <div className="text-sm text-gray-600 mt-2">
+          You can either buy credits or add your own API keys for Fireworks and OpenAI.
+        </div>
+      </div>
 
       <div className="flex flex-col px-5 py-3 gap-3 border border-gray-500 rounded-md">
         <label htmlFor="fireworks-api-key" className="text-sm font-medium">
