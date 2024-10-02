@@ -2,7 +2,7 @@
 
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { File } from "formdata-node";
-import fetch from "node-fetch";
+import fetch from "node-fetch"; // Use Response from node-fetch for compatibility
 
 interface RequestBody {
   prompt: string;
@@ -23,6 +23,16 @@ interface DalleResponse {
   data: { url: string }[];
 }
 
+// Function to check credits
+const checkCredits = (useCredits: string | null, credits: string | null) => {
+  if (useCredits && credits && Number(credits) < 2) {
+    throw new Error(
+      "Not enough credits to generate an image. Please purchase credits or use your own API keys."
+    );
+  }
+};
+
+// Main function to generate the image
 export async function generateImage(data: FormData) {
   try {
     const message = data.get("message") as string | null;
@@ -35,11 +45,13 @@ export async function generateImage(data: FormData) {
     const model = data.get("model") as string | null;
     const img: File | null = data.get("imageField") as File | null;
 
-    if (useCredits && credits && Number(credits) < 2) {
-      throw new Error(
-        "Not enough credits to generate an image. Please purchase credits or use your own API keys."
-      );
+    // Ensure required fields are not null
+    if (!message || !uid || !model) {
+      throw new Error("Required parameters (message, uid, model) are missing.");
     }
+
+    // Check if the user has enough credits
+    checkCredits(useCredits, credits);
 
     let apiUrl: string | undefined;
     let requestBody: RequestBody | undefined;
@@ -143,7 +155,7 @@ export async function generateImage(data: FormData) {
       };
     }
     // Handling for Playground V2 Model
-    else if (model === "playground-v2") {
+    else if (model === "playground-v2" || model === "playground-v2-5") {
       if (img) {
         formData = new FormData();
         formData.append("init_image", img);

@@ -3,7 +3,7 @@ export const imageCategories = [
     id: 1,
     type: "Headshot",
     prompt_addition:
-      "photographic headshot portrait of a living person, detailed facial features, soft studio lighting, neutral background, photorealistic, head and shoulders in frame, looking directly at the viewer",
+      "Realistic color headshot photograph of a living person, detailed facial features, soft studio lighting, neutral background, head and shoulders in frame, looking directly at the viewer, photorealistic color photo.",
   },
   {
     id: 2,
