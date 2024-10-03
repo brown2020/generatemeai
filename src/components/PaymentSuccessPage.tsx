@@ -73,7 +73,9 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
             id: data.id,
             amount: data.amount,
             status: data.status,
-            mode: 'stripe'
+            mode: "stripe",
+            platform: "web",
+            productId: "payment_gateway",
           });
 
           // Add credits to profile
