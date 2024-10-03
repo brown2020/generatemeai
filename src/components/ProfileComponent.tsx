@@ -28,7 +28,9 @@ export default function ProfileComponent() {
           id: message.message,
           amount: 99.99,
           status: "succeeded",
-          mode: 'iap'
+          mode: 'iap',
+          platform: message.platform,
+          productId: message.productId,
         });
         await addCredits(10000);
       }
