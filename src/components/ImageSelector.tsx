@@ -14,6 +14,7 @@ interface ImageData {
   timestamp: string;
   freestyle?: string;
   tags?: string[];
+  backgroundColor?: string;
 }
 
 const ImageListPage = () => {
@@ -117,6 +118,7 @@ const ImageListPage = () => {
               src={image.downloadUrl}
               alt="Visual Result"
               className="w-full h-64 object-cover rounded-lg"
+              style={{ background: image?.backgroundColor }}
             />
             <div className="absolute inset-0 flex items-center justify-center cursor-pointer select-none">
               {image.caption && (

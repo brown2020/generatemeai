@@ -22,6 +22,7 @@ import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
 import { Image as ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
+import { imageCategories } from "@/constants/imageCategories";
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -37,6 +38,9 @@ interface SpeechRecognitionErrorEvent extends Event {
   error: string;
 }
 
+// Import the server action
+import { generateImage } from "@/actions/generateImage";
+
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
   const searchterm = useSearchParams();
@@ -47,6 +51,7 @@ export default function GenerateImage() {
   const lightingSearchParam = searchterm.get("lighting");
   const tagsSearchParam = searchterm.get("tags")?.split(",");
   const imageReferenceSearchParam = searchterm.get("imageReference");
+  const imageCategorySearchParam = searchterm.get("imageCategory");
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
@@ -56,7 +61,7 @@ export default function GenerateImage() {
   const [imagePrompt, setImagePrompt] = useState<string>(
     freestyleSearchParam || ""
   );
-  const [audioPrompt, setAudioPrompt] = useState<string>("");
+
   const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
   const [model, setModel] = useState<model>(
     (modelSearchParam as model) || "playground-v2"
@@ -73,11 +78,17 @@ export default function GenerateImage() {
   const [tagInputValue, settagInputValue] = useState(
     tagsSearchParam
       ? tagsSearchParam.map((str) => {
-        return { label: str, value: str };
-      })
+          return { label: str, value: str };
+        })
       : []
   );
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [generatedImage, setGeneratedImage] = useState<string>("");
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>(imageCategorySearchParam || "");
+
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
@@ -86,15 +97,15 @@ export default function GenerateImage() {
     model: model,
     colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
     lighting: getLightingFromLabel(lighting) || lightings[0].value,
-    tags: tags,
+    tags: tags
   });
-  const [loading, setLoading] = useState<boolean>(false);
-  const [generatedImage, setGeneratedImage] = useState<string>("");
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
-  const colorLabels = colors.map((color: { value: string; label: string }) => color.label);
-  const lightingLabels = lightings.map((lightingss: { value: string; label: string }) => lightingss.label);
+  const colorLabels = colors.map(
+    (color: { value: string; label: string }) => color.label
+  );
+  const lightingLabels = lightings.map(
+    (lightingss: { value: string; label: string }) => lightingss.label
+  );
 
   const loadImageFromUrl = async (url: string) => {
     const response = await fetch(url);
@@ -130,7 +141,6 @@ export default function GenerateImage() {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
-      setAudioPrompt(transcript);
       setImagePrompt(transcript);
     };
 
@@ -180,7 +190,8 @@ export default function GenerateImage() {
       prompt: prompt,
       id: docRef.id,
       timestamp: Timestamp.now(),
-      tags
+      tags,
+      imageCategory: selectedCategory
     };
     setPromptData(p);
     await setDoc(docRef, p);
@@ -193,10 +204,11 @@ export default function GenerateImage() {
       setLoading(true);
 
       const prompt: string = generatePrompt(
-        audioPrompt || imagePrompt,
+        imagePrompt,
         imageStyle,
         getColorFromLabel(colorScheme) || colors[0].value,
-        getLightingFromLabel(lighting) || lightings[0].value
+        getLightingFromLabel(lighting) || lightings[0].value,
+        selectedCategory // Pass the selected category to the prompt generation
       );
 
       const formData = new FormData();
@@ -212,24 +224,17 @@ export default function GenerateImage() {
         formData.append("imageField", uploadedImage);
       }
 
-      const response = await fetch("/api/generate-image", {
-        method: "POST",
-        body: formData,
-      });
+      // Call the server action instead of the API route
+      const result = await generateImage(formData);
 
-      const result = await response.json();
-
-      if (!response.ok || result.error) {
-        toast.error(result.error || "Failed to generate image.");
-        throw new Error(result.error || "Failed to generate image.");
+      // Updated error handling
+      if (!result || !result.imageUrl) {
+        toast.error("Failed to generate image.");
+        throw new Error("Failed to generate image.");
       }
 
-      const downloadURL = result?.imageUrl;
-      if (!downloadURL) {
-        throw new Error("Error generating image");
-      }
-
-      const imageReference = result?.imageReference || '';
+      const downloadURL = result.imageUrl;
+      const imageReference = result.imageReference || "";
 
       if (useCredits) {
         await minusCredits(creditsToMinus(model));
@@ -247,7 +252,8 @@ export default function GenerateImage() {
           prompt,
           lighting: getLightingFromLabel(lighting) || lightings[0].value,
           colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
-          imageReference
+          imageReference,
+          imageCategory: selectedCategory
         },
         prompt,
         downloadURL
@@ -266,51 +272,49 @@ export default function GenerateImage() {
   return (
     <div className="flex flex-col items-center w-full p-4 bg-white">
       <div className="flex flex-col w-full max-w-xl space-y-4 relative">
-        <TextareaAutosize
-          autoFocus
-          minRows={4}
-          value={imagePrompt || ""}
-          placeholder="Describe an image or use voice input"
-          onChange={(e) => {
-            setImagePrompt(e.target.value);
-            handleTagSuggestions(e.target.value);
-          }}
-          className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
-        />
-
-        <button
-          className={`absolute top-[4rem] right-3 w-10 h-10 flex items-center justify-center rounded-full 
-            ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
-          onClick={
-            isRecording
-              ? () => {
-                setIsRecording(false);
-              }
-              : startAudioRecording
-          }
-          title={isRecording ? "Stop Recording" : "Start Recording"}
-        >
-          {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
-        </button>
-
-        {model != "dall-e" && (
-          <button
-            className="absolute top-[4rem] right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
-            onClick={() => {
-              const fileInput = document.getElementById(
-                "imageUpload"
-              ) as HTMLInputElement | null;
-              if (fileInput) {
-                fileInput.click();
-              } else {
-                console.error("Element with ID 'imageUpload' not found.");
-              }
+        <div className="relative">
+          <TextareaAutosize
+            autoFocus
+            minRows={4}
+            value={imagePrompt || ""}
+            placeholder="Describe an image or use voice input"
+            onChange={(e) => {
+              setImagePrompt(e.target.value);
+              handleTagSuggestions(e.target.value);
             }}
-            title="Upload Image"
+            className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
+          />
+
+          <button
+            className={`absolute bottom-4 right-3 w-10 h-10 flex items-center justify-center rounded-full 
+              ${isRecording ? "bg-red-600" : "bg-blue-600"} text-white`}
+            onClick={
+              isRecording ? () => setIsRecording(false) : startAudioRecording
+            }
+            title={isRecording ? "Stop Recording" : "Start Recording"}
           >
-            <ImageIcon size={20} />
+            {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
           </button>
-        )}
+
+          {model !== "dall-e" && (
+            <button
+              className="absolute bottom-4 right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
+              onClick={() => {
+                const fileInput = document.getElementById(
+                  "imageUpload"
+                ) as HTMLInputElement | null;
+                if (fileInput) {
+                  fileInput.click();
+                } else {
+                  console.error("Element with ID 'imageUpload' not found.");
+                }
+              }}
+              title="Upload Image"
+            >
+              <ImageIcon size={20} />
+            </button>
+          )}
+        </div>
 
         <input
           type="file"
@@ -383,6 +387,24 @@ export default function GenerateImage() {
         </div>
 
         <div>
+          <div>Image Category (optional)</div>
+          <Select
+            isClearable={true}
+            isSearchable={true}
+            name="category"
+            onChange={(v) => setSelectedCategory(v ? v.value : '')}
+            options={imageCategories.map((category) => ({
+              id: category.id,
+              label: category.type,
+              value: category.type,
+            }))}
+            defaultInputValue={imageCategorySearchParam || ""}
+            styles={selectStyles}
+            placeholder="Select image category"
+          />
+        </div>
+
+        <div>
           <div>Tags (optional)</div>
           <CreatableSelect
             isMulti
@@ -402,8 +424,9 @@ export default function GenerateImage() {
             {colorLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  colorScheme === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setColorScheme(option)}
                 title={option}
               >
@@ -419,8 +442,9 @@ export default function GenerateImage() {
             {lightingLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  lighting === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setLighting(option)}
                 title={option}
               >
@@ -436,7 +460,7 @@ export default function GenerateImage() {
           onClick={(e) => {
             setPromptData({
               ...promptData,
-              freestyle: audioPrompt || imagePrompt,
+              freestyle: imagePrompt,
               style: imageStyle,
               colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
               lighting: getLightingFromLabel(lighting) || lightings[0].value,

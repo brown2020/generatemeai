@@ -1,21 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import useProfileStore from "@/zustand/useProfileStore";
-import { MouseEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { isIOSReactNativeWebView } from "@/utils/platform"; // Import the platform check function
 import { usePaymentsStore } from "@/zustand/usePaymentsStore";
 
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
-  const [fireworksApiKey, setFireworksApiKey] = useState(
-    profile.fireworks_api_key
-  );
+
+  const [fireworksApiKey, setFireworksApiKey] = useState(profile.fireworks_api_key);
   const [openaiApiKey, setOpenaiApiKey] = useState(profile.openai_api_key);
-  const [stabilityAPIKey, setStabilityAPIKey] = useState(
-    profile.stability_api_key
-  );
+  const [stabilityAPIKey, setStabilityAPIKey] = useState(profile.stability_api_key);
+  const [briaApiKey, setBriaApiKey] = useState(profile.bria_api_key);
+
   const [useCredits, setUseCredits] = useState(profile.useCredits);
   const [showCreditsSection, setShowCreditsSection] = useState(true); // State to control visibility of credits section
   const addCredits = useProfileStore((state) => state.addCredits);
@@ -48,26 +46,29 @@ export default function ProfileComponent() {
     setFireworksApiKey(profile.fireworks_api_key);
     setOpenaiApiKey(profile.openai_api_key);
     setStabilityAPIKey(profile.stability_api_key);
+    setBriaApiKey(profile.bria_api_key);
 
-    // Hide credits section if in iOS WebView
     setShowCreditsSection(!isIOSReactNativeWebView());
   }, [
     profile.fireworks_api_key,
     profile.openai_api_key,
     profile.stability_api_key,
+    profile.bria_api_key,
   ]);
 
   const handleApiKeyChange = async () => {
     if (
       fireworksApiKey !== profile.fireworks_api_key ||
       openaiApiKey !== profile.openai_api_key ||
-      stabilityAPIKey !== profile.stability_api_key
+      stabilityAPIKey !== profile.stability_api_key ||
+      briaApiKey !== profile.bria_api_key
     ) {
       try {
         await updateProfile({
           fireworks_api_key: fireworksApiKey,
           openai_api_key: openaiApiKey,
           stability_api_key: stabilityAPIKey,
+          bria_api_key: briaApiKey,
         });
         console.log("API keys updated successfully!");
       } catch (error) {
@@ -76,47 +77,38 @@ export default function ProfileComponent() {
     }
   };
 
-  const handleCreditsChange = async (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
+  const handleCreditsChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUseCredits(e.target.value === "credits");
     await updateProfile({ useCredits: e.target.value === "credits" });
   };
 
-  const handleClick = useCallback(
-    (e: MouseEvent<HTMLAnchorElement>) => {
-      e.preventDefault(); // Prevent the default behavior
+  const handleBuyClick = useCallback(
+    () => {
       if (showCreditsSection) {
-        // navigate to paymenr if open from outside RN app
         window.location.href = "/payment-attempt";
       } else {
-        // initialize iap if open from RN app
         window.ReactNativeWebView?.postMessage("INIT_IAP");
       }
     },
     [showCreditsSection]
   );
 
-  const areApiKeysAvailable = fireworksApiKey && openaiApiKey;
+  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row px-5 py-3 gap-3 border border-gray-500 rounded-md">
         <div className="flex gap-2 w-full items-center">
-          <div className="flex-1">
-            Usage Credits: {Math.round(profile.credits)}
-          </div>
-          <Link
+          <div className="flex-1">Usage Credits: {Math.round(profile.credits)}</div>
+          <button
             className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 flex-1 text-center"
-            href={"/payment-attempt"}
-            onClick={handleClick}
+            onClick={handleBuyClick}
           >
             Buy 10,000 Credits
-          </Link>
+          </button>
         </div>
         <div className="text-sm text-gray-600 mt-2">
-          You can either buy credits or add your own API keys for Fireworks and
-          OpenAI.
+          You can either buy credits or add your own API keys for Fireworks and OpenAI.
         </div>
       </div>
 
@@ -132,6 +124,7 @@ export default function ProfileComponent() {
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your Fireworks API Key"
         />
+
         <label htmlFor="openai-api-key" className="text-sm font-medium">
           OpenAI API Key:
         </label>
@@ -143,7 +136,8 @@ export default function ProfileComponent() {
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your OpenAI API Key"
         />
-        <label htmlFor="openai-api-key" className="text-sm font-medium">
+
+        <label htmlFor="stability-api-key" className="text-sm font-medium">
           Stability API Key:
         </label>
         <input
@@ -154,12 +148,26 @@ export default function ProfileComponent() {
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your Stability API Key"
         />
+
+        <label htmlFor="bria-api-key" className="text-sm font-medium">
+          Bria API Key:
+        </label>
+        <input
+          type="text"
+          id="bria-api-key"
+          value={briaApiKey}
+          onChange={(e) => setBriaApiKey(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          placeholder="Enter your Bria API Key"
+        />
+
         <button
           onClick={handleApiKeyChange}
           disabled={
             fireworksApiKey === profile.fireworks_api_key &&
             openaiApiKey === profile.openai_api_key &&
-            stabilityAPIKey === profile.stability_api_key
+            stabilityAPIKey === profile.stability_api_key &&
+            briaApiKey === profile.bria_api_key
           }
           className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 disabled:opacity-50"
         >
@@ -182,6 +190,6 @@ export default function ProfileComponent() {
           {areApiKeysAvailable && <option value="apikeys">API Keys</option>}
         </select>
       </div>
-    </div>
+    </div >
   );
 }
