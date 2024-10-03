@@ -4,6 +4,7 @@ import Link from "next/link";
 import useProfileStore from "@/zustand/useProfileStore";
 import { MouseEvent, useCallback, useEffect, useState } from "react";
 import { isIOSReactNativeWebView } from "@/utils/platform"; // Import the platform check function
+import { usePaymentsStore } from "@/zustand/usePaymentsStore";
 
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
@@ -17,6 +18,31 @@ export default function ProfileComponent() {
   );
   const [useCredits, setUseCredits] = useState(profile.useCredits);
   const [showCreditsSection, setShowCreditsSection] = useState(true); // State to control visibility of credits section
+  const addCredits = useProfileStore((state) => state.addCredits);
+  const addPayment = usePaymentsStore((state) => state.addPayment);
+
+  useEffect(() => {
+    const handleMessageFromRN = async (event: MessageEvent) => {
+      // Process the message sent from React Native
+      const message = event.data;
+      if (message?.type === "IAP_SUCCESS") {
+        await addPayment({
+          id: message.message,
+          amount: 99.99,
+          status: "succeeded",
+          mode: 'iap'
+        });
+        await addCredits(10000);
+      }
+    };
+
+    // Listen for messages from the RN WebView
+    window.addEventListener("message", handleMessageFromRN);
+
+    return () => {
+      window.removeEventListener("message", handleMessageFromRN);
+    };
+  }, [addCredits, addPayment]);
 
   useEffect(() => {
     setFireworksApiKey(profile.fireworks_api_key);
@@ -65,7 +91,7 @@ export default function ProfileComponent() {
         window.location.href = "/payment-attempt";
       } else {
         // initialize iap if open from RN app
-        window.ReactNativeWebView?.postMessage('INIT_IAP');
+        window.ReactNativeWebView?.postMessage("INIT_IAP");
       }
     },
     [showCreditsSection]
