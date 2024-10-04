@@ -19,6 +19,7 @@ export type PaymentType = {
   mode: string;
   platform: string;
   productId: string;
+  currency: string;
 };
 
 interface PaymentsStoreState {
@@ -98,6 +99,7 @@ async function fetchUserPayments(uid: string): Promise<PaymentType[]> {
     createdAt: doc.data().createdAt,
     status: doc.data().status,
     mode: doc.data().mode,
+    currency: doc.data().currency,
     platform: doc.data().platform,
     productId: doc.data().productId,
   }));
@@ -129,6 +131,7 @@ async function createPayment(
     createdAt: Timestamp.now(),
     status: payment.status,
     mode: payment.mode,
+    currency: payment.currency,
     platform: payment.platform,
     productId: payment.productId,
   });
@@ -139,6 +142,7 @@ async function createPayment(
     createdAt: Timestamp.now(),
     status: payment.status,
     mode: payment.mode,
+    currency: payment.currency,
     platform: payment.platform,
     productId: payment.productId,
   };
