@@ -4,4 +4,5 @@ export type model =
   | "stability-sd3-turbo"
   | "playground-v2"
   | "playground-v2-5"
-  | "bria.ai";
+  | "bria.ai"
+  | "d-id";
