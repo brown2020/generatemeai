@@ -2,7 +2,7 @@
 
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { File } from "formdata-node";
-import fetch from "node-fetch"; // Use Response from node-fetch for compatibility
+import fetch from "node-fetch";
 
 interface RequestBody {
   prompt: string;
@@ -23,8 +23,18 @@ interface DalleResponse {
   data: { url: string }[];
 }
 
+interface ResultResponse {
+  message?: string;
+  result_url?: string;
+}
+
+interface DidResponse {
+  description: string;
+  id: string;
+}
+
 // Function to check credits
-const checkCredits = (useCredits: string | null, credits: string | null) => {
+const checkCredits = (useCredits: boolean | null, credits: string | null) => {
   if (useCredits && credits && Number(credits) < 2) {
     throw new Error(
       "Not enough credits to generate an image. Please purchase credits or use your own API keys."
@@ -40,10 +50,14 @@ export async function generateImage(data: FormData) {
     const openAPIKey = data.get("openAPIKey") as string | null;
     const fireworksAPIKey = data.get("fireworksAPIKey") as string | null;
     const stabilityAPIKey = data.get("stabilityAPIKey") as string | null;
-    const useCredits = data.get("useCredits") as string | null;
+    const didAPIkey = data.get("didAPIKey") as string | null;
+    const useCredits = data.get("useCredits") as boolean | null;
     const credits = data.get("credits") as string | null;
     const model = data.get("model") as string | null;
     const img: File | null = data.get("imageField") as File | null;
+    const scriptPrompt = data.get("scriptPrompt") as string | null;
+    const videoModel = data.get("videoModel") as string | null;
+    const audio = data.get("audio") as string | null;
 
     // Ensure required fields are not null
     if (!message || !uid || !model) {
@@ -69,9 +83,8 @@ export async function generateImage(data: FormData) {
 
         apiUrl = `https://api.openai.com/v1/images/edits`;
         headers = {
-          Authorization: `Bearer ${
-            useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
-          }`,
+          Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+            }`,
         };
       } else {
         apiUrl = `https://api.openai.com/v1/images/generations`;
@@ -82,9 +95,8 @@ export async function generateImage(data: FormData) {
         };
         headers = {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
-          }`,
+          Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+            }`,
         };
       }
     }
@@ -105,9 +117,8 @@ export async function generateImage(data: FormData) {
           "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0/image_to_image";
         headers = {
           Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-          }`,
+          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            }`,
         };
       } else {
         apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0`;
@@ -124,9 +135,8 @@ export async function generateImage(data: FormData) {
         headers = {
           "Content-Type": "application/json",
           Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-          }`,
+          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            }`,
         };
       }
     }
@@ -149,9 +159,8 @@ export async function generateImage(data: FormData) {
       apiUrl = "https://api.stability.ai/v2beta/stable-image/generate/sd3";
       headers = {
         Accept: "image/*",
-        Authorization: `Bearer ${
-          useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
-        }`,
+        Authorization: `Bearer ${useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
+          }`,
       };
     }
     // Handling for Playground V2 Model
@@ -171,9 +180,8 @@ export async function generateImage(data: FormData) {
           "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/playground-v2-1024px-aesthetic/image_to_image";
         headers = {
           Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-          }`,
+          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            }`,
         };
       } else {
         apiUrl =
@@ -191,9 +199,8 @@ export async function generateImage(data: FormData) {
         headers = {
           "Content-Type": "application/json",
           Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-          }`,
+          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            }`,
         };
       }
     }
@@ -272,11 +279,79 @@ export async function generateImage(data: FormData) {
       imageReference = imageReferenceUrl;
     }
 
-    return { imageUrl, imageReference };
+    console.log(didAPIkey)
+
+    if (scriptPrompt && videoModel === "d-id") {
+      let url = 'https://api.d-id.com/talks';
+      let options = {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Basic ${useCredits ? didAPIkey : process.env.DID_API_KEY}`
+        },
+        body: JSON.stringify({
+          source_url: imageUrl,
+          script: {
+            type: 'text',
+            subtitles: 'false',
+            provider: { type: 'amazon', voice_id: audio === "Male" ? 'Kevin' : 'Amy' },
+            input: scriptPrompt
+          },
+          config: { fluent: 'false', pad_audio: '0.0' }
+        })
+      };
+
+      const didResponse: DidResponse = await (await fetch(url, options)).json() as DidResponse;
+      const { id } = didResponse;
+
+      if (!id) {
+        console.log(didResponse)
+        if (didResponse?.description == 'not enough credits') {
+          throw new Error("D-ID API not enough credits.")
+        } else {
+          throw new Error("D-ID API Token is invalid.")
+        }
+      }
+
+      url = `https://api.d-id.com/talks/${id}`;
+      options = {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Basic ${useCredits ? didAPIkey : process.env.DID_API_KEY}`
+        },
+        body: ''
+      };
+
+      let result: ResultResponse = {};
+
+      let attemptCount = 0;
+
+      while (true) {
+        attemptCount++;
+        if (attemptCount > 24) {
+          console.log("Exceeded maximum retry attempts. Exiting loop.");
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        const response = await fetch(url, options);
+        result = await response.json() as ResultResponse;
+
+        if (result.result_url) break;
+      }
+
+      return { videoUrl: result.result_url, imageUrl }
+    } else {
+      return { imageUrl, imageReference };
+    }
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("Error generating image:", errorMessage);
+    console.error("Error generating image/video:", errorMessage);
     return { error: errorMessage }
   }
 }
