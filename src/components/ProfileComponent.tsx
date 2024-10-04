@@ -31,6 +31,7 @@ export default function ProfileComponent() {
           mode: 'iap',
           platform: message.platform,
           productId: message.productId,
+          currency: message.currency
         });
         await addCredits(10000);
       }
