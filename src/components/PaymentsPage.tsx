@@ -29,7 +29,7 @@ export default function PaymentsPage() {
               className="border p-4 rounded-md bg-white shadow-md"
             >
               <div>ID: {payment.id}</div>
-              <div>Amount: ${payment.amount / 100}</div>
+              <div>Amount: {payment.currency || '$'}{payment.amount / 100}</div>
               <div>
                 Created At:{" "}
                 {payment.createdAt
