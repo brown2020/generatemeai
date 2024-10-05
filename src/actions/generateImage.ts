@@ -29,6 +29,7 @@ interface ResultResponse {
 }
 
 interface DidResponse {
+  kind: string;
   description: string;
   id: string;
 }
@@ -282,8 +283,18 @@ export async function generateImage(data: FormData) {
     console.log(didAPIkey)
 
     if (scriptPrompt && videoModel === "d-id") {
+      let options: {
+        method: string;
+        headers: {
+          accept: string;
+          'content-type': string;
+          authorization: string;
+        };
+        body?: string;
+      };
+
       let url = 'https://api.d-id.com/talks';
-      let options = {
+      options = {
         method: 'POST',
         headers: {
           accept: 'application/json',
@@ -306,10 +317,12 @@ export async function generateImage(data: FormData) {
       const { id } = didResponse;
 
       if (!id) {
-        console.log(didResponse)
         if (didResponse?.description == 'not enough credits') {
           throw new Error("D-ID API not enough credits.")
-        } else {
+        } else if (didResponse?.kind == 'ValidationError') {
+          throw new Error("Validation Error")
+        }
+        else {
           throw new Error("D-ID API Token is invalid.")
         }
       }
@@ -322,7 +335,6 @@ export async function generateImage(data: FormData) {
           'content-type': 'application/json',
           authorization: `Basic ${useCredits ? didAPIkey : process.env.DID_API_KEY}`
         },
-        body: ''
       };
 
       let result: ResultResponse = {};
