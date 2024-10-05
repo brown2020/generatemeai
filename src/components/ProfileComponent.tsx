@@ -26,11 +26,12 @@ export default function ProfileComponent() {
       if (message?.type === "IAP_SUCCESS") {
         await addPayment({
           id: message.message,
-          amount: 99.99,
+          amount: message.amount,
           status: "succeeded",
           mode: 'iap',
           platform: message.platform,
           productId: message.productId,
+          currency: message.currency
         });
         await addCredits(10000);
       }
