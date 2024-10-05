@@ -114,23 +114,36 @@ const ImagePage = ({ id }: { id: string }) => {
   }, [id, uid, authPending, refreshCounter, isOwner]);
 
   const handleDownload = async () => {
-    const container = document.getElementById("image-container");
-    if (!container) return;
-
-    try {
-      const dataUrl = await domtoimage.toPng(container);
-
+    if (imageData?.videoDownloadUrl) {
+      const videoUrl = imageData.videoDownloadUrl;
       const currentDate = new Date().toISOString().split("T")[0];
-      const fileName = `${imageData?.freestyle}_${currentDate}.png`;
+      const fileName = `${imageData?.freestyle}_${currentDate}.mp4`;
 
       const link = document.createElement("a");
-      link.href = dataUrl;
+      link.href = videoUrl;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error) {
-      toast.error("Download error: " + error);
+    } else {
+      const container = document.getElementById("image-container");
+      if (!container) return;
+
+      try {
+        const dataUrl = await domtoimage.toPng(container);
+
+        const currentDate = new Date().toISOString().split("T")[0];
+        const fileName = `${imageData?.freestyle}_${currentDate}.png`;
+
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        toast.error("Download error: " + error);
+      }
     }
   };
 
@@ -418,7 +431,7 @@ const ImagePage = ({ id }: { id: string }) => {
       {imageData && (
         <div
           className="relative inline-block"
-          id="media-container"
+          id="image-container"
           style={{ backgroundColor: backgroundColor }}
         >
           {imageData?.videoDownloadUrl ? (
