@@ -21,7 +21,13 @@ import { getLightingFromLabel, lightings } from "@/constants/lightings";
 import { useSearchParams } from "next/navigation";
 import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
-import { Image as ImageIcon, Mic, StopCircle, VideoIcon, XCircle } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Mic,
+  StopCircle,
+  VideoIcon,
+  XCircle,
+} from "lucide-react";
 import { imageCategories } from "@/constants/imageCategories";
 
 interface SpeechRecognitionEvent extends Event {
@@ -66,13 +72,17 @@ export default function GenerateImage() {
   const [imagePrompt, setImagePrompt] = useState<string>(
     freestyleSearchParam || ""
   );
-  const [scriptPrompt, setScriptPrompt] = useState<string>(scriptPromptSearchParam || "")
+  const [scriptPrompt, setScriptPrompt] = useState<string>(
+    scriptPromptSearchParam || ""
+  );
 
   const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
   const [model, setModel] = useState<model>(
     (modelSearchParam as model) || "playground-v2"
   );
-  const [videoModel, setVideoModel] = useState<model>(videoModelSearchParam as model || "d-id");
+  const [videoModel, setVideoModel] = useState<model>(
+    (videoModelSearchParam as model) || "d-id"
+  );
   const [colorScheme, setColorScheme] = useState<string>(
     colorSearchParam || "None"
   );
@@ -85,8 +95,8 @@ export default function GenerateImage() {
   const [tagInputValue, settagInputValue] = useState(
     tagsSearchParam
       ? tagsSearchParam.map((str) => {
-        return { label: str, value: str };
-      })
+          return { label: str, value: str };
+        })
       : []
   );
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -95,7 +105,9 @@ export default function GenerateImage() {
   const [generatedVideo, setGeneratedVideo] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>(imageCategorySearchParam || "");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    imageCategorySearchParam || ""
+  );
   const [mode, setMode] = useState(scriptPromptSearchParam ? "video" : "image");
   const [audio, setAudio] = useState<string>(audioSearchParam || "Male");
 
@@ -107,27 +119,27 @@ export default function GenerateImage() {
     model: model,
     colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
     lighting: getLightingFromLabel(lighting) || lightings[0].value,
-    tags: tags
+    tags: tags,
   });
 
   const [isPromptValid, setIsPromptValid] = useState<boolean>(false);
   const [isScriptPromptValid, setIsScriptPromptValid] = useState<boolean>(true);
   const [isModelValid, setIsModelValid] = useState<boolean>(true);
   const [isVideoModelValid, setIsVideoModelValid] = useState<boolean>(true);
-  const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
+  // const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
 
   useEffect(() => {
     setIsPromptValid(!!imagePrompt.trim());
     setIsModelValid(!!model);
-    if (mode === 'video') {
+    if (mode === "video") {
       setIsScriptPromptValid(!!scriptPrompt.trim());
       setIsVideoModelValid(!!videoModel);
-      setIsAudioValid(!!audio);
+      // setIsAudioValid(!!audio);
     } else {
       setIsScriptPromptValid(true);
       setIsVideoModelValid(true);
     }
-  }, [imagePrompt, scriptPrompt, model, videoModel, mode]);
+  }, [imagePrompt, scriptPrompt, model, videoModel, mode, audio]);
 
   const colorLabels = colors.map(
     (color: { value: string; label: string }) => color.label
@@ -208,7 +220,12 @@ export default function GenerateImage() {
     promptData: PromptDataType,
     prompt: string,
     downloadUrl: string,
-    options: { videoDownloadUrl?: string; audio?: string, videoModel?: string, scriptPrompt?: string } = {}
+    options: {
+      videoDownloadUrl?: string;
+      audio?: string;
+      videoModel?: string;
+      scriptPrompt?: string;
+    } = {}
   ) {
     if (!uid) return;
 
@@ -227,7 +244,7 @@ export default function GenerateImage() {
       videoDownloadUrl: options.videoDownloadUrl || "",
       audio: options.audio || "",
       videoModel: options.videoModel || "",
-      scriptPrompt: options.scriptPrompt
+      scriptPrompt: options.scriptPrompt,
     };
 
     setPromptData(finalPromptData);
@@ -237,7 +254,11 @@ export default function GenerateImage() {
   const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    if (!isPromptValid || !isModelValid || (mode === 'video' && (!isScriptPromptValid || !isVideoModelValid))) {
+    if (
+      !isPromptValid ||
+      !isModelValid ||
+      (mode === "video" && (!isScriptPromptValid || !isVideoModelValid))
+    ) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -289,7 +310,7 @@ export default function GenerateImage() {
         await minusCredits(creditsToMinus(model));
 
         if (videoDownloadURL) {
-          await minusCredits(creditsToMinus(videoModel))
+          await minusCredits(creditsToMinus(videoModel));
         }
       }
 
@@ -309,11 +330,16 @@ export default function GenerateImage() {
           colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
           imageReference,
           imageCategory: selectedCategory,
-          audio: audio
+          audio: audio,
         },
         prompt,
         downloadURL,
-        { videoDownloadUrl: videoDownloadURL, audio: audio, videoModel: videoModel, scriptPrompt: scriptPrompt }
+        {
+          videoDownloadUrl: videoDownloadURL,
+          audio: audio,
+          videoModel: videoModel,
+          scriptPrompt: scriptPrompt,
+        }
       );
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -334,7 +360,11 @@ export default function GenerateImage() {
             autoFocus
             minRows={mode == "image" ? 4 : 3}
             value={imagePrompt || ""}
-            placeholder={mode == "image" ? "Describe an image or use voice input" : "Describe the avatar or use voice input"}
+            placeholder={
+              mode == "image"
+                ? "Describe an image or use voice input"
+                : "Describe the avatar or use voice input"
+            }
             onChange={(e) => {
               setImagePrompt(e.target.value);
               if (mode === "image") {
@@ -416,17 +446,19 @@ export default function GenerateImage() {
           </div>
         )}
 
-        {mode === "video" && <TextareaAutosize
-          autoFocus
-          minRows={4}
-          value={scriptPrompt || ""}
-          placeholder="Write the script here"
-          onChange={(e) => {
-            setScriptPrompt(e.target.value);
-            handleTagSuggestions(e.target.value);
-          }}
-          className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
-        />}
+        {mode === "video" && (
+          <TextareaAutosize
+            autoFocus
+            minRows={4}
+            value={scriptPrompt || ""}
+            placeholder="Write the script here"
+            onChange={(e) => {
+              setScriptPrompt(e.target.value);
+              handleTagSuggestions(e.target.value);
+            }}
+            className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
+          />
+        )}
 
         <div>
           <div>Artistic Style (optional)</div>
@@ -442,7 +474,9 @@ export default function GenerateImage() {
         </div>
 
         <div>
-          <div>{mode === "image" ? "Use" : "Image Model (Avatar Creation)"}</div>
+          <div>
+            {mode === "image" ? "Use" : "Image Model (Avatar Creation)"}
+          </div>
           <Select
             isClearable={true}
             isSearchable={true}
@@ -458,7 +492,7 @@ export default function GenerateImage() {
           />
         </div>
 
-        {mode === "video" &&
+        {mode === "video" && (
           <div>
             <div>Video Model</div>
             <Select
@@ -473,25 +507,27 @@ export default function GenerateImage() {
               styles={selectStyles}
             />
           </div>
-        }
+        )}
 
-        {mode === "video" && <div>
-          <div>Audio</div>
-          <Select
-            isClearable={true}
-            isSearchable={true}
-            name="audio"
-            onChange={(v) => setAudio(v ? v.value : "Male")}
-            options={audios.map((audio) => ({
-              id: audio.id,
-              label: audio.label,
-              value: audio.value,
-            }))}
-            defaultInputValue={"Male"}
-            styles={selectStyles}
-            placeholder="Select audio"
-          />
-        </div>}
+        {mode === "video" && (
+          <div>
+            <div>Audio</div>
+            <Select
+              isClearable={true}
+              isSearchable={true}
+              name="audio"
+              onChange={(v) => setAudio(v ? v.value : "Male")}
+              options={audios.map((audio) => ({
+                id: audio.id,
+                label: audio.label,
+                value: audio.value,
+              }))}
+              defaultInputValue={"Male"}
+              styles={selectStyles}
+              placeholder="Select audio"
+            />
+          </div>
+        )}
 
         <div>
           <div>Image Category (optional)</div>
@@ -499,7 +535,7 @@ export default function GenerateImage() {
             isClearable={true}
             isSearchable={true}
             name="category"
-            onChange={(v) => setSelectedCategory(v ? v.value : '')}
+            onChange={(v) => setSelectedCategory(v ? v.value : "")}
             options={imageCategories.map((category) => ({
               id: category.id,
               label: category.type,
@@ -531,8 +567,9 @@ export default function GenerateImage() {
             {colorLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  colorScheme === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setColorScheme(option)}
                 title={option}
               >
@@ -548,8 +585,9 @@ export default function GenerateImage() {
             {lightingLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
-                  }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
+                  lighting === option ? "bg-gray-200" : ""
+                }`}
                 onClick={() => setLighting(option)}
                 title={option}
               >
@@ -562,8 +600,11 @@ export default function GenerateImage() {
         <div className="flex space-x-4 mb-4">
           <button
             className={`w-10 h-10 flex items-center justify-center rounded-full 
-              ${mode === 'image' ? 'bg-blue-600' : 'bg-gray-300'} text-white`}
-            onClick={() => { setMode('image'); setScriptPrompt(""); }}
+              ${mode === "image" ? "bg-blue-600" : "bg-gray-300"} text-white`}
+            onClick={() => {
+              setMode("image");
+              setScriptPrompt("");
+            }}
             title="Image Mode"
           >
             <ImageIcon size={20} />
@@ -571,8 +612,8 @@ export default function GenerateImage() {
 
           <button
             className={`w-10 h-10 flex items-center justify-center rounded-full 
-              ${mode === 'video' ? 'bg-blue-600' : 'bg-gray-300'} text-white`}
-            onClick={() => setMode('video')}
+              ${mode === "video" ? "bg-blue-600" : "bg-gray-300"} text-white`}
+            onClick={() => setMode("video")}
             title="Video Mode"
           >
             <VideoIcon size={20} />
@@ -594,7 +635,13 @@ export default function GenerateImage() {
             handleGenerateSDXL(e);
           }}
         >
-          {loading ? <PulseLoader color="#fff" size={12} /> : mode === "image" ? "Create Image" : 'Create Video'}
+          {loading ? (
+            <PulseLoader color="#fff" size={12} />
+          ) : mode === "image" ? (
+            "Create Image"
+          ) : (
+            "Create Video"
+          )}
         </button>
       </div>
 
