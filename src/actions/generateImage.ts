@@ -3,7 +3,6 @@
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { File } from "formdata-node";
 import fetch from "node-fetch";
-import { useState } from "react";
 
 interface RequestBody {
   prompt: string;

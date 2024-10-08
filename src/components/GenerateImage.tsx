@@ -261,7 +261,7 @@ export default function GenerateImage() {
       return;
     }
 
-    if (mode === 'video' && imageApproved && (!isScriptPromptValid || !isVideoModelValid)) {
+    if (mode === 'video' && imageApproved && (!isScriptPromptValid || !isVideoModelValid || !isAudioValid)) {
       toast.error("Please fill in all required fields.");
       return;
     }

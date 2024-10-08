@@ -236,7 +236,7 @@ const ImagePage = ({ id }: { id: string }) => {
 
   const handleSuggestions = async () => {
     try {
-      let freestyle = imageData?.videoModel ? imageData?.scriptPrompt : imageData?.freestyle;
+      const freestyle = imageData?.videoModel ? imageData?.scriptPrompt : imageData?.freestyle;
       let suggestions = await suggestTags(
         freestyle,
         tags,
