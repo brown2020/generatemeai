@@ -312,7 +312,7 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
             provider: { type: 'amazon', voice_id: audio },
             input: scriptPrompt
           },
-          config: { fluent: 'false', pad_audio: '0.0', align_driver: "false" }
+          config: { fluent: 'false', pad_audio: '0.0' }
         })
       };
 
