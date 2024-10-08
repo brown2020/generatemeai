@@ -142,7 +142,7 @@ export default function GenerateImage() {
       setIsScriptPromptValid(true);
       setIsVideoModelValid(true);
     }
-  }, [imagePrompt, scriptPrompt, model, videoModel, mode]);
+  }, [imagePrompt, scriptPrompt, model, videoModel, mode, audio]);
 
   const colorLabels = colors.map(
     (color: { value: string; label: string }) => color.label
