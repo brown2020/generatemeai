@@ -315,7 +315,8 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
           source_url: imageUrls,
           driver_url: 'bank://fun',
           config: {
-            mute: true
+            mute: true,
+            stitch: true
           }
         })
       };
@@ -396,7 +397,8 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
           },
           config: {
             fluent: 'false',
-            pad_audio: '0.0'
+            pad_audio: '0.0',
+            stitch: true
           }
         })
       };
