@@ -1,9 +1,10 @@
-'use client'
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { db } from "../firebase/firebaseClient";
-import { collection, query, getDocs, orderBy } from "firebase/firestore";
-import { useAuthStore } from "@/zustand/useAuthStore";
+import React, { useEffect, useState } from 'react';
+import { db } from '../firebase/firebaseClient';
+import { collection, query, getDocs, orderBy } from 'firebase/firestore';
+import { useAuthStore } from '@/zustand/useAuthStore';
+import { Video, Image as ImageIcon } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 30;
 
@@ -15,6 +16,7 @@ interface ImageData {
   freestyle?: string;
   tags?: string[];
   backgroundColor?: string;
+  videoDownloadUrl?: string;
 }
 
 const ImageListPage = () => {
@@ -29,16 +31,16 @@ const ImageListPage = () => {
   useEffect(() => {
     const fetchImages = async () => {
       if (uid && !authPending) {
-        const q = query(collection(db, "profiles", uid, "covers"), orderBy("timestamp", "desc"));
+        const q = query(collection(db, 'profiles', uid, 'covers'), orderBy('timestamp', 'desc'));
         const querySnapshot = await getDocs(q);
         const fetchedImages: ImageData[] = [];
         const tagsSet: Set<string> = new Set();
-  
+
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const image: ImageData = { id: doc.id, ...data } as ImageData;
           fetchedImages.push(image);
-          
+
           if (Array.isArray(data.tags)) {
             data.tags.forEach((tag: string) => {
               tag = tag.trim().toLowerCase();
@@ -48,33 +50,33 @@ const ImageListPage = () => {
             });
           }
         });
-  
+
         setImages(fetchedImages);
         setAllTags(Array.from(tagsSet));
       }
     };
-  
+
     fetchImages();
   }, [uid, authPending]);
 
   const handleSearch = () => {
-    const formattedSelectedTags = selectedTags.map(tag => tag.trim().toLowerCase());
+    const formattedSelectedTags = selectedTags.map((tag) => tag.trim().toLowerCase());
 
-    const filteredImages = images.filter(image =>
-      image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (formattedSelectedTags.length === 0 || 
-        formattedSelectedTags.every(tag => 
-          image.tags?.map(t => t.trim().toLowerCase()).includes(tag)
-        )
-      )
+    const filteredImages = images.filter(
+      (image) =>
+        image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        (formattedSelectedTags.length === 0 ||
+          formattedSelectedTags.every((tag) =>
+            image.tags?.map((t) => t.trim().toLowerCase()).includes(tag)
+          ))
     );
 
     return filteredImages;
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
@@ -101,7 +103,9 @@ const ImageListPage = () => {
           <button
             key={index}
             onClick={() => toggleTag(tag)}
-            className={`px-3 py-1 rounded-md ${selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`px-3 py-1 rounded-md ${
+              selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
           >
             {tag}
           </button>
@@ -112,7 +116,7 @@ const ImageListPage = () => {
           <div
             key={image.id}
             className="relative cursor-pointer"
-            onClick={() => window.location.href = `/images/${image.id}`}
+            onClick={() => (window.location.href = `/images/${image.id}`)}
           >
             <img
               src={image.downloadUrl}
@@ -127,16 +131,24 @@ const ImageListPage = () => {
                 </div>
               )}
             </div>
+
+            <div className="absolute top-2 right-2">
+              {image.videoDownloadUrl ? (
+                <Video size={24} color="white" />
+              ) : (
+                <ImageIcon size={24} color="white" />
+              )}
+            </div>
+
             <div className="p-2">
-              <p className="font-bold text-sm">{image.freestyle && image.freestyle.length > 100
-                ? `${image.freestyle.substring(0, 100)}...`
-                : image.freestyle}</p>
+              <p className="font-bold text-sm">
+                {image.freestyle && image.freestyle.length > 100
+                  ? `${image.freestyle.substring(0, 100)}...`
+                  : image.freestyle}
+              </p>
               <div className="flex gap-2 flex-wrap mt-2">
                 {image.tags?.map((tag: string, index: number) => (
-                  <span
-                    key={index}
-                    className="text-sm bg-gray-200 rounded-md px-2 py-1"
-                  >
+                  <span key={index} className="text-sm bg-gray-200 rounded-md px-2 py-1">
                     {tag}
                   </span>
                 ))}
@@ -145,25 +157,33 @@ const ImageListPage = () => {
           </div>
         ))}
       </div>
-      {paginatedImages?.length > 0 && totalPages > 1 && <div className="flex justify-center gap-2 my-4">
-        <button
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className={`px-4 py-2 rounded-md text-white ${currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} transition duration-150 ease-in-out`}
-        >
-          Previous
-        </button>
-        <span className="flex items-center px-4 py-2 text-gray-700">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className={`px-4 py-2 rounded-md text-white ${currentPage === totalPages ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} transition duration-150 ease-in-out`}
-        >
-          Next
-        </button>
-      </div>}
+      {paginatedImages?.length > 0 && totalPages > 1 && (
+        <div className="flex justify-center gap-2 my-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded-md text-white ${
+              currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+            } transition duration-150 ease-in-out`}
+          >
+            Previous
+          </button>
+          <span className="flex items-center px-4 py-2 text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 rounded-md text-white ${
+              currentPage === totalPages
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600'
+            } transition duration-150 ease-in-out`}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };
