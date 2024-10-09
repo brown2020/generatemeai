@@ -44,7 +44,8 @@ const checkCredits = (useCredits: boolean | null, credits: string | null) => {
 };
 
 // Main function to generate the image
-export async function generateImage(data: FormData) {
+export async function generateImage(data: FormData, imageUrls: string | null = null,
+  imageReferences: string | null = null) {
   try {
     const message = data.get("message") as string | null;
     const uid = data.get("uid") as string | null;
@@ -60,6 +61,7 @@ export async function generateImage(data: FormData) {
     const videoModel = data.get("videoModel") as string | null;
     const audio = data.get("audio") as string | null;
 
+
     // Ensure required fields are not null
     if (!message || !uid || !model) {
       throw new Error("Required parameters (message, uid, model) are missing.");
@@ -72,215 +74,216 @@ export async function generateImage(data: FormData) {
     let requestBody: RequestBody | undefined;
     let formData: FormData | undefined;
     let headers: { [key: string]: string } = {};
+    if (scriptPrompt === null) {
+      // Handling for DALL-E Model
+      if (model === "dall-e") {
+        if (img) {
+          formData = new FormData();
+          formData.append("image", img);
+          formData.append("prompt", message!);
+          formData.append("n", "1");
+          formData.append("size", "1024x1024");
 
-    // Handling for DALL-E Model
-    if (model === "dall-e") {
-      if (img) {
+          apiUrl = `https://api.openai.com/v1/images/edits`;
+          headers = {
+            Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+              }`,
+          };
+        } else {
+          apiUrl = `https://api.openai.com/v1/images/generations`;
+          requestBody = {
+            prompt: message!,
+            n: 1,
+            size: "1024x1024",
+          };
+          headers = {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+              }`,
+          };
+        }
+      }
+      // Handling for Stable Diffusion XL Model
+      else if (model === "stable-diffusion-xl") {
+        if (img) {
+          formData = new FormData();
+          formData.append("init_image", img);
+          formData.append("prompt", message!);
+          formData.append("init_image_mode", "IMAGE_STRENGTH");
+          formData.append("image_strength", "0.5");
+          formData.append("cfg_scale", "7");
+          formData.append("seed", "1");
+          formData.append("steps", "30");
+          formData.append("safety_check", "false");
+
+          apiUrl =
+            "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0/image_to_image";
+          headers = {
+            Accept: "image/jpeg",
+            Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+              }`,
+          };
+        } else {
+          apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0`;
+          requestBody = {
+            cfg_scale: 7,
+            height: 1024,
+            width: 1024,
+            samples: 1,
+            steps: 30,
+            seed: 0,
+            safety_check: false,
+            prompt: message!,
+          };
+          headers = {
+            "Content-Type": "application/json",
+            Accept: "image/jpeg",
+            Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+              }`,
+          };
+        }
+      }
+      // Handling for Stability SD3 Turbo Model
+      else if (model === "stability-sd3-turbo") {
         formData = new FormData();
-        formData.append("image", img);
+        if (img) {
+          formData.append("mode", "image-to-image");
+          formData.append("image", img);
+          formData.append("strength", "0.7");
+        } else {
+          formData.append("mode", "text-to-image");
+          formData.append("aspect_ratio", "1:1");
+        }
         formData.append("prompt", message!);
-        formData.append("n", "1");
-        formData.append("size", "1024x1024");
+        formData.append("output_format", "png");
+        formData.append("model", "sd3-turbo");
+        formData.append("isValidPrompt", "true");
 
-        apiUrl = `https://api.openai.com/v1/images/edits`;
+        apiUrl = "https://api.stability.ai/v2beta/stable-image/generate/sd3";
         headers = {
-          Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
-            }`,
-        };
-      } else {
-        apiUrl = `https://api.openai.com/v1/images/generations`;
-        requestBody = {
-          prompt: message!,
-          n: 1,
-          size: "1024x1024",
-        };
-        headers = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+          Accept: "image/*",
+          Authorization: `Bearer ${useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
             }`,
         };
       }
-    }
-    // Handling for Stable Diffusion XL Model
-    else if (model === "stable-diffusion-xl") {
-      if (img) {
-        formData = new FormData();
-        formData.append("init_image", img);
-        formData.append("prompt", message!);
-        formData.append("init_image_mode", "IMAGE_STRENGTH");
-        formData.append("image_strength", "0.5");
-        formData.append("cfg_scale", "7");
-        formData.append("seed", "1");
-        formData.append("steps", "30");
-        formData.append("safety_check", "false");
+      // Handling for Playground V2 Model
+      else if (model === "playground-v2" || model === "playground-v2-5") {
+        if (img) {
+          formData = new FormData();
+          formData.append("init_image", img);
+          formData.append("prompt", message!);
+          formData.append("init_image_mode", "IMAGE_STRENGTH");
+          formData.append("image_strength", "0.5");
+          formData.append("cfg_scale", "7");
+          formData.append("seed", "1");
+          formData.append("steps", "30");
+          formData.append("safety_check", "false");
 
-        apiUrl =
-          "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0/image_to_image";
-        headers = {
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
-        };
-      } else {
-        apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0`;
-        requestBody = {
-          cfg_scale: 7,
-          height: 1024,
-          width: 1024,
-          samples: 1,
-          steps: 30,
-          seed: 0,
-          safety_check: false,
-          prompt: message!,
-        };
-        headers = {
-          "Content-Type": "application/json",
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
-        };
+          apiUrl =
+            "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/playground-v2-1024px-aesthetic/image_to_image";
+          headers = {
+            Accept: "image/jpeg",
+            Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+              }`,
+          };
+        } else {
+          apiUrl =
+            "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/playground-v2-1024px-aesthetic";
+          requestBody = {
+            cfg_scale: 7,
+            height: 1024,
+            width: 1024,
+            samples: 1,
+            steps: 30,
+            seed: 0,
+            safety_check: false,
+            prompt: message!,
+          };
+          headers = {
+            "Content-Type": "application/json",
+            Accept: "image/jpeg",
+            Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+              }`,
+          };
+        }
       }
-    }
-    // Handling for Stability SD3 Turbo Model
-    else if (model === "stability-sd3-turbo") {
-      formData = new FormData();
-      if (img) {
-        formData.append("mode", "image-to-image");
-        formData.append("image", img);
-        formData.append("strength", "0.7");
-      } else {
-        formData.append("mode", "text-to-image");
-        formData.append("aspect_ratio", "1:1");
+
+      // If no apiUrl is found, throw an error
+      if (!apiUrl) {
+        throw new Error("Invalid model type");
       }
-      formData.append("prompt", message!);
-      formData.append("output_format", "png");
-      formData.append("model", "sd3-turbo");
-      formData.append("isValidPrompt", "true");
 
-      apiUrl = "https://api.stability.ai/v2beta/stable-image/generate/sd3";
-      headers = {
-        Accept: "image/*",
-        Authorization: `Bearer ${useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
-          }`,
-      };
-    }
-    // Handling for Playground V2 Model
-    else if (model === "playground-v2" || model === "playground-v2-5") {
-      if (img) {
-        formData = new FormData();
-        formData.append("init_image", img);
-        formData.append("prompt", message!);
-        formData.append("init_image_mode", "IMAGE_STRENGTH");
-        formData.append("image_strength", "0.5");
-        formData.append("cfg_scale", "7");
-        formData.append("seed", "1");
-        formData.append("steps", "30");
-        formData.append("safety_check", "false");
+      // Send the request to the external API
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: headers,
+        body: formData || JSON.stringify(requestBody),
+      });
 
-        apiUrl =
-          "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/playground-v2-1024px-aesthetic/image_to_image";
-        headers = {
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
-        };
-      } else {
-        apiUrl =
-          "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/playground-v2-1024px-aesthetic";
-        requestBody = {
-          cfg_scale: 7,
-          height: 1024,
-          width: 1024,
-          samples: 1,
-          steps: 30,
-          seed: 0,
-          safety_check: false,
-          prompt: message!,
-        };
-        headers = {
-          "Content-Type": "application/json",
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
-        };
+      if (!response.ok) {
+        throw new Error(
+          `Error from Image API: ${response.status} ${response.statusText}`
+        );
       }
-    }
 
-    // If no apiUrl is found, throw an error
-    if (!apiUrl) {
-      throw new Error("Invalid model type");
-    }
+      // Handle image response based on model
+      let imageData: ArrayBuffer;
 
-    // Send the request to the external API
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: headers,
-      body: formData || JSON.stringify(requestBody),
-    });
+      if (model === "dall-e") {
+        const dalleResponse: DalleResponse =
+          (await response.json()) as DalleResponse;
+        const imageUrl = dalleResponse.data[0].url;
+        imageData = await fetch(imageUrl).then((res) => res.arrayBuffer());
+      } else {
+        imageData = await response.arrayBuffer();
+      }
 
-    if (!response.ok) {
-      throw new Error(
-        `Error from Image API: ${response.status} ${response.statusText}`
-      );
-    }
+      const finalImage = Buffer.from(imageData);
 
-    // Handle image response based on model
-    let imageData: ArrayBuffer;
+      // Save the generated image to Firebase
+      const fileName = `generated/${uid}/${Date.now()}.jpg`;
+      const file = adminBucket.file(fileName);
 
-    if (model === "dall-e") {
-      const dalleResponse: DalleResponse =
-        (await response.json()) as DalleResponse;
-      const imageUrl = dalleResponse.data[0].url;
-      imageData = await fetch(imageUrl).then((res) => res.arrayBuffer());
-    } else {
-      imageData = await response.arrayBuffer();
-    }
-
-    const finalImage = Buffer.from(imageData);
-
-    // Save the generated image to Firebase
-    const fileName = `generated/${uid}/${Date.now()}.jpg`;
-    const file = adminBucket.file(fileName);
-
-    await file.save(finalImage, {
-      contentType: "image/jpeg",
-    });
-
-    const metadata = {
-      metadata: {
-        prompt: message!,
-      },
-    };
-
-    await file.setMetadata(metadata);
-
-    const [imageUrl] = await file.getSignedUrl({
-      action: "read",
-      expires: "03-17-2125",
-    });
-
-    let imageReference;
-
-    // Handle uploaded image reference
-    if (img) {
-      imageReference = Buffer.from(await img.arrayBuffer());
-
-      const referenceFileName = `image-references/${uid}/${Date.now()}.jpg`;
-      const referenceFile = adminBucket.file(referenceFileName);
-
-      await referenceFile.save(imageReference, {
+      await file.save(finalImage, {
         contentType: "image/jpeg",
       });
 
-      const [imageReferenceUrl] = await referenceFile.getSignedUrl({
+      const metadata = {
+        metadata: {
+          prompt: message!,
+        },
+      };
+
+      await file.setMetadata(metadata);
+
+      const [imageUrl] = await file.getSignedUrl({
         action: "read",
         expires: "03-17-2125",
       });
 
-      imageReference = imageReferenceUrl;
-    }
+      imageUrls = imageUrl
+      let imageReference;
 
-    console.log(didAPIkey)
+      // Handle uploaded image reference
+      if (img) {
+        imageReference = Buffer.from(await img.arrayBuffer());
+
+        const referenceFileName = `image-references/${uid}/${Date.now()}.jpg`;
+        const referenceFile = adminBucket.file(referenceFileName);
+
+        await referenceFile.save(imageReference, {
+          contentType: "image/jpeg",
+        });
+
+        const [imageReferenceUrl] = await referenceFile.getSignedUrl({
+          action: "read",
+          expires: "03-17-2125",
+        });
+
+        imageReference = imageReferenceUrl;
+        imageReferences = imageReferenceUrl;
+      }
+    }
 
     if (scriptPrompt && videoModel === "d-id") {
       let options: {
@@ -302,11 +305,11 @@ export async function generateImage(data: FormData) {
           authorization: `Basic ${useCredits ? didAPIkey : process.env.DID_API_KEY}`
         },
         body: JSON.stringify({
-          source_url: imageUrl,
+          source_url: imageUrls,
           script: {
             type: 'text',
             subtitles: 'false',
-            provider: { type: 'amazon', voice_id: audio === "Male" ? 'Kevin' : 'Amy' },
+            provider: { type: 'amazon', voice_id: audio },
             input: scriptPrompt
           },
           config: { fluent: 'false', pad_audio: '0.0' }
@@ -356,9 +359,9 @@ export async function generateImage(data: FormData) {
         if (result.result_url) break;
       }
 
-      return { videoUrl: result.result_url, imageUrl }
+      return { videoUrl: result.result_url, imageUrls }
     } else {
-      return { imageUrl, imageReference };
+      return { imageUrls, imageReferences };
     }
   } catch (error) {
     const errorMessage =
