@@ -99,6 +99,7 @@ export default function GenerateImage() {
         })
       : []
   );
+  const [imageApproved, setImageApproved] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
@@ -109,8 +110,8 @@ export default function GenerateImage() {
     imageCategorySearchParam || ""
   );
   const [mode, setMode] = useState(scriptPromptSearchParam ? "video" : "image");
-  const [audio, setAudio] = useState<string>(audioSearchParam || "Male");
-
+  const [audio, setAudio] = useState<string>(audioSearchParam || "Matthew");
+  const [isCreated, setIsCreated] = useState(false);
   const [promptData, setPromptData] = useState<PromptDataType>({
     style: "",
     freestyle: "",
@@ -126,7 +127,9 @@ export default function GenerateImage() {
   const [isScriptPromptValid, setIsScriptPromptValid] = useState<boolean>(true);
   const [isModelValid, setIsModelValid] = useState<boolean>(true);
   const [isVideoModelValid, setIsVideoModelValid] = useState<boolean>(true);
-  // const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
+  const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
+  const [lastImageUrl, setLastImageUrl] = useState<string>("");
+  const [lastImageReference, setLastImageReference] = useState<string>("");
 
   useEffect(() => {
     setIsPromptValid(!!imagePrompt.trim());
@@ -253,11 +256,15 @@ export default function GenerateImage() {
 
   const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    if (!isPromptValid || !isModelValid) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
 
     if (
-      !isPromptValid ||
-      !isModelValid ||
-      (mode === "video" && (!isScriptPromptValid || !isVideoModelValid))
+      mode === "video" &&
+      imageApproved &&
+      (!isScriptPromptValid || !isVideoModelValid || !isAudioValid)
     ) {
       toast.error("Please fill in all required fields.");
       return;
@@ -292,19 +299,25 @@ export default function GenerateImage() {
         formData.append("videoModel", videoModel);
         formData.append("audio", audio);
       }
-
       // Call the server action instead of the API route
-      const result = await generateImage(formData);
+
+      const result = await generateImage(
+        formData,
+        lastImageUrl,
+        lastImageReference
+      );
 
       // Updated error handling
-      if (!result || (!result.videoUrl && !result.imageUrl)) {
+      if (!result || (!result.videoUrl && !result.imageUrls)) {
         toast.error(`Failed to generate image/video: ${result.error}`);
         throw new Error("Failed to generate image/video.");
       }
 
-      const downloadURL = result.imageUrl || "";
+      const downloadURL = result.imageUrls || "";
       const videoDownloadURL = result.videoUrl || "";
-      const imageReference = result.imageReference || "";
+      const imageReference = result.imageReferences || "";
+      setLastImageUrl(downloadURL);
+      setLastImageReference(imageReference);
 
       if (useCredits) {
         await minusCredits(creditsToMinus(model));
@@ -446,20 +459,6 @@ export default function GenerateImage() {
           </div>
         )}
 
-        {mode === "video" && (
-          <TextareaAutosize
-            autoFocus
-            minRows={4}
-            value={scriptPrompt || ""}
-            placeholder="Write the script here"
-            onChange={(e) => {
-              setScriptPrompt(e.target.value);
-              handleTagSuggestions(e.target.value);
-            }}
-            className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
-          />
-        )}
-
         <div>
           <div>Artistic Style (optional)</div>
           <Select
@@ -491,43 +490,6 @@ export default function GenerateImage() {
             styles={selectStyles}
           />
         </div>
-
-        {mode === "video" && (
-          <div>
-            <div>Video Model</div>
-            <Select
-              isClearable={true}
-              isSearchable={true}
-              name="videoModel"
-              onChange={(v) =>
-                setVideoModel(v ? (v as SelectModel).value : "d-id")
-              }
-              defaultValue={findModelByValue("d-id")}
-              options={models.filter((m) => m.type === "video")}
-              styles={selectStyles}
-            />
-          </div>
-        )}
-
-        {mode === "video" && (
-          <div>
-            <div>Audio</div>
-            <Select
-              isClearable={true}
-              isSearchable={true}
-              name="audio"
-              onChange={(v) => setAudio(v ? v.value : "Male")}
-              options={audios.map((audio) => ({
-                id: audio.id,
-                label: audio.label,
-                value: audio.value,
-              }))}
-              defaultInputValue={"Male"}
-              styles={selectStyles}
-              placeholder="Select audio"
-            />
-          </div>
-        )}
 
         <div>
           <div>Image Category (optional)</div>
@@ -632,38 +594,153 @@ export default function GenerateImage() {
               lighting: getLightingFromLabel(lighting) || lightings[0].value,
               tags,
             });
+            setIsCreated(true);
             handleGenerateSDXL(e);
           }}
         >
-          {loading ? (
+          {loading && !imageApproved ? (
             <PulseLoader color="#fff" size={12} />
+          ) : isCreated ? (
+            "Regenerate"
           ) : mode === "image" ? (
             "Create Image"
           ) : (
-            "Create Video"
+            "Create Avatar First"
           )}
         </button>
       </div>
 
-      <div className="w-full max-w-2xl mt-6 flex justify-center">
-        {generatedVideo ? (
-          <video
-            className="object-cover rounded-md"
-            src={generatedVideo}
-            controls
-          />
-        ) : generatedImage ? (
-          <img
-            className="object-cover rounded-md"
-            src={generatedImage}
-            alt="Generated visualization"
-          />
+      <div className="w-full max-w-lg mt-6 flex justify-center">
+        {generatedImage ? (
+          <div className="image-container">
+            <img
+              className="object-cover rounded-md"
+              src={generatedImage}
+              alt="Generated visualization"
+            />
+          </div>
         ) : (
           <div className="text-gray-500 text-center">
-            No video or image generated yet.
+            No image generated yet.
           </div>
         )}
       </div>
+
+      {generatedImage && !imageApproved && mode === "video" && (
+        <div className="w-full max-w-lg mt-3">
+          <button
+            className="btn  btn-blue bg-gray-400 h-10 flex items-center justify-center disabled:opacity-50"
+            onClick={() => setImageApproved(true)}
+          >
+            Approve Image To Proceed
+          </button>
+        </div>
+      )}
+
+      {imageApproved && mode === "video" && (
+        <div className="flex mt-10 flex-col w-full max-w-xl space-y-4 relative">
+          {mode === "video" && (
+            <TextareaAutosize
+              autoFocus
+              minRows={4}
+              value={scriptPrompt || ""}
+              placeholder="Write the script here"
+              onChange={(e) => {
+                setScriptPrompt(e.target.value);
+                handleTagSuggestions(e.target.value);
+              }}
+              className="border-2 text-xl border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
+            />
+          )}
+          {mode === "video" && (
+            <div>
+              <div>Video Model</div>
+              <Select
+                isClearable={true}
+                isSearchable={true}
+                name="videoModel"
+                onChange={(v) =>
+                  setVideoModel(v ? (v as SelectModel).value : "d-id")
+                }
+                defaultValue={findModelByValue("d-id")}
+                options={models.filter((m) => m.type === "video")}
+                styles={selectStyles}
+              />
+            </div>
+          )}
+
+          {mode === "video" && (
+            <div>
+              <div>Audio</div>
+
+              <Select
+                isClearable={true}
+                isSearchable={true}
+                name="audio"
+                onChange={(v) => setAudio(v ? v.value : "Matthew")}
+                options={audios.map((audio) => ({
+                  id: audio.id,
+                  label: audio.label,
+                  value: audio.value,
+                }))}
+                defaultInputValue={"Matthew"}
+                styles={selectStyles}
+                placeholder="Select audio"
+              />
+            </div>
+          )}
+
+          {model != "dall-e" && imageApproved && (
+            <>
+              <div>Avatar Preview</div>
+              <div className="mt-4 relative">
+                <img
+                  src={lastImageUrl}
+                  alt="Uploaded"
+                  className="w-32 h-32 object-cover rounded-md border-2 border-blue-600"
+                />
+              </div>
+            </>
+          )}
+
+          <button
+            className="btn btn-blue h-10 flex items-center justify-center disabled:opacity-50"
+            disabled={loading}
+            onClick={(e) => {
+              setPromptData({
+                ...promptData,
+                freestyle: imagePrompt,
+                style: imageStyle,
+                colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
+                lighting: getLightingFromLabel(lighting) || lightings[0].value,
+                tags,
+              });
+              handleGenerateSDXL(e);
+            }}
+          >
+            {loading ? <PulseLoader color="#fff" size={12} /> : "Create Video"}
+          </button>
+        </div>
+      )}
+
+      {imageApproved && mode === "video" && (
+        <div className="w-full max-w-2xl mt-6 flex justify-center">
+          {/* Video Section */}
+          {generatedVideo ? (
+            <div className="video-container">
+              <video
+                className="object-cover rounded-md"
+                src={generatedVideo}
+                controls
+              />
+            </div>
+          ) : (
+            <div className="text-gray-500 text-center">
+              No video generated yet.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
