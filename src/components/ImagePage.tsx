@@ -55,7 +55,7 @@ const ImagePage = ({ id }: { id: string }) => {
   const [passwordVerified, setPasswordVerified] = useState<boolean>(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#ffffff");
-  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
   const openAPIKey =
     useProfileStore((s) => s.profile.openai_api_key) ||
     process.env.OPENAI_API_KEY!;
@@ -236,7 +236,9 @@ const ImagePage = ({ id }: { id: string }) => {
 
   const handleSuggestions = async () => {
     try {
-      const freestyle = imageData?.videoModel ? imageData?.scriptPrompt : imageData?.freestyle;
+      const freestyle = imageData?.videoModel
+        ? imageData?.scriptPrompt
+        : imageData?.freestyle;
       let suggestions = await suggestTags(
         freestyle,
         tags,
@@ -420,14 +422,18 @@ const ImagePage = ({ id }: { id: string }) => {
 
     setRefreshCounter(refreshCounter + 1);
     toast.success("Background color changed successfully");
-  }
+  };
 
   const currentPageUrl = `${window.location.origin}/image/${id}`;
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
       {imageData && (
-        <div className="relative inline-block" id="image-container" style={{ backgroundColor: backgroundColor }}>
+        <div
+          className="relative inline-block"
+          id="image-container"
+          style={{ backgroundColor: backgroundColor }}
+        >
           {imageData?.videoDownloadUrl ? (
             <video
               className="block h-full w-full object-cover"
@@ -632,27 +638,37 @@ const ImagePage = ({ id }: { id: string }) => {
         </div>
       )}
 
-      {imageData && uid && isOwner && imageData?.downloadUrl && imageData?.downloadUrl.includes('cloudfront.net') && !imageData?.videoDownloadUrl && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-          onClick={() => {
-            setShowColorPicker(true);
-          }}
-        >
-          Change Background Color
-        </button>
-      )}
+      {imageData &&
+        uid &&
+        isOwner &&
+        imageData?.downloadUrl &&
+        imageData?.downloadUrl.includes("cloudfront.net") &&
+        !imageData?.videoDownloadUrl && (
+          <button
+            className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
+            onClick={() => {
+              setShowColorPicker(true);
+            }}
+          >
+            Change Background Color
+          </button>
+        )}
 
-      {imageData && uid && isOwner && imageData?.downloadUrl && imageData?.downloadUrl.includes('googleapis.com') && !imageData?.videoDownloadUrl && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-          onClick={() => {
-            removeBackground();
-          }}
-        >
-          Remove Background
-        </button>
-      )}
+      {imageData &&
+        uid &&
+        isOwner &&
+        imageData?.downloadUrl &&
+        imageData?.downloadUrl.includes("googleapis.com") &&
+        !imageData?.videoDownloadUrl && (
+          <button
+            className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
+            onClick={() => {
+              removeBackground();
+            }}
+          >
+            Remove Background
+          </button>
+        )}
 
       {showColorPicker && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
@@ -714,7 +730,7 @@ const ImagePage = ({ id }: { id: string }) => {
                 imageCategory,
                 videoModel,
                 audio,
-                scriptPrompt
+                scriptPrompt,
               } = imageData;
 
               const addQueryParam = (key: string, value: string) => {
@@ -735,7 +751,7 @@ const ImagePage = ({ id }: { id: string }) => {
                 addQueryParam("imageCategory", imageCategory),
                 addQueryParam("videoModel", videoModel),
                 addQueryParam("audio", audio),
-                addQueryParam("scriptPrompt", scriptPrompt)
+                addQueryParam("scriptPrompt", scriptPrompt),
               ].filter(Boolean);
 
               if (queryParams.length > 0) {
