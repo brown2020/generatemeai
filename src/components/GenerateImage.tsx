@@ -127,7 +127,7 @@ export default function GenerateImage() {
   const [isScriptPromptValid, setIsScriptPromptValid] = useState<boolean>(true);
   const [isModelValid, setIsModelValid] = useState<boolean>(true);
   const [isVideoModelValid, setIsVideoModelValid] = useState<boolean>(true);
-  const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
+  // const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
   const [lastImageUrl, setLastImageUrl] = useState<string>("");
   const [lastImageReference, setLastImageReference] = useState<string>("");
 
@@ -264,7 +264,7 @@ export default function GenerateImage() {
     if (
       mode === "video" &&
       imageApproved &&
-      (!isScriptPromptValid || !isVideoModelValid || !isAudioValid)
+      (!isScriptPromptValid || !isVideoModelValid)
     ) {
       toast.error("Please fill in all required fields.");
       return;
