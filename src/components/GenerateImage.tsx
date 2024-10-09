@@ -95,8 +95,8 @@ export default function GenerateImage() {
   const [tagInputValue, settagInputValue] = useState(
     tagsSearchParam
       ? tagsSearchParam.map((str) => {
-          return { label: str, value: str };
-        })
+        return { label: str, value: str };
+      })
       : []
   );
   const [imageApproved, setImageApproved] = useState(false);
@@ -124,10 +124,9 @@ export default function GenerateImage() {
   });
 
   const [isPromptValid, setIsPromptValid] = useState<boolean>(false);
-  const [isScriptPromptValid, setIsScriptPromptValid] = useState<boolean>(true);
   const [isModelValid, setIsModelValid] = useState<boolean>(true);
   const [isVideoModelValid, setIsVideoModelValid] = useState<boolean>(true);
-  const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
+  // const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
   const [lastImageUrl, setLastImageUrl] = useState<string>("");
   const [lastImageReference, setLastImageReference] = useState<string>("");
 
@@ -135,11 +134,9 @@ export default function GenerateImage() {
     setIsPromptValid(!!imagePrompt.trim());
     setIsModelValid(!!model);
     if (mode === "video") {
-      setIsScriptPromptValid(!!scriptPrompt.trim());
       setIsVideoModelValid(!!videoModel);
-      setIsAudioValid(!!audio);
+      // setIsAudioValid(!!audio);
     } else {
-      setIsScriptPromptValid(true);
       setIsVideoModelValid(true);
     }
   }, [imagePrompt, scriptPrompt, model, videoModel, mode, audio]);
@@ -261,7 +258,7 @@ export default function GenerateImage() {
       return;
     }
 
-    if (mode === 'video' && imageApproved && (!isScriptPromptValid || !isVideoModelValid || !isAudioValid)) {
+    if (mode === "video" && imageApproved && !isVideoModelValid) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -290,13 +287,12 @@ export default function GenerateImage() {
       if (uploadedImage) {
         formData.append("imageField", uploadedImage);
       }
-      if (scriptPrompt) {
+      if (mode === "video" && imageApproved) {
         formData.append("scriptPrompt", scriptPrompt);
         formData.append("videoModel", videoModel);
         formData.append("audio", audio);
       }
       // Call the server action instead of the API route
-
       const result = await generateImage(
         formData,
         lastImageUrl,
@@ -326,30 +322,32 @@ export default function GenerateImage() {
       setGeneratedImage(downloadURL);
       setGeneratedVideo(videoDownloadURL);
 
-      await saveHistory(
-        {
-          ...promptData,
-          freestyle: imagePrompt,
-          style: imageStyle,
-          downloadUrl: downloadURL,
-          videoDownloadUrl: videoDownloadURL,
-          model,
+      if ((mode === "video" && videoDownloadURL) || (mode === 'image' && downloadURL)) {
+        await saveHistory(
+          {
+            ...promptData,
+            freestyle: imagePrompt,
+            style: imageStyle,
+            downloadUrl: downloadURL,
+            videoDownloadUrl: videoDownloadURL,
+            model,
+            prompt,
+            lighting: getLightingFromLabel(lighting) || lightings[0].value,
+            colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
+            imageReference,
+            imageCategory: selectedCategory,
+            audio: audio,
+          },
           prompt,
-          lighting: getLightingFromLabel(lighting) || lightings[0].value,
-          colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
-          imageReference,
-          imageCategory: selectedCategory,
-          audio: audio,
-        },
-        prompt,
-        downloadURL,
-        {
-          videoDownloadUrl: videoDownloadURL,
-          audio: audio,
-          videoModel: videoModel,
-          scriptPrompt: scriptPrompt,
-        }
-      );
+          downloadURL,
+          {
+            videoDownloadUrl: videoDownloadURL,
+            audio: audio,
+            videoModel: videoModel,
+            scriptPrompt: scriptPrompt,
+          }
+        );
+      }
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error generating image:", error.message);
@@ -525,9 +523,8 @@ export default function GenerateImage() {
             {colorLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
-                  colorScheme === option ? "bg-gray-200" : ""
-                }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
+                  }`}
                 onClick={() => setColorScheme(option)}
                 title={option}
               >
@@ -543,9 +540,8 @@ export default function GenerateImage() {
             {lightingLabels.map((option) => (
               <div
                 key={option}
-                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${
-                  lighting === option ? "bg-gray-200" : ""
-                }`}
+                className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
+                  }`}
                 onClick={() => setLighting(option)}
                 title={option}
               >
@@ -640,7 +636,7 @@ export default function GenerateImage() {
               autoFocus
               minRows={4}
               value={scriptPrompt || ""}
-              placeholder="Write the script here"
+              placeholder="Write the script here (optional)"
               onChange={(e) => {
                 setScriptPrompt(e.target.value);
                 handleTagSuggestions(e.target.value);

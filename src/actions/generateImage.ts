@@ -1,7 +1,11 @@
 "use server";
 
-import { adminBucket } from "@/firebase/firebaseAdmin";
-import { File } from "formdata-node";
+import {
+  adminBucket
+} from "@/firebase/firebaseAdmin";
+import {
+  File
+} from "formdata-node";
 import fetch from "node-fetch";
 
 interface RequestBody {
@@ -20,10 +24,13 @@ interface RequestBody {
 }
 
 interface DalleResponse {
-  data: { url: string }[];
+  data: {
+    url: string
+  }[];
 }
 
 interface ResultResponse {
+  error?: { description: string };
   message?: string;
   result_url?: string;
 }
@@ -73,7 +80,9 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
     let apiUrl: string | undefined;
     let requestBody: RequestBody | undefined;
     let formData: FormData | undefined;
-    let headers: { [key: string]: string } = {};
+    let headers: {
+      [key: string]: string
+    } = {};
     if (scriptPrompt === null) {
       // Handling for DALL-E Model
       if (model === "dall-e") {
@@ -284,8 +293,78 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
         imageReferences = imageReferenceUrl;
       }
     }
+    if (scriptPrompt === "" && videoModel === "d-id") {
+      let options: {
+        method: string;
+        headers: {
+          accept: string;
+          'content-type': string;
+          authorization: string;
+        };
+        body?: string;
+      };
+      let url = 'https://api.d-id.com/animations';
+      options = {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Basic ${useCredits ? didAPIkey : process.env.DID_API_KEY}`
+        },
+        body: JSON.stringify({
+          source_url: imageUrls,
+          driver_url: 'bank://fun',
+          config: {
+            mute: true
+          }
+        })
+      };
 
-    if (scriptPrompt && videoModel === "d-id") {
+      // Proceed with the D-ID API call as usual
+      const didResponse: DidResponse = await (await fetch(url, options)).json() as DidResponse;
+      const {
+        id
+      } = didResponse;
+
+      if (!id) {
+        throw new Error("D-ID API Token is invalid or credits issue.");
+      }
+
+      // Get the result as usual
+      url = `https://api.d-id.com/animations/${id}`;
+      options = {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Basic ${useCredits ? didAPIkey : process.env.DID_API_KEY}`
+        },
+      };
+
+      let result: ResultResponse = {};
+      let attemptCount = 0;
+
+      while (true) {
+        attemptCount++;
+        if (attemptCount > 24) {
+          console.log("Exceeded maximum retry attempts. Exiting loop.");
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        const response = await fetch(url, options);
+        result = await response.json() as ResultResponse;
+        if (result.error) {
+          return { error: result.error.description }
+        }
+        if (result.result_url) break;
+      }
+
+      return {
+        videoUrl: result.result_url,
+        imageUrls
+      };
+    }
+    else if (scriptPrompt && videoModel === "d-id") {
       let options: {
         method: string;
         headers: {
@@ -309,23 +388,30 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
           script: {
             type: 'text',
             subtitles: 'false',
-            provider: { type: 'amazon', voice_id: audio },
+            provider: {
+              type: 'amazon',
+              voice_id: audio
+            },
             input: scriptPrompt
           },
-          config: { fluent: 'false', pad_audio: '0.0' }
+          config: {
+            fluent: 'false',
+            pad_audio: '0.0'
+          }
         })
       };
 
       const didResponse: DidResponse = await (await fetch(url, options)).json() as DidResponse;
-      const { id } = didResponse;
+      const {
+        id
+      } = didResponse;
 
       if (!id) {
         if (didResponse?.description == 'not enough credits') {
           throw new Error("D-ID API not enough credits.")
         } else if (didResponse?.kind == 'ValidationError') {
           throw new Error("Validation Error")
-        }
-        else {
+        } else {
           throw new Error("D-ID API Token is invalid.")
         }
       }
@@ -354,19 +440,32 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         const response = await fetch(url, options);
+
         result = await response.json() as ResultResponse;
+
+        if (result.error) {
+          return { error: result.error.description }
+        }
 
         if (result.result_url) break;
       }
 
-      return { videoUrl: result.result_url, imageUrls }
+      return {
+        videoUrl: result.result_url,
+        imageUrls
+      }
     } else {
-      return { imageUrls, imageReferences };
+      return {
+        imageUrls,
+        imageReferences
+      };
     }
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error generating image/video:", errorMessage);
-    return { error: errorMessage }
+    return {
+      error: errorMessage
+    }
   }
 }
