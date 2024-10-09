@@ -124,7 +124,6 @@ export default function GenerateImage() {
   });
 
   const [isPromptValid, setIsPromptValid] = useState<boolean>(false);
-  const [isScriptPromptValid, setIsScriptPromptValid] = useState<boolean>(true);
   const [isModelValid, setIsModelValid] = useState<boolean>(true);
   const [isVideoModelValid, setIsVideoModelValid] = useState<boolean>(true);
   // const [isAudioValid, setIsAudioValid] = useState<boolean>(true);
@@ -135,11 +134,9 @@ export default function GenerateImage() {
     setIsPromptValid(!!imagePrompt.trim());
     setIsModelValid(!!model);
     if (mode === "video") {
-      setIsScriptPromptValid(!!scriptPrompt.trim());
       setIsVideoModelValid(!!videoModel);
       // setIsAudioValid(!!audio);
     } else {
-      setIsScriptPromptValid(true);
       setIsVideoModelValid(true);
     }
   }, [imagePrompt, scriptPrompt, model, videoModel, mode, audio]);
@@ -261,11 +258,7 @@ export default function GenerateImage() {
       return;
     }
 
-    if (
-      mode === "video" &&
-      imageApproved &&
-      (!isScriptPromptValid || !isVideoModelValid)
-    ) {
+    if (mode === "video" && imageApproved && !isVideoModelValid) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -294,13 +287,12 @@ export default function GenerateImage() {
       if (uploadedImage) {
         formData.append("imageField", uploadedImage);
       }
-      if (scriptPrompt) {
+      if (mode === "video" && imageApproved) {
         formData.append("scriptPrompt", scriptPrompt);
         formData.append("videoModel", videoModel);
         formData.append("audio", audio);
       }
       // Call the server action instead of the API route
-
       const result = await generateImage(
         formData,
         lastImageUrl,
@@ -644,7 +636,7 @@ export default function GenerateImage() {
               autoFocus
               minRows={4}
               value={scriptPrompt || ""}
-              placeholder="Write the script here"
+              placeholder="Write the script here (optional)"
               onChange={(e) => {
                 setScriptPrompt(e.target.value);
                 handleTagSuggestions(e.target.value);
