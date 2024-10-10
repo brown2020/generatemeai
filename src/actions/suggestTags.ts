@@ -1,6 +1,6 @@
 "use server"
 
-export const suggestTags = async (freestyle: string, tags: string[], openAPIKey: string, useCredits: boolean, credits: number) => {
+export const suggestTags = async (freestyle: string, videoScript: string, color: string, lighting: string, style: string, imageCategory: string, tags: string[], openAPIKey: string, useCredits: boolean, credits: number) => {
     try {
         if (useCredits && credits < 1) {
             throw new Error("Not enough credits to suggest a tag. Please purchase credits or use your own API Keys.")
@@ -16,8 +16,23 @@ export const suggestTags = async (freestyle: string, tags: string[], openAPIKey:
         const data = {
             model: 'gpt-4',
             messages: [
-                { role: 'system', content: 'For all response reply just the answer without giving any description.' },
-                { role: 'user', content: `Using this prompt that image created with\n\nthe prompt: ${freestyle}\n\nSuggest tags for the image. It shouldn't be from this list: ${tags}. Please list the tags in this format: separate all tags with commas, that's it, nothing else, and don't use a full stop at the end. Provide only suggest 6, no explanation.\n\n` }
+                { 
+                    role: 'system', 
+                    content: 'For all response reply just the answer without giving any description.' 
+                },
+                { 
+                    role: 'user', 
+                    content: `Using this prompt that image created with\n\n` +
+                        `the prompt: ${freestyle}` +
+                        `${videoScript ? ` videoScript: ${videoScript}` : ''}` +
+                        `${color && color !== 'None' ? ` color: ${color}` : ''}` +
+                        `${lighting && lighting !== 'None' ? ` lighting: ${lighting}` : ''}` +
+                        `${style ? ` style: ${style}` : ''}` +
+                        `${imageCategory ? ` ImageCategory: ${imageCategory}` : ''}` +
+                        `\n\nSuggest tags for the image. It shouldn't be from this list: ${tags}. ` +
+                        `Please list the tags in this format: separate all tags with commas, ` +
+                        `that's it, nothing else, and don't use a full stop at the end. Provide only suggest 6, no explanation.\n\n` 
+                }
             ],
             max_tokens: 200,
             temperature: 0.7,

@@ -200,6 +200,11 @@ export default function GenerateImage() {
   const handleTagSuggestions = async (prompt: string) => {
     let suggestions = await suggestTags(
       prompt,
+      scriptPrompt,
+      colorScheme,
+      lighting,
+      imageStyle,
+      selectedCategory,
       tags,
       openAPIKey,
       useCredits,
@@ -525,7 +530,12 @@ export default function GenerateImage() {
                 key={option}
                 className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${colorScheme === option ? "bg-gray-200" : ""
                   }`}
-                onClick={() => setColorScheme(option)}
+                onClick={() => {setColorScheme(option);
+                  setTags((prevTags) => {
+                    const newTags = prevTags.filter((tag) => !tag.startsWith('Color: '));
+                    return [...newTags, `Color: ${option}`];
+                  });
+                }}
                 title={option}
               >
                 <span>{option}</span>
@@ -542,7 +552,12 @@ export default function GenerateImage() {
                 key={option}
                 className={`cursor-pointer flex items-center space-x-1 p-2 rounded-md ${lighting === option ? "bg-gray-200" : ""
                   }`}
-                onClick={() => setLighting(option)}
+                onClick={() => {setLighting(option);
+                  setTags((prevTags) => {
+                    const newTags = prevTags.filter((tag) => !tag.startsWith('Lighting: '));
+                    return [...newTags, `Lighting: ${option}`];
+                  });
+                }}
                 title={option}
               >
                 <span>{option}</span>
