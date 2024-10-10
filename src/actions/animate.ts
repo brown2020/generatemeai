@@ -1,5 +1,4 @@
 "use server";
-import type { NextApiRequest, NextApiResponse } from 'next';
 
 interface DidResponse {
   kind: string;
@@ -13,7 +12,7 @@ interface ResultResponse {
   result_url?: string;
 }
 
-export async function animate(imageUrls: string, useCredits: any, didAPIKey: any) {
+export async function animate(imageUrls: string, useCredits: boolean, didAPIKey: string) {
   let options: { method: string; headers: { accept: string; 'content-type': string; authorization: string }; body?: string };
   
   let url = 'https://api.d-id.com/animations';

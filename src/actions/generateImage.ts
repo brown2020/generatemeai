@@ -50,10 +50,6 @@ const checkCredits = (useCredits: boolean | null, credits: string | null) => {
   }
 };
 
-export async function animate(imageUrls: string|null){
-  
-}
-
 // Main function to generate the image
 export async function generateImage(data: FormData, imageUrls: string | null = null,
   imageReferences: string | null = null) {
