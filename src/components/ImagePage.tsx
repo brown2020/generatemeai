@@ -8,6 +8,7 @@ import {
   runTransaction,
   updateDoc,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 import {
   FacebookShareButton,
@@ -19,6 +20,8 @@ import {
   LinkedinIcon,
   EmailIcon,
 } from "react-share";
+
+import { Timestamp, collection } from "firebase/firestore";
 import { animate } from "@/actions/animate";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
@@ -136,11 +139,15 @@ const ImagePage = ({ id }: { id: string }) => {
       if (resultUrl) {
         await minusCredits(creditsToMinus("d-id"))
 
-        const docRef = uid
-          ? doc(db, "profiles", uid, "covers", id)
-          : doc(db, "publicImages", id);
-
-        await updateDoc(docRef, { videoDownloadUrl: resultUrl });
+        
+        const coll = collection(db, "profiles", uid, "covers");
+        const newDocRef = doc(coll);
+        await setDoc(newDocRef, {
+          ...imageData,               
+          videoDownloadUrl: resultUrl, 
+          id: newDocRef.id,           
+          timestamp: Timestamp.now(), 
+        });
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setImageData((prevData: any) => ({
