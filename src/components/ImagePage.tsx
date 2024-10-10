@@ -19,6 +19,7 @@ import {
   LinkedinIcon,
   EmailIcon,
 } from "react-share";
+import { animate } from "@/actions/animate";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { X, Sparkle, Plus } from "lucide-react";
@@ -28,6 +29,18 @@ import TextareaAutosize from "react-textarea-autosize";
 import { suggestTags } from "@/actions/suggestTags";
 import useProfileStore from "@/zustand/useProfileStore";
 import { creditsToMinus } from "@/utils/credits";
+
+interface DidResponse {
+  kind: string;
+  description: string;
+  id: string;
+}
+
+interface ResultResponse {
+  error?: { description: string };
+  message?: string;
+  result_url?: string;
+}
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -56,6 +69,8 @@ const ImagePage = ({ id }: { id: string }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [animateLoading, setAnimateLoading] = useState<boolean>(false);
+  const didAPIkey = useProfileStore((s) => s.profile.did_api_key);
   const openAPIKey =
     useProfileStore((s) => s.profile.openai_api_key) ||
     process.env.OPENAI_API_KEY!;
@@ -112,6 +127,46 @@ const ImagePage = ({ id }: { id: string }) => {
       fetchImageData();
     }
   }, [id, uid, authPending, refreshCounter, isOwner]);
+
+  const handleAnimate = async () => {
+    setAnimateLoading(true)
+    try {
+      if (!imageData || !uid) return;
+
+      const imageUrls = imageData.downloadUrl;
+      const result = await animate(imageUrls, useCredits, didAPIkey);
+
+      if (result?.error) {
+        console.error("Animation error:", result.error);
+        toast.error(`Failed animating the image: ${result.error}`);
+        setAnimateLoading(false)
+        return;
+      }
+
+      const resultUrl = result.result_url;
+
+      if (resultUrl) {
+        await minusCredits(creditsToMinus("d-id"))
+
+        const docRef = uid
+          ? doc(db, "profiles", uid, "covers", id)
+          : doc(db, "publicImages", id);
+
+        await updateDoc(docRef, { videoDownloadUrl: resultUrl });
+
+        setImageData((prevData: any) => ({
+          ...prevData,
+          videoDownloadUrl: resultUrl,
+        }));
+        setAnimateLoading(false)
+        toast.success("Video animation created and saved successfully!");
+      }
+    } catch (error) {
+      console.error("Error during animation:", error);
+      setAnimateLoading(false)
+      toast.error("Error creating the video animation.");
+    }
+  };
 
   const handleDownload = async () => {
     if (imageData?.videoDownloadUrl) {
@@ -236,9 +291,20 @@ const ImagePage = ({ id }: { id: string }) => {
 
   const handleSuggestions = async () => {
     try {
-      const freestyle = imageData?.scriptPrompt || imageData?.freestyle;
+      const freestyle = imageData?.freestyle;
+      const videoScript = imageData?.scriptPrompt;
+      const color = imageData?.color;
+      const lighting = imageData?.lighting;
+      const style = imageData?.style;
+      const imageCategory = imageData?.imageCategory;
+
       let suggestions = await suggestTags(
         freestyle,
+        videoScript,
+        color,
+        lighting,
+        style,
+        imageCategory,
         tags,
         openAPIKey,
         useCredits,
@@ -510,6 +576,18 @@ const ImagePage = ({ id }: { id: string }) => {
           Delete
         </button>
       )}
+
+      {
+        (!imageData?.videoDownloadUrl) && uid && isOwner && (
+          <button
+            className="btn-primary2 h-12 flex items-center justify-center mx-3 disabled:bg-gray-200 disabled:hover:bg-gray-200"
+            disabled={animateLoading}
+            onClick={handleAnimate}
+          >
+            {animateLoading ? 'Animating . . .' : 'Animate'}
+          </button>
+        )
+      }
 
       {imageData && (
         <div className="mt-4 p-3 py-0">

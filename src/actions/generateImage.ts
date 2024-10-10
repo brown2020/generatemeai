@@ -50,6 +50,10 @@ const checkCredits = (useCredits: boolean | null, credits: string | null) => {
   }
 };
 
+export async function animate(imageUrls: string|null){
+  
+}
+
 // Main function to generate the image
 export async function generateImage(data: FormData, imageUrls: string | null = null,
   imageReferences: string | null = null) {
@@ -68,7 +72,7 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
     const videoModel = data.get("videoModel") as string | null;
     const audio = data.get("audio") as string | null;
 
-
+    console.log(didAPIkey);
     // Ensure required fields are not null
     if (!message || !uid || !model) {
       throw new Error("Required parameters (message, uid, model) are missing.");
@@ -313,7 +317,7 @@ export async function generateImage(data: FormData, imageUrls: string | null = n
         },
         body: JSON.stringify({
           source_url: imageUrls,
-          driver_url: 'bank://fun',
+          driver_url: 'bank://nostalgia',
           config: {
             mute: true,
             stitch: true
