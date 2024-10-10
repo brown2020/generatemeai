@@ -30,18 +30,6 @@ import { suggestTags } from "@/actions/suggestTags";
 import useProfileStore from "@/zustand/useProfileStore";
 import { creditsToMinus } from "@/utils/credits";
 
-interface DidResponse {
-  kind: string;
-  description: string;
-  id: string;
-}
-
-interface ResultResponse {
-  error?: { description: string };
-  message?: string;
-  result_url?: string;
-}
-
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -154,6 +142,7 @@ const ImagePage = ({ id }: { id: string }) => {
 
         await updateDoc(docRef, { videoDownloadUrl: resultUrl });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setImageData((prevData: any) => ({
           ...prevData,
           videoDownloadUrl: resultUrl,
