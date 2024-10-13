@@ -8,7 +8,6 @@ import {
   runTransaction,
   updateDoc,
   deleteDoc,
-  setDoc,
 } from "firebase/firestore";
 import {
   FacebookShareButton,
@@ -21,8 +20,6 @@ import {
   EmailIcon,
 } from "react-share";
 
-import { Timestamp, collection } from "firebase/firestore";
-import { animate } from "@/actions/animate";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { X, Sparkle, Plus } from "lucide-react";
@@ -32,6 +29,8 @@ import TextareaAutosize from "react-textarea-autosize";
 import { suggestTags } from "@/actions/suggestTags";
 import useProfileStore from "@/zustand/useProfileStore";
 import { creditsToMinus } from "@/utils/credits";
+import ModalComponent from "./VideoModalComponent";
+import { removeBackground } from "@/actions/removeBackground";
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -40,6 +39,7 @@ function delay(ms: number) {
 const ImagePage = ({ id }: { id: string }) => {
   const router = useRouter();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [modalmode, setModalmode] = useState<string>("default");
   const [imageData, setImageData] = useState<any>(null);
   const [isOwner, setIsOwner] = useState<boolean>(false);
   const [isSharable, setIsSharable] = useState<boolean>(false);
@@ -60,18 +60,31 @@ const ImagePage = ({ id }: { id: string }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [animateLoading, setAnimateLoading] = useState<boolean>(false);
-  const didAPIkey = useProfileStore((s) => s.profile.did_api_key);
-  const openAPIKey =
-    useProfileStore((s) => s.profile.openai_api_key) ||
-    process.env.OPENAI_API_KEY!;
-  const briaApiKey =
-    useProfileStore((s) => s.profile.bria_api_key) ||
-    process.env.BRIA_AI_API_KEY!;
+
   const useCredits = useProfileStore((s) => s.profile.useCredits);
+
+  const openAPIKey = useCredits
+    ? useProfileStore((s) => s.profile.openai_api_key)
+    : process.env.OPENAI_API_KEY!;
+
+  const briaApiKey = useCredits
+    ? useProfileStore((s) => s.profile.bria_api_key)
+    : process.env.BRIA_AI_API_KEY!;
+
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
 
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const [animation, setAnimation] = useState<string>("");
   useEffect(() => {
     const fetchImageData = async () => {
       let docRef;
@@ -88,6 +101,7 @@ const ImagePage = ({ id }: { id: string }) => {
           setCaption(data?.caption ?? "");
           setIsOwner(true);
           setBackgroundColor(data?.backgroundColor);
+          setAnimation(data?.animation);
         }
       } else {
         if (!isOwner) {
@@ -101,6 +115,7 @@ const ImagePage = ({ id }: { id: string }) => {
             setTags(data?.tags ?? []);
             setCaption(data?.caption ?? "");
             setBackgroundColor(data?.backgroundColor);
+            setAnimation(data?.animation);
             if (data?.password) {
               setIsPasswordProtected(true);
             }
@@ -109,6 +124,7 @@ const ImagePage = ({ id }: { id: string }) => {
             setIsSharable(false);
             setTags([]);
             setCaption("");
+            setAnimation("");
           }
         }
       }
@@ -119,73 +135,38 @@ const ImagePage = ({ id }: { id: string }) => {
     }
   }, [id, uid, authPending, refreshCounter, isOwner]);
 
-  const handleAnimate = async () => {
-    setAnimateLoading(true)
-    try {
-      if (!imageData || !uid) return;
-
-      const imageUrls = imageData.downloadUrl;
-      const result = await animate(imageUrls, useCredits, didAPIkey);
-
-      if (result?.error) {
-        console.error("Animation error:", result.error);
-        toast.error(`Failed animating the image: ${result.error}`);
-        setAnimateLoading(false)
-        return;
-      }
-
-      const resultUrl = result.result_url;
-
-      if (resultUrl) {
-        await minusCredits(creditsToMinus("d-id"))
-
-        
-        const coll = collection(db, "profiles", uid, "covers");
-        const newDocRef = doc(coll);
-        await setDoc(newDocRef, {
-          ...imageData,               
-          videoDownloadUrl: resultUrl, 
-          id: newDocRef.id,           
-          timestamp: Timestamp.now(), 
-        });
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setImageData((prevData: any) => ({
-          ...prevData,
-          videoDownloadUrl: resultUrl,
-        }));
-        setAnimateLoading(false)
-        toast.success("Video animation created and saved successfully!");
-      }
-    } catch (error) {
-      console.error("Error during animation:", error);
-      setAnimateLoading(false)
-      toast.error("Error creating the video animation.");
-    }
-  };
-
   const handleDownload = async () => {
     if (imageData?.videoDownloadUrl) {
       const videoUrl = imageData.videoDownloadUrl;
       const currentDate = new Date().toISOString().split("T")[0];
       const fileName = `${imageData?.freestyle}_${currentDate}.mp4`;
-
-      const link = document.createElement("a");
-      link.href = videoUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  
+      try {
+        const response = await fetch(videoUrl);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+  
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+  
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (error) {
+        console.error("Video download error:", error);
+        toast.error("Download error: " + error);
+      }
     } else {
       const container = document.getElementById("image-container");
       if (!container) return;
-
+  
       try {
         const dataUrl = await domtoimage.toPng(container);
-
         const currentDate = new Date().toISOString().split("T")[0];
         const fileName = `${imageData?.freestyle}_${currentDate}.png`;
-
+  
         const link = document.createElement("a");
         link.href = dataUrl;
         link.download = fileName;
@@ -288,7 +269,6 @@ const ImagePage = ({ id }: { id: string }) => {
   const handleSuggestions = async () => {
     try {
       const freestyle = imageData?.freestyle;
-      const videoScript = imageData?.scriptPrompt;
       const color = imageData?.color;
       const lighting = imageData?.lighting;
       const style = imageData?.style;
@@ -296,7 +276,6 @@ const ImagePage = ({ id }: { id: string }) => {
 
       let suggestions = await suggestTags(
         freestyle,
-        videoScript,
         color,
         lighting,
         style,
@@ -420,7 +399,7 @@ const ImagePage = ({ id }: { id: string }) => {
     );
   }
 
-  const removeBackground = async () => {
+  const handleBackgroundRemove = async () => {
     const imageUrl = imageData?.downloadUrl;
 
     const formData = new FormData();
@@ -431,23 +410,14 @@ const ImagePage = ({ id }: { id: string }) => {
     );
 
     try {
-      const result = await fetch(
-        "https://engine.prod.bria-api.com/v1/background/remove",
-        {
-          method: "POST",
-          headers: {
-            api_token: briaApiKey,
-          },
-          body: formData,
-        }
-      );
+      const result = await removeBackground(useCredits, credits, imageUrl, briaApiKey);
 
-      if (result.ok) {
+      if (!result?.error) {
         if (useCredits) {
           minusCredits(creditsToMinus("bria.ai"));
         }
 
-        const bgRemovedImageUrl = (await result.json())?.result_url;
+        const bgRemovedImageUrl = result?.result_url;
 
         const docRef = uid
           ? doc(db, "profiles", uid, "covers", id)
@@ -461,11 +431,12 @@ const ImagePage = ({ id }: { id: string }) => {
 
         toast.success("Background removed successfully!");
       } else {
-        throw new Error("Failed to remove background via Bria API");
+        throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Error removing background:", error);
-      toast.error("Failed to remove background.");
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      console.error("Error removing background: ", error);
+      toast.error(`Failed to remove background: ${errorMessage}`);
     }
   };
 
@@ -573,17 +544,14 @@ const ImagePage = ({ id }: { id: string }) => {
         </button>
       )}
 
-      {
-        (!imageData?.videoDownloadUrl) && uid && isOwner && (
-          <button
-            className="btn-primary2 h-12 flex items-center justify-center mx-3 disabled:bg-gray-200 disabled:hover:bg-gray-200"
-            disabled={animateLoading}
-            onClick={handleAnimate}
-          >
-            {animateLoading ? 'Animating . . .' : 'Animate'}
-          </button>
-        )
-      }
+      {!imageData?.videoDownloadUrl && uid && isOwner && (
+        <button
+          className="btn-primary2 h-12 flex items-center justify-center mx-3"
+          onClick={openModal}
+        >
+          Generate Video/GIF
+        </button>
+      )}
 
       {imageData && (
         <div className="mt-4 p-3 py-0">
@@ -593,7 +561,6 @@ const ImagePage = ({ id }: { id: string }) => {
               <strong>Freestyle:</strong> {imageData?.freestyle}
             </p>
           )}
-          {/* {imageData?.prompt && <p><strong>Prompt:</strong> {imageData?.prompt}</p>} */}
           {imageData?.style && (
             <p>
               <strong>Style:</strong> {imageData?.style}
@@ -624,16 +591,6 @@ const ImagePage = ({ id }: { id: string }) => {
               <strong>Lighting:</strong> {imageData?.lighting}
             </p>
           )}
-          {imageData?.imageReference && (
-            <p>
-              <strong>Image Reference Used: </strong>{" "}
-              <img
-                className="w-32 h-32 object-cover rounded-md border-2 border-black-600"
-                src={imageData?.imageReference}
-                alt="image reference used"
-              ></img>
-            </p>
-          )}
           {imageData?.imageCategory && (
             <p>
               <strong>Category:</strong> {imageData?.imageCategory}
@@ -649,6 +606,21 @@ const ImagePage = ({ id }: { id: string }) => {
             <p>
               <strong>Script: </strong>
               {imageData?.scriptPrompt}
+            </p>
+          )}
+          {!imageData?.scriptPrompt && imageData?.animation && (
+            <p>
+              <strong>Animation:</strong> {imageData?.animation}
+            </p>
+          )}
+          {(imageData?.imageReference || (imageData?.downloadUrl && imageData?.videoDownloadUrl)) && (
+            <p>
+              <strong>{imageData?.imageReference ? 'Image Reference' : 'Avatar'} Used: </strong>{" "}
+              <img
+                className="w-32 h-32 object-cover rounded-md border-2 border-black-600"
+                src={imageData?.imageReference || imageData?.downloadUrl}
+                alt="image reference used"
+              ></img>
             </p>
           )}
           {uid && isOwner && (
@@ -735,7 +707,7 @@ const ImagePage = ({ id }: { id: string }) => {
           <button
             className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
             onClick={() => {
-              removeBackground();
+              handleBackgroundRemove();
             }}
           >
             Remove Background
@@ -786,7 +758,7 @@ const ImagePage = ({ id }: { id: string }) => {
         </button>
       )}
 
-      {imageData && uid && isOwner && (
+      {!imageData?.videoDownloadUrl && uid && isOwner && (
         <button
           className="btn-primary2 h-12 flex items-center justify-center mx-3"
           onClick={() => {
@@ -841,6 +813,17 @@ const ImagePage = ({ id }: { id: string }) => {
         </button>
       )}
 
+      {imageData?.videoDownloadUrl && uid && isOwner && (
+        <button
+          className="btn-primary2 h-12 flex items-center justify-center mx-3"
+          onClick={() => {
+            setIsModalOpen(true)
+          }}
+        >
+          Try again
+        </button>
+      )}
+
       {showPasswordModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
@@ -870,6 +853,18 @@ const ImagePage = ({ id }: { id: string }) => {
       )}
       <canvas ref={canvasRef} className="hidden" />
       <br />
+
+      {isModalOpen && (
+        <ModalComponent
+          modalmode={modalmode}
+          imageData={{ ...imageData }}
+          isOpen={isModalOpen}
+          onRequestClose={closeModal}
+          downloadUrl={imageData?.downloadUrl}
+          ariaHideApp={false}
+          initialData={imageData?.videoDownloadUrl && imageData}
+        />
+      )}
     </div>
   );
 };

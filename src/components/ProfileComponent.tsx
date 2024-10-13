@@ -14,15 +14,15 @@ export default function ProfileComponent() {
   const [stabilityAPIKey, setStabilityAPIKey] = useState(profile.stability_api_key);
   const [briaApiKey, setBriaApiKey] = useState(profile.bria_api_key);
   const [didApiKey, setdidApiKey] = useState(profile.did_api_key);
+  const [replaceApiKey, setReplaceApiKey] = useState(profile.replicate_api_key);
 
   const [useCredits, setUseCredits] = useState(profile.useCredits);
-  const [showCreditsSection, setShowCreditsSection] = useState(true); // State to control visibility of credits section
+  const [showCreditsSection, setShowCreditsSection] = useState(true);
   const addCredits = useProfileStore((state) => state.addCredits);
   const addPayment = usePaymentsStore((state) => state.addPayment);
 
   useEffect(() => {
     const handleMessageFromRN = async (event: MessageEvent) => {
-      // Process the message sent from React Native
       const message = event.data;
       if (message?.type === "IAP_SUCCESS") {
         await addPayment({
@@ -52,6 +52,7 @@ export default function ProfileComponent() {
     setStabilityAPIKey(profile.stability_api_key);
     setBriaApiKey(profile.bria_api_key);
     setdidApiKey(profile.did_api_key);
+    setReplaceApiKey(profile.replicate_api_key);
 
     setShowCreditsSection(!isIOSReactNativeWebView());
   }, [
@@ -59,7 +60,8 @@ export default function ProfileComponent() {
     profile.openai_api_key,
     profile.stability_api_key,
     profile.bria_api_key,
-    profile.did_api_key
+    profile.did_api_key,
+    profile.replicate_api_key
   ]);
 
   const handleApiKeyChange = async () => {
@@ -68,7 +70,8 @@ export default function ProfileComponent() {
       openaiApiKey !== profile.openai_api_key ||
       stabilityAPIKey !== profile.stability_api_key ||
       briaApiKey !== profile.bria_api_key ||
-      didApiKey !== profile.did_api_key
+      didApiKey !== profile.did_api_key ||
+      replaceApiKey !== profile.replicate_api_key
     ) {
       try {
         await updateProfile({
@@ -76,7 +79,8 @@ export default function ProfileComponent() {
           openai_api_key: openaiApiKey,
           stability_api_key: stabilityAPIKey,
           bria_api_key: briaApiKey,
-          did_api_key: didApiKey
+          did_api_key: didApiKey,
+          replicate_api_key: replaceApiKey
         });
         console.log("API keys updated successfully!");
       } catch (error) {
@@ -101,7 +105,7 @@ export default function ProfileComponent() {
     [showCreditsSection]
   );
 
-  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey && didApiKey;
+  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey && didApiKey && replaceApiKey;
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,7 +120,7 @@ export default function ProfileComponent() {
           </button>
         </div>
         <div className="text-sm text-gray-600 mt-2">
-          You can either buy credits or add your own API keys for Fireworks and OpenAI.
+          You can either buy credits or add your own API keys.
         </div>
       </div>
 
@@ -181,6 +185,18 @@ export default function ProfileComponent() {
           placeholder="Enter your D-ID API Key"
         />
 
+        <label htmlFor="replace-api-key" className="text-sm font-medium">
+          Replace API Key:
+        </label>
+        <input
+          type="text"
+          id="replace-api-key"
+          value={replaceApiKey}
+          onChange={(e) => setReplaceApiKey(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          placeholder="Enter your Replace API Key"
+        />
+
         <button
           onClick={handleApiKeyChange}
           disabled={
@@ -188,7 +204,8 @@ export default function ProfileComponent() {
             openaiApiKey === profile.openai_api_key &&
             stabilityAPIKey === profile.stability_api_key &&
             briaApiKey === profile.bria_api_key &&
-            didApiKey === profile.did_api_key
+            didApiKey === profile.did_api_key &&
+            replaceApiKey === profile.replicate_api_key
           }
           className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 disabled:opacity-50"
         >
@@ -211,6 +228,6 @@ export default function ProfileComponent() {
           {areApiKeysAvailable && <option value="apikeys">API Keys</option>}
         </select>
       </div>
-    </div >
+    </div>
   );
 }

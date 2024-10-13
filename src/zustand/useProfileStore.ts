@@ -15,6 +15,7 @@ export interface ProfileType {
   stability_api_key: string;
   bria_api_key: string;
   did_api_key: string;
+  replicate_api_key: string;
   selectedAvatar: string;
   selectedTalkingPhoto: string;
   useCredits: boolean;
@@ -32,6 +33,7 @@ const defaultProfile: ProfileType = {
   stability_api_key: "",
   bria_api_key: "",
   did_api_key: "",
+  replicate_api_key: "",
   selectedAvatar: "",
   selectedTalkingPhoto: "",
   useCredits: true
@@ -170,6 +172,7 @@ function createNewProfile(
     stability_api_key: "",
     bria_api_key: "",
     did_api_key: "",
+    replicate_api_key: "",
     selectedAvatar: "",
     selectedTalkingPhoto: "",
     useCredits: true
