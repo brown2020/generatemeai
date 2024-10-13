@@ -246,7 +246,6 @@ export async function generateImage(data: FormData) {
          });
 
          if (!response.ok) {
-            console.log(await response.json())
             throw new Error(
                `Error from Image API: ${response.status} ${response.statusText}`
             );

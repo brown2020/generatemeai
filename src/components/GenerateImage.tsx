@@ -320,7 +320,7 @@ export default function GenerateImage() {
             {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
           </button>
 
-          {model !== "dall-e" && (
+          {model !== "dall-e" && model !== "flux-schnell" && (
             <button
               className="absolute bottom-4 right-[4rem] w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white"
               onClick={() => {
@@ -352,7 +352,7 @@ export default function GenerateImage() {
           }}
         />
 
-        {model != "dall-e" && uploadedImage && (
+        {model != "dall-e" && model != "flux-schnell" && uploadedImage && (
           <div className="mt-4 relative">
             <img
               src={URL.createObjectURL(uploadedImage)}
