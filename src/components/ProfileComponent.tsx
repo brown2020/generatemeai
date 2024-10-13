@@ -14,7 +14,7 @@ export default function ProfileComponent() {
   const [stabilityAPIKey, setStabilityAPIKey] = useState(profile.stability_api_key);
   const [briaApiKey, setBriaApiKey] = useState(profile.bria_api_key);
   const [didApiKey, setdidApiKey] = useState(profile.did_api_key);
-  const [replaceApiKey, setReplaceApiKey] = useState(profile.replicate_api_key);
+  const [replicateApiKey, setreplicateApiKey] = useState(profile.replicate_api_key);
 
   const [useCredits, setUseCredits] = useState(profile.useCredits);
   const [showCreditsSection, setShowCreditsSection] = useState(true);
@@ -52,7 +52,7 @@ export default function ProfileComponent() {
     setStabilityAPIKey(profile.stability_api_key);
     setBriaApiKey(profile.bria_api_key);
     setdidApiKey(profile.did_api_key);
-    setReplaceApiKey(profile.replicate_api_key);
+    setreplicateApiKey(profile.replicate_api_key);
 
     setShowCreditsSection(!isIOSReactNativeWebView());
   }, [
@@ -71,7 +71,7 @@ export default function ProfileComponent() {
       stabilityAPIKey !== profile.stability_api_key ||
       briaApiKey !== profile.bria_api_key ||
       didApiKey !== profile.did_api_key ||
-      replaceApiKey !== profile.replicate_api_key
+      replicateApiKey !== profile.replicate_api_key
     ) {
       try {
         await updateProfile({
@@ -80,7 +80,7 @@ export default function ProfileComponent() {
           stability_api_key: stabilityAPIKey,
           bria_api_key: briaApiKey,
           did_api_key: didApiKey,
-          replicate_api_key: replaceApiKey
+          replicate_api_key: replicateApiKey
         });
         console.log("API keys updated successfully!");
       } catch (error) {
@@ -105,7 +105,7 @@ export default function ProfileComponent() {
     [showCreditsSection]
   );
 
-  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey && didApiKey && replaceApiKey;
+  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey && didApiKey && replicateApiKey;
 
   return (
     <div className="flex flex-col gap-4">
@@ -185,16 +185,16 @@ export default function ProfileComponent() {
           placeholder="Enter your D-ID API Key"
         />
 
-        <label htmlFor="replace-api-key" className="text-sm font-medium">
-          Replace API Key:
+        <label htmlFor="replicate-api-key" className="text-sm font-medium">
+          Replicate API Key:
         </label>
         <input
           type="text"
-          id="replace-api-key"
-          value={replaceApiKey}
-          onChange={(e) => setReplaceApiKey(e.target.value)}
+          id="replicate-api-key"
+          value={replicateApiKey}
+          onChange={(e) => setreplicateApiKey(e.target.value)}
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
-          placeholder="Enter your Replace API Key"
+          placeholder="Enter your Replicate API Key"
         />
 
         <button
@@ -205,7 +205,7 @@ export default function ProfileComponent() {
             stabilityAPIKey === profile.stability_api_key &&
             briaApiKey === profile.bria_api_key &&
             didApiKey === profile.did_api_key &&
-            replaceApiKey === profile.replicate_api_key
+            replicateApiKey === profile.replicate_api_key
           }
           className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 disabled:opacity-50"
         >
