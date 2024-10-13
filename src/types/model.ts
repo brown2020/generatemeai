@@ -5,4 +5,6 @@ export type model =
   | "playground-v2"
   | "playground-v2-5"
   | "bria.ai"
-  | "d-id";
+  | "d-id"
+  | "chatgpt"
+  | "flux-schnell";
