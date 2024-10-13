@@ -39,7 +39,6 @@ function delay(ms: number) {
 const ImagePage = ({ id }: { id: string }) => {
   const router = useRouter();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [modalmode, setModalmode] = useState<string>("default");
   const [imageData, setImageData] = useState<any>(null);
   const [isOwner, setIsOwner] = useState<boolean>(false);
   const [isSharable, setIsSharable] = useState<boolean>(false);
@@ -62,14 +61,8 @@ const ImagePage = ({ id }: { id: string }) => {
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
 
   const useCredits = useProfileStore((s) => s.profile.useCredits);
-
-  const openAPIKey = useCredits
-    ? useProfileStore((s) => s.profile.openai_api_key)
-    : process.env.OPENAI_API_KEY!;
-
-  const briaApiKey = useCredits
-    ? useProfileStore((s) => s.profile.bria_api_key)
-    : process.env.BRIA_AI_API_KEY!;
+  const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
+  const briaApiKey = useProfileStore((s) => s.profile.bria_api_key);
 
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
@@ -84,7 +77,6 @@ const ImagePage = ({ id }: { id: string }) => {
     setIsModalOpen(false);
   };
 
-  const [animation, setAnimation] = useState<string>("");
   useEffect(() => {
     const fetchImageData = async () => {
       let docRef;
@@ -101,7 +93,6 @@ const ImagePage = ({ id }: { id: string }) => {
           setCaption(data?.caption ?? "");
           setIsOwner(true);
           setBackgroundColor(data?.backgroundColor);
-          setAnimation(data?.animation);
         }
       } else {
         if (!isOwner) {
@@ -115,7 +106,6 @@ const ImagePage = ({ id }: { id: string }) => {
             setTags(data?.tags ?? []);
             setCaption(data?.caption ?? "");
             setBackgroundColor(data?.backgroundColor);
-            setAnimation(data?.animation);
             if (data?.password) {
               setIsPasswordProtected(true);
             }
@@ -124,7 +114,6 @@ const ImagePage = ({ id }: { id: string }) => {
             setIsSharable(false);
             setTags([]);
             setCaption("");
-            setAnimation("");
           }
         }
       }
@@ -856,7 +845,6 @@ const ImagePage = ({ id }: { id: string }) => {
 
       {isModalOpen && (
         <ModalComponent
-          modalmode={modalmode}
           imageData={{ ...imageData }}
           isOpen={isModalOpen}
           onRequestClose={closeModal}

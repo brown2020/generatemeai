@@ -100,7 +100,7 @@ export async function generateVideo(data: FormData) {
       while (attemptCount++ < 24) {
         await new Promise(resolve => setTimeout(resolve, 5000));
         const response = await fetch(url, getOptions);
-        let result = await response.json() as unknown as ResultResponse;
+        const result = await response.json() as unknown as ResultResponse;
 
         if (result.error) return { error: result.error.description };
         if (result.result_url) {
