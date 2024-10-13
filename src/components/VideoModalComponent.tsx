@@ -4,7 +4,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { db } from "@/firebase/firebaseClient";
 import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PromptDataType } from "@/types/promptdata";
 import Select from "react-select";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -19,17 +19,17 @@ import { audios } from "@/constants/audios";
 import { useRouter } from "next/navigation";
 
 interface ModalProps {
-  modalmode: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   imageData: any;
   isOpen: boolean;
   onRequestClose: () => void;
   downloadUrl: string;
   ariaHideApp: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialData?: any;
 }
 
 const ModalComponent: React.FC<ModalProps> = ({
-  modalmode,
   imageData,
   isOpen,
   onRequestClose,
@@ -54,14 +54,6 @@ const ModalComponent: React.FC<ModalProps> = ({
   const [animation, setAnimation] = useState<string>(initialData?.animation || "nostalgia");
   const [loading, setLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (modalmode == 'video') {
-      setMode('video');
-    } else if (modalmode == 'gif') {
-      setMode('gif');
-    }
-  }, []);
-
   async function saveHistory(
     videoDownloadUrl: string,
     audio: string,
@@ -72,6 +64,7 @@ const ModalComponent: React.FC<ModalProps> = ({
     const coll = collection(db, "profiles", uid, "covers");
     const docRef = doc(coll);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...restOfImageData } = imageData;
 
     const finalPromptData: PromptDataType = {
@@ -178,42 +171,20 @@ const ModalComponent: React.FC<ModalProps> = ({
         </div>
 
         <div className="p-4 md:p-5 space-y-6">
-          {modalmode === "default" && (
-            <div className="flex w-full">
-              <button
-                className={`w-1/2 px-4 py-2 rounded-md rounded-r-none ${mode === "video" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
-                onClick={() => setMode("video")}
-              >
-                Video
-              </button>
-              <button
-                className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${mode === "gif" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
-                onClick={() => setMode("gif")}
-              >
-                GIF
-              </button>
-            </div>
-          )}
-          {modalmode === "gif" && (
-            <div>
-              <button
-                className={`w-full px-4 py-2 rounded-md text-white ${mode === "gif" ? "bg-blue-500" : "bg-gray-200"}`}
-                onClick={() => setMode("gif")}
-              >
-                GIF
-              </button>
-            </div>
-          )}
-          {modalmode === "video" && (
-            <div>
-              <button
-                className={`w-full px-4 py-2 rounded-md text-white ${mode === "video" ? "bg-blue-500" : "bg-gray-200"}`}
-                onClick={() => setMode("video")}
-              >
-                Video
-              </button>
-            </div>
-          )}
+          <div className="flex w-full">
+            <button
+              className={`w-1/2 px-4 py-2 rounded-md rounded-r-none ${mode === "video" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
+              onClick={() => setMode("video")}
+            >
+              Video
+            </button>
+            <button
+              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${mode === "gif" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
+              onClick={() => setMode("gif")}
+            >
+              GIF
+            </button>
+          </div>
 
           <div className="space-y-4">
             {mode === "video" && (

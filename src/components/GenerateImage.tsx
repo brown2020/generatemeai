@@ -83,7 +83,6 @@ export default function GenerateImage() {
         })
       : []
   );
-  const [imageApproved, setImageApproved] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
@@ -501,7 +500,7 @@ export default function GenerateImage() {
             handleGenerateSDXL(e);
           }}
         >
-          {loading && !imageApproved ? (
+          {loading ? (
             <PulseLoader color="#fff" size={12} />
           ) : (
             "Create an Image"

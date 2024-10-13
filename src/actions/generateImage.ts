@@ -40,20 +40,6 @@ interface DalleResponse {
    } [];
 }
 
-interface ResultResponse {
-   error ? : {
-      description: string
-   };
-   message ? : string;
-   result_url ? : string;
-}
-
-interface DidResponse {
-   kind: string;
-   description: string;
-   id: string;
-}
-
 // Function to check credits
 const checkCredits = (useCredits: boolean | null, credits: string | null, model: string | null) => {
    if (useCredits && credits && Number(credits) < creditsToMinus(model as model)) {
