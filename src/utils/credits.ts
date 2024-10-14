@@ -19,6 +19,10 @@ export const creditsToMinus = (model: model): number => {
         return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_BRIA_IMAGE, 4);
     } else if (model == 'd-id') {
         return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_D_ID, 50);
+    } else if (model == 'chatgpt') {
+        return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_CHATGPT, 2)
+    } else if (model == "flux-schnell") {
+        return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL, 4);
     }
 
     return 4;

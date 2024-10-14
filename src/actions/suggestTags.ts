@@ -1,8 +1,10 @@
 "use server"
 
-export const suggestTags = async (freestyle: string, videoScript: string, color: string, lighting: string, style: string, imageCategory: string, tags: string[], openAPIKey: string, useCredits: boolean, credits: number) => {
+import { creditsToMinus } from "@/utils/credits";
+
+export const suggestTags = async (freestyle: string, color: string, lighting: string, style: string, imageCategory: string, tags: string[], openAPIKey: string, useCredits: boolean, credits: number) => {
     try {
-        if (useCredits && credits < 1) {
+        if (useCredits && credits < creditsToMinus('chatgpt')) {
             throw new Error("Not enough credits to suggest a tag. Please purchase credits or use your own API Keys.")
         }
 
@@ -24,7 +26,6 @@ export const suggestTags = async (freestyle: string, videoScript: string, color:
                     role: 'user', 
                     content: `Using this prompt that image created with\n\n` +
                         `the prompt: ${freestyle}` +
-                        `${videoScript ? ` videoScript: ${videoScript}` : ''}` +
                         `${color && color !== 'None' ? ` color: ${color}` : ''}` +
                         `${lighting && lighting !== 'None' ? ` lighting: ${lighting}` : ''}` +
                         `${style ? ` style: ${style}` : ''}` +

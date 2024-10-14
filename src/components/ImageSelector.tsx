@@ -58,21 +58,40 @@ const ImageListPage = () => {
 
     fetchImages();
   }, [uid, authPending]);
+  const [filterType, setFilterType] = useState<'all' | 'image' | 'video'>('all');
+
 
   const handleSearch = () => {
     const formattedSelectedTags = selectedTags.map((tag) => tag.trim().toLowerCase());
-
-    const filteredImages = images.filter(
-      (image) =>
-        image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (formattedSelectedTags.length === 0 ||
-          formattedSelectedTags.every((tag) =>
-            image.tags?.map((t) => t.trim().toLowerCase()).includes(tag)
-          ))
-    );
-
+    
+    const filteredImages = images.filter((image) => {
+      
+      const freestyleMatch = image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const tagsMatch = image.tags?.some((tag) =>
+        tag.trim().toLowerCase().includes(searchQuery.toLowerCase())
+      );
+  
+      
+      const tagsFilterMatch =
+        formattedSelectedTags.length === 0 ||
+        formattedSelectedTags.every((tag) =>
+          image.tags?.map((t) => t.trim().toLowerCase()).includes(tag)
+        );
+  
+     
+      const typeMatch =
+        filterType === 'all' ||
+        (filterType === 'image' && !image.videoDownloadUrl) ||
+        (filterType === 'video' && image.videoDownloadUrl);
+  
+      
+      return (freestyleMatch || tagsMatch) && tagsFilterMatch && typeMatch;
+    });
+  
     return filteredImages;
   };
+  
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -97,8 +116,48 @@ const ImageListPage = () => {
           placeholder="Search..."
           className="p-2 border border-gray-300 rounded-md"
         />
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-3 py-1 rounded-md ${
+              filterType === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilterType('image')}
+            className={`px-3 py-1 rounded-md ${
+              filterType === 'image' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+          >
+            Images
+          </button>
+          <button
+            onClick={() => setFilterType('video')}
+            className={`px-3 py-1 rounded-md ${
+              filterType === 'video' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+          >
+            Videos
+          </button>
+        </div>
+
       </div>
-      <div className="flex gap-2 flex-wrap mb-4">
+      {/* <div className="flex gap-2 flex-wrap mb-4">
+        {allTags.map((tag, index) => (
+          <button
+            key={index}
+            onClick={() => toggleTag(tag)}
+            className={`px-3 py-1 rounded-md ${
+              selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+          >
+            {tag}
+          </button>
+        ))}
+      </div> */}
+      <div className="flex gap-2 flex-wrap mb-4 max-h-20 overflow-y-auto">
         {allTags.map((tag, index) => (
           <button
             key={index}
@@ -146,7 +205,14 @@ const ImageListPage = () => {
                   ? `${image.freestyle.substring(0, 100)}...`
                   : image.freestyle}
               </p>
-              <div className="flex gap-2 flex-wrap mt-2">
+              {/* <div className="flex gap-2 flex-wrap mt-2">
+                {image.tags?.map((tag: string, index: number) => (
+                  <span key={index} className="text-sm bg-gray-200 rounded-md px-2 py-1">
+                    {tag}
+                  </span>
+                ))}
+              </div> */}
+              <div className="flex gap-2 flex-wrap mt-2 max-h-24 overflow-y-auto">
                 {image.tags?.map((tag: string, index: number) => (
                   <span key={index} className="text-sm bg-gray-200 rounded-md px-2 py-1">
                     {tag}
