@@ -17,4 +17,5 @@ export type PromptDataType = {
   imageReference?: string;
   imageCategory?: string;
   audio?: string;
+  animation?: string;
 };

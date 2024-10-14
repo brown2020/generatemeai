@@ -43,6 +43,12 @@ export const models: SelectModel[] = [
     value: 'd-id',
     label: 'D-ID',
     type: 'video'
+  },
+  {
+    id: 6,
+    value: 'flux-schnell',
+    label: 'Flux Schnell (Blackforest Labs)',
+    type: 'image'
   }
 ];
 
