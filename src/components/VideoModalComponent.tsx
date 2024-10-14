@@ -47,7 +47,7 @@ const ModalComponent: React.FC<ModalProps> = ({
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
 
-  const [mode, setMode] = useState<"video" | "gif">((initialData && !initialData?.scriptPrompt) ? "gif" : "video");
+  const [mode, setMode] = useState<"video" | "animation">((initialData && !initialData?.scriptPrompt) ? "animation" : "video");
   const [scriptPrompt, setScriptPrompt] = useState<string>(initialData?.scriptPrompt || "");
   const [videoModel, setVideoModel] = useState<model>("d-id");
   const [audio, setAudio] = useState<string>(initialData?.audio || "Matthew");
@@ -145,7 +145,7 @@ const ModalComponent: React.FC<ModalProps> = ({
       <div className="relative w-full max-w-md bg-white rounded-lg shadow">
         <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-300">
           <h3 className="text-xl font-semibold text-gray-900">
-            {mode === "video" ? "Create Video" : "Create GIF"}
+            {mode === "video" ? "Create Video" : "Create Silent Animation"}
           </h3>
           <button
             type="button"
@@ -179,10 +179,10 @@ const ModalComponent: React.FC<ModalProps> = ({
               Video
             </button>
             <button
-              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${mode === "gif" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
-              onClick={() => setMode("gif")}
+              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${mode === "animation" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
+              onClick={() => setMode("animation")}
             >
-              GIF
+              Silent Animation
             </button>
           </div>
 
@@ -225,7 +225,7 @@ const ModalComponent: React.FC<ModalProps> = ({
                 />
               </div>
             )}
-            {mode === "gif" && (
+            {mode === "animation" && (
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-900">Animation</label>
                 <Select
