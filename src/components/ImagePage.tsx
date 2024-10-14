@@ -538,7 +538,7 @@ const ImagePage = ({ id }: { id: string }) => {
           className="btn-primary2 h-12 flex items-center justify-center mx-3"
           onClick={openModal}
         >
-          Generate Video/GIF
+          Generate Video/Animation
         </button>
       )}
 
