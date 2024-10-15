@@ -1,5 +1,4 @@
 import React from "react";
-import Image, { StaticImageData } from "next/image";
 
 type Props = {
   companyName: string;
