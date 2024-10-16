@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "../firebase/firebaseClient";
 import {
@@ -19,7 +18,7 @@ import {
   LinkedinIcon,
   EmailIcon,
 } from "react-share";
-
+import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { X, Sparkle, Plus } from "lucide-react";
@@ -87,6 +86,7 @@ const ImagePage = ({ id }: { id: string }) => {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
+
           setImageData({ ...data });
           setIsSharable(data?.isSharable ?? false);
           setTags(data?.tags ?? []);
@@ -123,25 +123,37 @@ const ImagePage = ({ id }: { id: string }) => {
       fetchImageData();
     }
   }, [id, uid, authPending, refreshCounter, isOwner]);
+  const getFileTypeFromUrl = (url: string) => {
+    if(!url){return}
+    // Split the URL by '/' to get the last part
+    const fileName = url.split('/').pop(); // Get the last part of the URL
+    // Split by '?' to remove any query parameters
+    const cleanFileName = fileName?.split('?')[0]; // Get the file name without query params
+    // Split by '.' to get the file extension
+    const fileParts: any = cleanFileName?.split('.');
+
+    // Return the last part as the file type, if it exists
+    return fileParts?.length > 1 ? fileParts?.pop() : null;
+  }
 
   const handleDownload = async () => {
     if (imageData?.videoDownloadUrl) {
       const videoUrl = imageData.videoDownloadUrl;
       const currentDate = new Date().toISOString().split("T")[0];
-      const fileName = `${imageData?.freestyle}_${currentDate}.mp4`;
-  
+      const fileName = `${imageData?.freestyle}_${currentDate}.${getFileTypeFromUrl(videoUrl)}`;
+
       try {
         const response = await fetch(videoUrl);
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
-  
+
         const link = document.createElement("a");
         link.href = blobUrl;
         link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-  
+
         window.URL.revokeObjectURL(blobUrl);
       } catch (error) {
         console.error("Video download error:", error);
@@ -150,12 +162,12 @@ const ImagePage = ({ id }: { id: string }) => {
     } else {
       const container = document.getElementById("image-container");
       if (!container) return;
-  
+
       try {
         const dataUrl = await domtoimage.toPng(container);
         const currentDate = new Date().toISOString().split("T")[0];
         const fileName = `${imageData?.freestyle}_${currentDate}.png`;
-  
+
         const link = document.createElement("a");
         link.href = dataUrl;
         link.download = fileName;
@@ -353,7 +365,9 @@ const ImagePage = ({ id }: { id: string }) => {
       }
     }
   };
+  const handleConvertToGif = () => {
 
+  }
   if (imageData == false)
     return (
       <div className="text-center text-3xl mt-10">
@@ -454,7 +468,8 @@ const ImagePage = ({ id }: { id: string }) => {
           id="image-container"
           style={{ backgroundColor: backgroundColor }}
         >
-          {imageData?.videoDownloadUrl ? (
+          {imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif" ? (
+
             <video
               className="block h-full w-full object-cover"
               src={imageData.videoDownloadUrl}
@@ -464,10 +479,14 @@ const ImagePage = ({ id }: { id: string }) => {
             >
               Your browser does not support the video tag.
             </video>
+
+
+
+
           ) : (
             <img
               className="block h-full w-full object-cover"
-              src={imageData?.downloadUrl}
+              src={getFileTypeFromUrl(imageData?.videoDownloadUrl) == "gif" ? imageData?.videoDownloadUrl : imageData?.downloadUrl}
               alt="Visual Result"
               height={512}
               width={512}
@@ -509,6 +528,7 @@ const ImagePage = ({ id }: { id: string }) => {
           Download
         </button>
       )}
+
       {uid && isOwner && (
         <button
           className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
@@ -746,7 +766,13 @@ const ImagePage = ({ id }: { id: string }) => {
           Next: Generate Your Image
         </button>
       )}
+      {(imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif" )&& <div className="p-2">
+        <button onClick={async () => {
 
+          router.push(`${await processVideoToGIF(imageData?.videoDownloadUrl, id, uid)}`);
+        }} className="btn-primary2  flex h-12 items-center justify-center  w-full ">Create GIF</button>
+
+      </div>}
       {!imageData?.videoDownloadUrl && uid && isOwner && (
         <button
           className="btn-primary2 h-12 flex items-center justify-center mx-3"
