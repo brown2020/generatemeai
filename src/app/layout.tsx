@@ -2,11 +2,14 @@ import "./globals.css";
 import { ClientProvider } from "@/components/ClientProvider";
 import Header from "@/components/Header";
 import BottomBar from "@/components/BottomBar";
+import Footer from "@/components/Footer";
 
 export const metadata = {
   title: "Generate.me",
-  description: "Generate.me is a cutting-edge platform that turns your ideas into stunning visuals using AI models like DALL-E, Stable Diffusion, and more. Join today and start creating beautiful images effortlessly.",
-  keywords: "AI image generation, create images with AI, DALL-E, Stable Diffusion, AI art generator, artistic styles, AI image creation, generate art, creative AI platform",
+  description:
+    "Generate.me is a cutting-edge platform that turns your ideas into stunning visuals using AI models like DALL-E, Stable Diffusion, and more. Join today and start creating beautiful images effortlessly.",
+  keywords:
+    "AI image generation, create images with AI, DALL-E, Stable Diffusion, AI art generator, artistic styles, AI image creation, generate art, creative AI platform",
   canonical: "https://www.generate.me/",
 };
 
@@ -30,11 +33,11 @@ export default function RootLayout({
             <Header />
             <div className="flex flex-col h-container-small md:h-container-custom overflow-y-scroll">
               <div className="flex flex-col h-full flex-1">{children}</div>
+              <Footer />
             </div>
             <BottomBar />
           </div>
         </ClientProvider>
-
       </body>
     </html>
   );
