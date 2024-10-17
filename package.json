@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.66",
+    "@runwayml/sdk": "^1.2.0",
     "@stripe/react-stripe-js": "^2.8.0",
     "@types/node-fetch": "^2.6.11",
     "ai": "^3.4.7",
@@ -37,6 +38,7 @@
     "react-share": "^5.1.0",
     "react-spinners": "^0.14.1",
     "react-textarea-autosize": "^8.5.3",
+    "react-toastify": "^10.0.6",
     "replicate": "^1.0.0",
     "sharp": "^0.33.5",
     "stripe": "^17.0.0",

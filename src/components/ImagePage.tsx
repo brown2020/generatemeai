@@ -18,6 +18,7 @@ import {
   LinkedinIcon,
   EmailIcon,
 } from "react-share";
+import '../app/globals.css'; 
 import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
@@ -30,6 +31,9 @@ import useProfileStore from "@/zustand/useProfileStore";
 import { creditsToMinus } from "@/utils/credits";
 import ModalComponent from "./VideoModalComponent";
 import { removeBackground } from "@/actions/removeBackground";
+import { SiStagetimer } from "react-icons/si";
+import { Span } from "next/dist/trace";
+
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -58,6 +62,7 @@ const ImagePage = ({ id }: { id: string }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [loading, setLoading] = useState(false);
 
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
@@ -124,7 +129,7 @@ const ImagePage = ({ id }: { id: string }) => {
     }
   }, [id, uid, authPending, refreshCounter, isOwner]);
   const getFileTypeFromUrl = (url: string) => {
-    if(!url){return}
+    if (!url) { return }
     // Split the URL by '/' to get the last part
     const fileName = url.split('/').pop(); // Get the last part of the URL
     // Split by '?' to remove any query parameters
@@ -766,11 +771,27 @@ const ImagePage = ({ id }: { id: string }) => {
           Next: Generate Your Image
         </button>
       )}
-      {(imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif" )&& <div className="p-2">
+      {(imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif") && <div className="p-2">
         <button onClick={async () => {
+          try {
+            setLoading(true);
+            const response = await processVideoToGIF(imageData?.videoDownloadUrl, id, uid);
+            setLoading(false);
+            toast.success(`Gif Created Succesfuly!`);
+            router.push(`${response}`);
+          } catch (error: any) {
+            console.log(error?.message, "this is the error")
+            toast.error(`${error.message}`);
+          }
 
-          router.push(`${await processVideoToGIF(imageData?.videoDownloadUrl, id, uid)}`);
-        }} className="btn-primary2  flex h-12 items-center justify-center  w-full ">Create GIF</button>
+        }} className="btn-primary2  flex h-12 items-center justify-center  w-full  " disabled={loading}>
+          {loading ? <span className="flex flex-row  items-center space-x-2">
+            <span className="rotating-icon">
+              <SiStagetimer />
+            </span> <span> Converting ... </span>
+
+          </span> : <span> Create GIF </span>}
+        </button>
 
       </div>}
       {!imageData?.videoDownloadUrl && uid && isOwner && (

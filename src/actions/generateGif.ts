@@ -10,31 +10,43 @@ ffmpeg.setFfmpegPath(ffmpegPath as string);
 
 async function convertToGIF(videoUrl: string) {
     // Create a pass-through stream for the GIF output
-    const gifStream = new PassThrough();
-    let gifBuffer: Buffer[] = [];  
-        const ffmpegProcess = ffmpeg().input(videoUrl)
-            .outputFormat('gif').addOption('-loglevel verbose')
+    return new Promise((resolve, reject) => {
+        // Create a pass-through stream for the GIF output
+        const gifStream = new PassThrough();
+        const gifBuffer: Buffer[] = [];  
+
+        // Start the ffmpeg process to convert video to GIF
+        const ffmpegProcess = ffmpeg()
+            .input(videoUrl)
+            .outputFormat('gif')
+            .addOption('-loglevel', 'verbose')
             .on('end', () => {
                 console.log("Conversion to GIF completed.");
-                
-             
             })
-            .on('error', (err) => {
+            .on('error', (err:any) => {
                 console.error("Error during GIF conversion:", err);
-           
-            }) .on('stderr', (stderr) => {
+                reject(new Error(err));  // Reject the promise on error
+            })
+            .on('stderr', (stderr) => {
                 console.log(`FFmpeg stderr: ${stderr}`);
-            }).pipe(gifStream,{ end: true });
+            })
+            .pipe(gifStream, { end: true });
 
-            // ffmpegProcess.pipe(gifStream);
-            gifStream.on('data', (chunk) => {
-                gifBuffer.push(chunk);  // Push each chunk to the array
-            });
-            gifStream.on('finish', () => {
-                console.log('GIF stream finished. Total size:', gifBuffer.length);
-              });
-         
-         return gifStream;
+        // Collect the stream chunks
+        gifStream.on('data', (chunk) => {
+            gifBuffer.push(chunk);  // Push each chunk to the array
+        });
+
+        // Resolve the buffer when the stream finishes
+        gifStream.on('finish', () => {
+            console.log('GIF stream finished. Total size:', gifBuffer.length);
+            resolve(Buffer.concat(gifBuffer));  // Concatenate all chunks into a single buffer and resolve
+        });
+
+        gifStream.on('error', (err:any) => {
+            reject( new Error(err));  // Reject if there’s a stream error
+        });
+    });
  
 
 }
@@ -52,8 +64,8 @@ function streamToBuffer(stream: any): Promise<Buffer> {
 export async function processVideoToGIF(firebaseVideoUrl: string , id:string,uid:string) {
     try {
  
-       
-        const videoBuffer = await streamToBuffer(await convertToGIF(firebaseVideoUrl));
+        const videoBuffer:any = await convertToGIF(firebaseVideoUrl);
+        
         const  docRef = doc(db, "profiles", uid, "covers", id);
         const docSnap = await getDoc(docRef);
  
@@ -83,6 +95,8 @@ export async function processVideoToGIF(firebaseVideoUrl: string , id:string,uid
         
         
     } catch (error) {
-        console.error('Error during process:', error);
+        console.log("the error is here")
+        throw error;
+    
     }
 }
