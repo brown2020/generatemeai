@@ -7,4 +7,5 @@ export type model =
   | "bria.ai"
   | "d-id"
   | "chatgpt"
-  | "flux-schnell";
+  | "flux-schnell"
+  |"Runway-ML";

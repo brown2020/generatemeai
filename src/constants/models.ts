@@ -49,6 +49,12 @@ export const models: SelectModel[] = [
     value: 'flux-schnell',
     label: 'Flux Schnell (Blackforest Labs)',
     type: 'image'
+  },
+  {
+    id: 7,
+    value: 'Runway-ML',
+    label: 'RunwayML',
+    type: 'video'
   }
 ];
 

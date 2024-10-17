@@ -3,6 +3,7 @@
 import fetch from "node-fetch";
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { creditsToMinus } from "@/utils/credits";
+import RunwayML from '@runwayml/sdk';
 
 interface ResultResponse {
   error?: { description: string };
@@ -108,6 +109,16 @@ export async function generateVideo(data: FormData) {
           break;
         }
       }
+    }
+    if(videoModel === "Runway-ML"){
+      const client = new RunwayML();
+      const imageToVideo = await client.imageToVideo.create({
+        model: 'gen3a_turbo',
+        // Point this at your own image file
+        promptImage:imageUrl,
+        promptText: scriptPrompt as string,
+      });
+      console.log(imageToVideo,"this is image to video response");
     }
 
     if (videoUrl) {
