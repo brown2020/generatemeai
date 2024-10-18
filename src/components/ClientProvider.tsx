@@ -12,8 +12,8 @@ import { usePathname, useRouter } from "next/navigation";
 
 export function ClientProvider({ children }: { children: React.ReactNode }) {
   const { loading, uid } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);
-  const router = useRouter()
-  const pathname = usePathname()
+  const router = useRouter();
+  const pathname = usePathname();
   useInitializeStores();
 
   useEffect(() => {
@@ -49,10 +49,19 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading && !uid && pathname != '/' && !pathname.includes('images/') && !pathname.includes('/about') && !pathname.includes('/terms') && !pathname.includes('/privacy')) {
-      router.push("/")
+    if (
+      !loading &&
+      !uid &&
+      pathname != "/" &&
+      !pathname.includes("images/") &&
+      !pathname.includes("/about") &&
+      !pathname.includes("/terms") &&
+      !pathname.includes("/privacy") &&
+      !pathname.includes("/support")
+    ) {
+      router.push("/");
     }
-  }, [loading, pathname, router, uid])
+  }, [loading, pathname, router, uid]);
 
   if (loading)
     return (

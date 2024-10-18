@@ -23,6 +23,7 @@ import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
 import { Image as ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
 import { imageCategories } from "@/constants/imageCategories";
+import { isIOSReactNativeWebView, checkRestrictedWords } from "@/utils/platform"; // Import the platform check function
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -219,6 +220,11 @@ export default function GenerateImage() {
     if (!isPromptValid || !isModelValid) {
       toast.error("Please fill in all required fields.");
       return;
+    }
+
+    if (isIOSReactNativeWebView() && checkRestrictedWords(imagePrompt)) {
+      toast.error('Your description contains restricted words and cannot be used.')
+      return;  
     }
 
     try {
