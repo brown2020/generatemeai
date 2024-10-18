@@ -3,15 +3,15 @@
 import fetch from "node-fetch";
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { creditsToMinus } from "@/utils/credits";
-import RunwayML from '@runwayml/sdk';
-import { models } from "@/constants/models";
 import { model } from "@/types/model";
-import { json } from "stream/consumers";
 
 interface ResultResponse {
   error?: { description: string };
   message?: string;
   result_url?: string;
+  id?: string;
+  status?: string;
+  output: [string];
 }
 
 interface DidResponse {
@@ -144,7 +144,7 @@ export async function generateVideo(data: FormData) {
         body: JSON.stringify(body)
       };
 
-      const response: any = await (await fetch(url, options)).json();
+      const response: ResultResponse = await (await fetch(url, options)).json() as ResultResponse;
       const { id } = response;
       let attempt = 0;
 
@@ -160,7 +160,7 @@ export async function generateVideo(data: FormData) {
         };
 
         const videoResponse = await fetch(url, getOptions);
-        const result: any = await videoResponse.json();
+        const result: ResultResponse = await videoResponse.json() as ResultResponse;
         if (result.error) return { error: result.error.description };
         if (result.status == "SUCCEEDED") {
           videoUrl = result.output[0];
