@@ -10,3 +10,14 @@ export function isIOSReactNativeWebView(): boolean {
   // Return trueif in a React Native WebView
   return isReactNativeWebView;
 }
+
+const restrictedWords = [
+  "nude", "naked", "sexual", "explicit", "porn", "erotic", "provocative", 
+  "seductive", "intimate", "lingerie", "underwear", "bikini", "strip", 
+  "sex", "breasts", "genital", "vagina", "penis", "buttocks", "bare",
+  "inappropriate", "obscene", "lewd"
+];
+
+export const checkRestrictedWords = (imagePrompt: string): boolean => {
+  return restrictedWords.some(word => imagePrompt.toLowerCase().includes(word));
+};
