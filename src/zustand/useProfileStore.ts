@@ -19,6 +19,7 @@ export interface ProfileType {
   selectedAvatar: string;
   selectedTalkingPhoto: string;
   useCredits: boolean;
+  runway_ml_api_key: string;
 }
 
 const defaultProfile: ProfileType = {
@@ -36,7 +37,8 @@ const defaultProfile: ProfileType = {
   replicate_api_key: "",
   selectedAvatar: "",
   selectedTalkingPhoto: "",
-  useCredits: true
+  useCredits: true,
+  runway_ml_api_key: "",
 };
 
 interface ProfileState {
@@ -78,16 +80,16 @@ const useProfileStore = create<ProfileState>((set, get) => ({
 
       const newProfile = docSnap.exists()
         ? mergeProfileWithDefaults(docSnap.data() as ProfileType, {
-            authEmail,
-            authDisplayName,
-            authPhotoUrl,
-          })
+          authEmail,
+          authDisplayName,
+          authPhotoUrl,
+        })
         : createNewProfile(
-            authEmail,
-            authDisplayName,
-            authPhotoUrl,
-            authEmailVerified
-          );
+          authEmail,
+          authDisplayName,
+          authPhotoUrl,
+          authEmailVerified
+        );
 
       console.log(
         docSnap.exists()
@@ -175,7 +177,8 @@ function createNewProfile(
     replicate_api_key: "",
     selectedAvatar: "",
     selectedTalkingPhoto: "",
-    useCredits: true
+    useCredits: true,
+    runway_ml_api_key: "",
   };
 }
 
