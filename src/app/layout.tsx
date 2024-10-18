@@ -33,7 +33,6 @@ export default function RootLayout({
             <Header />
             <div className="flex flex-col h-container-small md:h-container-custom overflow-y-scroll">
               <div className="flex flex-col h-full flex-1">{children}</div>
-              <Footer />
             </div>
             <BottomBar />
           </div>
