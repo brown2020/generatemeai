@@ -23,7 +23,9 @@ export const creditsToMinus = (model: model): number => {
         return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_CHATGPT, 2)
     } else if (model == "flux-schnell") {
         return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL, 4);
+    } else if (model == "runway-ml") {
+        return parseEnvVarToNumber(process.env.NEXT_PUBLIC_CREDITS_PER_RUNWAY, 4);
     }
-
+    
     return 4;
 };
