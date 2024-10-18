@@ -126,13 +126,13 @@ const ImagePage = ({ id }: { id: string }) => {
     }
   }, [id, uid, authPending, refreshCounter, isOwner]);
 
-  const getFileTypeFromUrl = (url: string) => {
-    if (!url) { return }
+  const getFileTypeFromUrl = (url: string): string | null | undefined => {
+    if (!url) { return; }
     const fileName = url.split('/').pop();
     const cleanFileName = fileName?.split('?')[0];
-    const fileParts: any = cleanFileName?.split('.');
+    const fileParts: string[] | undefined = cleanFileName?.split('.');
 
-    return fileParts?.length > 1 ? fileParts?.pop() : null;
+    return fileParts && fileParts.length > 1 ? fileParts.pop() : null;
   }
 
   const handleDownload = async () => {
@@ -365,9 +365,7 @@ const ImagePage = ({ id }: { id: string }) => {
       }
     }
   };
-  const handleConvertToGif = () => {
 
-  }
   if (imageData == false)
     return (
       <div className="text-center text-3xl mt-10">
@@ -772,10 +770,14 @@ const ImagePage = ({ id }: { id: string }) => {
             setLoading(true);
             const response = await processVideoToGIF(imageData?.videoDownloadUrl, id, uid);
             setLoading(false);
-            toast.success(`Gif Created Succesfuly!`);
+            toast.success(`GIF Created Successfully!`);
             router.push(`${response}`);
-          } catch (error: any) {
-            toast.error(`${error.message}`);
+          } catch (error: unknown) {
+            if (error instanceof Error) {
+              toast.error(`${error.message}`);
+            } else {
+              toast.error(`An unexpected error occurred.`);
+            }
           }
 
         }} className="btn-primary2  flex h-12 items-center justify-center  w-full  " disabled={loading}>

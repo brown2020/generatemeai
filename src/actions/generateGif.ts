@@ -1,48 +1,35 @@
 "use server";
-import {
-    adminBucket
-} from "@/firebase/firebaseAdmin";
+import { adminBucket } from "@/firebase/firebaseAdmin";
 import ffmpeg from "fluent-ffmpeg";
-import {
-    PassThrough
-} from 'stream';
-import {
-    db
-} from "@/firebase/firebaseClient";
-import {
-    collection,
-    doc,
-    getDoc,
-    setDoc,
-    Timestamp
-} from "firebase/firestore";
+import { PassThrough } from 'stream';
+import { db } from "@/firebase/firebaseClient";
+import { collection, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import path from "path";
-const ffmpegPath = path.resolve(__dirname, '../../../../../', "node_modules", "ffmpeg-static", "ffmpeg.exe");
-ffmpeg.setFfmpegPath(ffmpegPath as string);
 
-async function convertToGIF(videoUrl: string) {
+const ffmpegPath = path.resolve(__dirname, '../../../../../', "node_modules", "ffmpeg-static", "ffmpeg.exe");
+ffmpeg.setFfmpegPath(ffmpegPath);
+
+async function convertToGIF(videoUrl: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
         const gifStream = new PassThrough();
         const gifBuffer: Buffer[] = [];
 
-        const ffmpegProcess = ffmpeg()
+        ffmpeg()
             .input(videoUrl)
             .outputFormat('gif')
             .addOption('-loglevel', 'verbose')
             .on('end', () => {
                 console.log("Conversion to GIF completed.");
             })
-            .on('error', (err: any) => {
-                reject(new Error(err));
+            .on('error', (err: Error) => {
+                reject(new Error(err.message));
             })
-            .on('stderr', (stderr) => {
+            .on('stderr', (stderr: string) => {
                 console.log(`FFmpeg stderr: ${stderr}`);
             })
-            .pipe(gifStream, {
-                end: true
-            });
+            .pipe(gifStream, { end: true });
 
-        gifStream.on('data', (chunk) => {
+        gifStream.on('data', (chunk: Buffer) => {
             gifBuffer.push(chunk);
         });
 
@@ -51,31 +38,27 @@ async function convertToGIF(videoUrl: string) {
             resolve(Buffer.concat(gifBuffer));
         });
 
-        gifStream.on('error', (err: any) => {
-            reject(new Error(err));
+        gifStream.on('error', (err: Error) => {
+            reject(new Error(err.message));
         });
     });
 }
 
-export async function processVideoToGIF(firebaseVideoUrl: string, id: string, uid: string) {
+export async function processVideoToGIF(firebaseVideoUrl: string, id: string, uid: string): Promise<string | void> {
     try {
-
-        const videoBuffer: any = await convertToGIF(firebaseVideoUrl);
+        const videoBuffer: Buffer = await convertToGIF(firebaseVideoUrl);
 
         const docRef = doc(db, "profiles", uid, "covers", id);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-
             const data = docSnap.data();
             const coll = collection(db, "profiles", uid, "covers");
             const cloneRef = doc(coll);
             const newFilePath = `video-generation/${Date.now()}.gif`;
             const gifFileRef = adminBucket.file(newFilePath);
 
-            await gifFileRef.save(videoBuffer, {
-                contentType: 'image/gif',
-            });
+            await gifFileRef.save(videoBuffer, { contentType: 'image/gif' });
 
             const [gifsReferenceUrl] = await gifFileRef.getSignedUrl({
                 action: 'read',
