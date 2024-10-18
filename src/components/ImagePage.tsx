@@ -18,7 +18,7 @@ import {
   LinkedinIcon,
   EmailIcon,
 } from "react-share";
-import '../app/globals.css'; 
+import '../app/globals.css';
 import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
@@ -32,8 +32,6 @@ import { creditsToMinus } from "@/utils/credits";
 import ModalComponent from "./VideoModalComponent";
 import { removeBackground } from "@/actions/removeBackground";
 import { SiStagetimer } from "react-icons/si";
-import { Span } from "next/dist/trace";
-
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -84,7 +82,6 @@ const ImagePage = ({ id }: { id: string }) => {
   useEffect(() => {
     const fetchImageData = async () => {
       let docRef;
-
       if (uid && !authPending) {
         docRef = doc(db, "profiles", uid, "covers", id);
         const docSnap = await getDoc(docRef);
@@ -128,16 +125,13 @@ const ImagePage = ({ id }: { id: string }) => {
       fetchImageData();
     }
   }, [id, uid, authPending, refreshCounter, isOwner]);
+
   const getFileTypeFromUrl = (url: string) => {
     if (!url) { return }
-    // Split the URL by '/' to get the last part
-    const fileName = url.split('/').pop(); // Get the last part of the URL
-    // Split by '?' to remove any query parameters
-    const cleanFileName = fileName?.split('?')[0]; // Get the file name without query params
-    // Split by '.' to get the file extension
+    const fileName = url.split('/').pop();
+    const cleanFileName = fileName?.split('?')[0];
     const fileParts: any = cleanFileName?.split('.');
 
-    // Return the last part as the file type, if it exists
     return fileParts?.length > 1 ? fileParts?.pop() : null;
   }
 
@@ -166,6 +160,7 @@ const ImagePage = ({ id }: { id: string }) => {
       }
     } else {
       const container = document.getElementById("image-container");
+
       if (!container) return;
 
       try {
@@ -780,7 +775,6 @@ const ImagePage = ({ id }: { id: string }) => {
             toast.success(`Gif Created Succesfuly!`);
             router.push(`${response}`);
           } catch (error: any) {
-            console.log(error?.message, "this is the error")
             toast.error(`${error.message}`);
           }
 

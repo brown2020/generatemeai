@@ -13,7 +13,6 @@ import {
    File
 } from "formdata-node";
 import fetch from "node-fetch";
-import Replicate from "replicate";
 
 interface RequestBody {
    prompt ? : string;
@@ -209,6 +208,8 @@ export async function generateImage(data: FormData) {
             };
          }
       } else if (model === "flux-schnell") {
+         const { default: Replicate } = await import('replicate');
+
          const replicate = new Replicate({
             auth: useCredits ? process.env.REPLICATE_API_KEY! : replicateAPIKey!
          });

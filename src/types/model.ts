@@ -8,4 +8,6 @@ export type model =
   | "d-id"
   | "chatgpt"
   | "flux-schnell"
-  |"Runway-ML";
+  |"runway-ml"
+  |"tavus"
+  |"imagen"

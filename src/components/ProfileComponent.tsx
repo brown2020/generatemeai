@@ -2,7 +2,7 @@
 
 import useProfileStore from "@/zustand/useProfileStore";
 import { useCallback, useEffect, useState } from "react";
-import { isIOSReactNativeWebView } from "@/utils/platform"; // Import the platform check function
+import { isIOSReactNativeWebView } from "@/utils/platform";
 import { usePaymentsStore } from "@/zustand/usePaymentsStore";
 
 export default function ProfileComponent() {
@@ -15,6 +15,7 @@ export default function ProfileComponent() {
   const [briaApiKey, setBriaApiKey] = useState(profile.bria_api_key);
   const [didApiKey, setdidApiKey] = useState(profile.did_api_key);
   const [replicateApiKey, setreplicateApiKey] = useState(profile.replicate_api_key);
+  const [runwayMlApiKey, setRunwayMlApiKey] = useState(profile.runway_ml_api_key);
 
   const [useCredits, setUseCredits] = useState(profile.useCredits);
   const [showCreditsSection, setShowCreditsSection] = useState(true);
@@ -184,7 +185,17 @@ export default function ProfileComponent() {
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your D-ID API Key"
         />
-
+        <label htmlFor="d-id-api-key" className="text-sm font-medium">
+          Runway-ML API Key:
+        </label>
+        <input
+          type="text"
+          id="runway-ml-api-key"
+          value={runwayMlApiKey}
+          onChange={(e) => setRunwayMlApiKey(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          placeholder="Enter your Runway-ML  API Key"
+        />
         <label htmlFor="replicate-api-key" className="text-sm font-medium">
           Replicate API Key:
         </label>

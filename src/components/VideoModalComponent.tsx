@@ -35,7 +35,7 @@ const ModalComponent: React.FC<ModalProps> = ({
   onRequestClose,
   downloadUrl,
   ariaHideApp,
-  initialData
+  initialData,
 }) => {
   const router = useRouter();
 
@@ -43,15 +43,22 @@ const ModalComponent: React.FC<ModalProps> = ({
 
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const didApiKey = useProfileStore((s) => s.profile.did_api_key);
+  const runwayApiKey = useProfileStore((s) => s.profile.runway_ml_api_key);
 
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
 
-  const [mode, setMode] = useState<"video" | "animation">((initialData && !initialData?.scriptPrompt) ? "animation" : "video");
-  const [scriptPrompt, setScriptPrompt] = useState<string>(initialData?.scriptPrompt || "");
-  const [videoModel, setVideoModel] = useState<model>("d-id");
+  const [mode, setMode] = useState<"video" | "animation">(
+    initialData && !initialData?.scriptPrompt ? "animation" : "video"
+  );
+  const [scriptPrompt, setScriptPrompt] = useState<string>(
+    initialData?.scriptPrompt || ""
+  );
+  const [videoModel, setVideoModel] = useState<model>(initialData?.videoModel || "d-id");
   const [audio, setAudio] = useState<string>(initialData?.audio || "Matthew");
-  const [animation, setAnimation] = useState<string>(initialData?.animation || "nostalgia");
+  const [animation, setAnimation] = useState<string>(
+    initialData?.animation || "nostalgia"
+  );
   const [loading, setLoading] = useState<boolean>(false);
 
   async function saveHistory(
@@ -75,7 +82,7 @@ const ModalComponent: React.FC<ModalProps> = ({
       audio: audio || "",
       videoModel: videoModel || "",
       scriptPrompt: scriptPrompt,
-      animation: animation || ""
+      animation: findModelByValue(videoModel as model)?.hasAnimationType ? animation || "" : ""
     };
 
     await setDoc(docRef, finalPromptData);
@@ -90,6 +97,7 @@ const ModalComponent: React.FC<ModalProps> = ({
       const formData = new FormData();
       formData.append("uid", uid);
       formData.append("didAPIKey", didApiKey);
+      formData.append("runwayApiKey", runwayApiKey);
       formData.append("useCredits", useCredits.toString());
       formData.append("credits", credits.toString());
       formData.append("scriptPrompt", scriptPrompt);
@@ -100,8 +108,11 @@ const ModalComponent: React.FC<ModalProps> = ({
 
       const result = await generateVideo(formData);
 
-      if (!result || result.error || (!result.videoUrl)) {
-        toast.error(`Failed to generate video: ${result?.error || "Unknown error"}`);
+      if (!result || result.error || !result.videoUrl) {
+        toast.error(
+          `Failed to generate video: ${result?.error || "Unknown error"}`
+        );
+        console.log(result)
         throw new Error("Failed to generate video.");
       }
 
@@ -120,9 +131,9 @@ const ModalComponent: React.FC<ModalProps> = ({
           animation
         );
 
-        onRequestClose()
+        onRequestClose();
 
-        router.push(`/images/${docId}`)
+        router.push(`/images/${docId}`);
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -173,13 +184,19 @@ const ModalComponent: React.FC<ModalProps> = ({
         <div className="p-4 md:p-5 space-y-6">
           <div className="flex w-full">
             <button
-              className={`w-1/2 px-4 py-2 rounded-md rounded-r-none ${mode === "video" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
+              className={`w-1/2 px-4 py-2 rounded-md rounded-r-none ${mode === "video"
+                ? "bg-[#2563EB] text-white"
+                : "bg-gray-200 text-black-500"
+                }`}
               onClick={() => setMode("video")}
             >
               Video
             </button>
             <button
-              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${mode === "animation" ? "bg-[#2563EB] text-white" : "bg-gray-200 text-black-500"}`}
+              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${mode === "animation"
+                ? "bg-[#2563EB] text-white"
+                : "bg-gray-200 text-black-500"
+                }`}
               onClick={() => setMode("animation")}
             >
               Silent Animation
@@ -197,19 +214,31 @@ const ModalComponent: React.FC<ModalProps> = ({
               />
             )}
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-900">Model</label>
+              <label className="block mb-2 text-sm font-medium text-gray-900">
+                Models
+              </label>
               <Select
                 isClearable={true}
                 isSearchable={true}
                 name="videoModel"
-                onChange={(v) => setVideoModel(v ? (v as SelectModel).value : "d-id")}
-                defaultValue={findModelByValue(initialData?.videoModel || "d-id")}
-                options={models.filter((m) => m.type === "video")}
+                onChange={(v) =>
+                  setVideoModel(v ? (v as SelectModel).value : "d-id")
+                }
+                defaultValue={findModelByValue(
+                  initialData?.videoModel || "d-id"
+                )}
+                options={models.filter(
+                  (m) =>
+                    (m.type === "video" || m.type === "both") &&
+                    (mode !== "video" || m.hasScriptPromptVideoGen !== false)
+                )}
               />
             </div>
-            {mode === "video" && (
+            {mode === "video" && findModelByValue(videoModel)?.hasAudio && (
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-900">Audio</label>
+                <label className="block mb-2 text-sm font-medium text-gray-900">
+                  Audio
+                </label>
                 <Select
                   isClearable
                   isSearchable
@@ -225,32 +254,39 @@ const ModalComponent: React.FC<ModalProps> = ({
                 />
               </div>
             )}
-            {mode === "animation" && (
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-900">Animation</label>
-                <Select
-                  isClearable
-                  isSearchable
-                  name="animation"
-                  onChange={(v) => setAnimation(v ? v.value : initialData?.animation || "nostalgia")}
-                  defaultValue={{ label: initialData?.animation || "nostalgia", value: initialData?.animation || "nostalgia" }}
-                  options={animations.map((audio) => ({
-                    id: audio.id,
-                    label: audio.label,
-                    value: audio.value,
-                  }))}
-                  placeholder="Select animation"
-                />
-              </div>
-            )}
+            {mode === "animation" &&
+              findModelByValue(videoModel)?.hasAnimationType == true && (
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Animation
+                  </label>
+                  <Select
+                    isClearable
+                    isSearchable
+                    name="animation"
+                    onChange={(v) =>
+                      setAnimation(
+                        v ? v.value : initialData?.animation || "nostalgia"
+                      )
+                    }
+                    defaultValue={{
+                      label: initialData?.animation || "nostalgia",
+                      value: initialData?.animation || "nostalgia",
+                    }}
+                    options={animations.map((audio) => ({
+                      id: audio.id,
+                      label: audio.label,
+                      value: audio.value,
+                    }))}
+                    placeholder="Select animation"
+                  />
+                </div>
+              )}
           </div>
         </div>
 
         <div className="p-4 md:p-5 flex justify-end space-x-4 border-t border-gray-300">
-          <button
-            className="btn-secondary"
-            onClick={onRequestClose}
-          >
+          <button className="btn-secondary" onClick={onRequestClose}>
             Cancel
           </button>
           <button
