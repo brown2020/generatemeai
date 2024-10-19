@@ -5,8 +5,8 @@ import {
   GoogleAuthProvider,
   sendSignInLinkToEmail,
   signInWithPopup,
-  signInWithEmailAndPassword, // Added for email/password login
-  createUserWithEmailAndPassword, // Added for email/password registration
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
 
@@ -31,12 +31,12 @@ export default function AuthComponent() {
   const authDisplayName = useAuthStore((s) => s.authDisplayName);
   const authPending = useAuthStore((s) => s.authPending);
   const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>(""); // Added password state
+  const [password, setPassword] = useState<string>("");
   const [name, setName] = useState<string>("");
   const [acceptTerms, setAcceptTerms] = useState<boolean>(true);
   const formRef = useRef<HTMLFormElement>(null);
   const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [isEmailLinkLogin, setIsEmailLinkLogin] = useState(true); // Switch between email link and password login
+  const [isEmailLinkLogin, setIsEmailLinkLogin] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(true);
 
@@ -144,11 +144,32 @@ export default function AuthComponent() {
     }
   };
 
-  const handlePasswordLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handlePasswordLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
+      window.localStorage.setItem("generateEmail", email);
+      window.localStorage.setItem("generateName", email.split('@')[0]);
+    } catch (error: unknown) {
+      handleAuthError(error);
+    } finally {
+      hideModal();
+    }
+  };
+
+  const handlePasswordSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      window.localStorage.setItem("generateEmail", email);
+      window.localStorage.setItem("generateName", email.split('@')[0]);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if ((error as { code?: string }).code === 'auth/email-already-in-use') {
+          handlePasswordLogin();
+          return;
+        }
+      }
+      hideModal();
       handleAuthError(error);
     }
   };
@@ -263,14 +284,12 @@ export default function AuthComponent() {
               </div>
             ) : (
               <form
-                onSubmit={
-                  isEmailLinkLogin ? handleSubmit : handlePasswordLogin
-                }
+                onSubmit={isEmailLinkLogin ? handleSubmit : handlePasswordSignup}
                 ref={formRef}
                 className="flex flex-col gap-2"
               >
                 <div className="text-3xl text-center pb-3">Sign In</div>
-                
+
                 {/* Conditionally render Google Sign-In and divider */}
                 {showGoogleSignIn && (
                   <>
@@ -287,21 +306,23 @@ export default function AuthComponent() {
                   </>
                 )}
 
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="input-primary"
-                />
+                {isEmailLinkLogin && (
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="input-primary mb-2"
+                  />
+                )}
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="input-primary mt-2"
+                  className="input-primary"
                 />
                 {!isEmailLinkLogin && (
                   <input
