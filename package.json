@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^0.0.66",
+    "@ai-sdk/openai": "^0.0.68",
     "@stripe/react-stripe-js": "^2.8.0",
     "@types/node-fetch": "^2.6.11",
     "ai": "^3.4.11",
