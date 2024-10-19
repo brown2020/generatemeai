@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { useAuthStore } from "./useAuthStore";
 import { db } from "@/firebase/firebaseClient";
+import { deleteUser, getAuth } from "firebase/auth";
 
 export interface ProfileType {
   email: string;
@@ -19,6 +20,7 @@ export interface ProfileType {
   selectedAvatar: string;
   selectedTalkingPhoto: string;
   useCredits: boolean;
+  runway_ml_api_key: string;
 }
 
 const defaultProfile: ProfileType = {
@@ -36,7 +38,8 @@ const defaultProfile: ProfileType = {
   replicate_api_key: "",
   selectedAvatar: "",
   selectedTalkingPhoto: "",
-  useCredits: true
+  useCredits: true,
+  runway_ml_api_key: "",
 };
 
 interface ProfileState {
@@ -45,6 +48,7 @@ interface ProfileState {
   updateProfile: (newProfile: Partial<ProfileType>) => Promise<void>;
   minusCredits: (amount: number) => Promise<boolean>;
   addCredits: (amount: number) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const mergeProfileWithDefaults = (
@@ -78,16 +82,16 @@ const useProfileStore = create<ProfileState>((set, get) => ({
 
       const newProfile = docSnap.exists()
         ? mergeProfileWithDefaults(docSnap.data() as ProfileType, {
-            authEmail,
-            authDisplayName,
-            authPhotoUrl,
-          })
+          authEmail,
+          authDisplayName,
+          authPhotoUrl,
+        })
         : createNewProfile(
-            authEmail,
-            authDisplayName,
-            authPhotoUrl,
-            authEmailVerified
-          );
+          authEmail,
+          authDisplayName,
+          authPhotoUrl,
+          authEmailVerified
+        );
 
       console.log(
         docSnap.exists()
@@ -116,6 +120,27 @@ const useProfileStore = create<ProfileState>((set, get) => ({
       console.log("Profile updated successfully");
     } catch (error) {
       handleProfileError("updating profile", error);
+    }
+  },
+
+  deleteAccount: async () => {
+    const auth = getAuth(); // Get Firebase auth instance
+    const currentUser = auth.currentUser;
+
+    const uid = useAuthStore.getState().uid;
+    if (!uid || !currentUser) return;
+
+    try {
+      const userRef = doc(db, `users/${uid}/profile/userData`);
+      // Delete the user profile data from Firestore
+      await deleteDoc(userRef);
+
+      //Delete the user from Firebase Authentication
+      await deleteUser(currentUser);
+
+      console.log("Account deleted successfully");
+    } catch (error) {
+      handleProfileError("deleting account", error);
     }
   },
 
@@ -175,7 +200,8 @@ function createNewProfile(
     replicate_api_key: "",
     selectedAvatar: "",
     selectedTalkingPhoto: "",
-    useCredits: true
+    useCredits: true,
+    runway_ml_api_key: "",
   };
 }
 

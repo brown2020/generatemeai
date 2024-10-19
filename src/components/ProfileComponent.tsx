@@ -2,11 +2,18 @@
 
 import useProfileStore from "@/zustand/useProfileStore";
 import { useCallback, useEffect, useState } from "react";
-import { isIOSReactNativeWebView } from "@/utils/platform"; // Import the platform check function
+import { isIOSReactNativeWebView } from "@/utils/platform";
 import { usePaymentsStore } from "@/zustand/usePaymentsStore";
+import { signOut } from "firebase/auth";
+import { auth } from "@/firebase/firebaseClient";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useAuthStore } from "@/zustand/useAuthStore";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
+  const router = useRouter();
   const updateProfile = useProfileStore((state) => state.updateProfile);
 
   const [fireworksApiKey, setFireworksApiKey] = useState(profile.fireworks_api_key);
@@ -15,11 +22,15 @@ export default function ProfileComponent() {
   const [briaApiKey, setBriaApiKey] = useState(profile.bria_api_key);
   const [didApiKey, setdidApiKey] = useState(profile.did_api_key);
   const [replicateApiKey, setreplicateApiKey] = useState(profile.replicate_api_key);
+  const [runwayMlApiKey, setRunwayMlApiKey] = useState(profile.runway_ml_api_key);
 
   const [useCredits, setUseCredits] = useState(profile.useCredits);
   const [showCreditsSection, setShowCreditsSection] = useState(true);
   const addCredits = useProfileStore((state) => state.addCredits);
   const addPayment = usePaymentsStore((state) => state.addPayment);
+  const deleteAccount = useProfileStore((state) => state.deleteAccount);
+  const clearAuthDetails = useAuthStore((s) => s.clearAuthDetails);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const handleMessageFromRN = async (event: MessageEvent) => {
@@ -105,6 +116,23 @@ export default function ProfileComponent() {
     [showCreditsSection]
   );
 
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const onDeleteConfirm = useCallback(async () => {
+    setShowDeleteModal(false);
+    try {
+      await deleteAccount();
+      await signOut(auth);
+      clearAuthDetails();
+      toast.success("Account deleted successfully.");
+      router.replace("/");
+    } catch (error) {
+      console.error("Error on deletion of account:", error);
+    }
+  }, [deleteAccount, clearAuthDetails, router]);
+
   const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey && didApiKey && replicateApiKey;
 
   return (
@@ -184,7 +212,17 @@ export default function ProfileComponent() {
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your D-ID API Key"
         />
-
+        <label htmlFor="d-id-api-key" className="text-sm font-medium">
+          Runway-ML API Key:
+        </label>
+        <input
+          type="text"
+          id="runway-ml-api-key"
+          value={runwayMlApiKey}
+          onChange={(e) => setRunwayMlApiKey(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          placeholder="Enter your Runway-ML  API Key"
+        />
         <label htmlFor="replicate-api-key" className="text-sm font-medium">
           Replicate API Key:
         </label>
@@ -213,6 +251,18 @@ export default function ProfileComponent() {
         </button>
       </div>
 
+      <div className="flex flex-col px-5 py-3 gap-3 border border-gray-500 rounded-md">
+        <label htmlFor="setting-lable-key" className="text-sm font-medium">
+          Settings:
+        </label>
+        <button
+          className="btn-primary bg-[#e32012] self-start rounded-md hover:bg-[#e32012]/30"
+          onClick={handleDeleteClick}
+        >
+          Delete Account
+        </button>
+      </div>
+
       <div className="flex items-center px-5 py-3 gap-3 border border-gray-500 rounded-md">
         <label htmlFor="toggle-use-credits" className="text-sm font-medium">
           Use:
@@ -228,6 +278,12 @@ export default function ProfileComponent() {
           {areApiKeysAvailable && <option value="apikeys">API Keys</option>}
         </select>
       </div>
+
+      <DeleteConfirmModal
+        showDeleteModal={showDeleteModal}
+        onHideModal={() => setShowDeleteModal(false)}
+        onDeleteConfirm={onDeleteConfirm}
+      />
     </div>
   );
 }
