@@ -7,19 +7,18 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
 } from "firebase/auth";
 
 import Link from "next/link";
-import { MailIcon, XIcon, LockIcon } from "lucide-react"; // Added LockIcon for password login
+import { MailIcon, XIcon, LockIcon } from "lucide-react";
 import { PulseLoader } from "react-spinners";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
 import toast from "react-hot-toast";
 
 import googleLogo from "@/app/assets/google.svg";
-// import microsoftLogo from "@/app/assets/microsoft.svg";
-// import appleLogo from "@/app/assets/apple.svg";
 import Image from "next/image";
 import { isIOSReactNativeWebView } from "@/utils/platform";
 
@@ -76,62 +75,6 @@ export default function AuthComponent() {
     }
   };
 
-  // const signInWithMicrosoft = async () => {
-  //   if (!acceptTerms) {
-  //     if (formRef.current) {
-  //       formRef.current.reportValidity();
-  //     }
-  //     return;
-  //   }
-
-  //   try {
-  //     const provider = new OAuthProvider("microsoft.com");
-  //     await signInWithPopup(auth, provider);
-  //   } catch (error) {
-  //     if (isFirebaseError(error)) {
-  //       if (error.code === "auth/account-exists-with-different-credential") {
-  //         toast.error(
-  //           "An account with the same email exists with a different sign-in provider."
-  //         );
-  //       } else {
-  //         toast.error(
-  //           "Something went wrong signing in with Microsoft\n" + error.message
-  //         );
-  //       }
-  //     }
-  //   } finally {
-  //     hideModal();
-  //   }
-  // };
-
-  // const signInWithApple = async () => {
-  //   if (!acceptTerms) {
-  //     if (formRef.current) {
-  //       formRef.current.reportValidity();
-  //     }
-  //     return;
-  //   }
-
-  //   try {
-  //     const provider = new OAuthProvider("apple.com");
-  //     await signInWithPopup(auth, provider);
-  //   } catch (error) {
-  //     if (isFirebaseError(error)) {
-  //       if (error.code === "auth/account-exists-with-different-credential") {
-  //         toast.error(
-  //           "An account with the same email exists with a different sign-in provider."
-  //         );
-  //       } else {
-  //         toast.error(
-  //           "Something went wrong signing in with Apple\n" + error.message
-  //         );
-  //       }
-  //     }
-  //   } finally {
-  //     hideModal();
-  //   }
-  // };
-
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -148,7 +91,7 @@ export default function AuthComponent() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       window.localStorage.setItem("generateEmail", email);
-      window.localStorage.setItem("generateName", email.split('@')[0]);
+      window.localStorage.setItem("generateName", email.split("@")[0]);
     } catch (error: unknown) {
       handleAuthError(error);
     } finally {
@@ -161,10 +104,10 @@ export default function AuthComponent() {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       window.localStorage.setItem("generateEmail", email);
-      window.localStorage.setItem("generateName", email.split('@')[0]);
+      window.localStorage.setItem("generateName", email.split("@")[0]);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        if ((error as { code?: string }).code === 'auth/email-already-in-use') {
+        if ((error as { code?: string }).code === "auth/email-already-in-use") {
           handlePasswordLogin();
           return;
         }
@@ -191,6 +134,21 @@ export default function AuthComponent() {
       console.error("Error sending sign-in link:", error);
       alert("An error occurred while sending the sign-in link.");
       hideModal();
+    }
+  };
+
+  // Forgot password handler
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast.error("Please enter your email to reset your password.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success(`Password reset email sent to ${email}`);
+    } catch (error) {
+      handleAuthError(error);
     }
   };
 
@@ -284,13 +242,14 @@ export default function AuthComponent() {
               </div>
             ) : (
               <form
-                onSubmit={isEmailLinkLogin ? handleSubmit : handlePasswordSignup}
+                onSubmit={
+                  isEmailLinkLogin ? handleSubmit : handlePasswordSignup
+                }
                 ref={formRef}
                 className="flex flex-col gap-2"
               >
                 <div className="text-3xl text-center pb-3">Sign In</div>
 
-                {/* Conditionally render Google Sign-In and divider */}
                 {showGoogleSignIn && (
                   <>
                     <AuthButton
@@ -333,6 +292,19 @@ export default function AuthComponent() {
                     className="input-primary mt-2"
                   />
                 )}
+
+                {!isEmailLinkLogin && (
+                  <div className="text-right mt-2">
+                    <button
+                      type="button"
+                      onClick={handlePasswordReset}
+                      className="underline text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   className="btn-primary"
