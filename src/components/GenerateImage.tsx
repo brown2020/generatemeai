@@ -414,7 +414,7 @@ export default function GenerateImage() {
             defaultValue={findModelByValue(
               (modelSearchParam as model) || "playground-v2"
             )}
-            options={models.filter((m) => m.type === "image")}
+            options={models.filter((m) => m.type === "image" || m.type === "both")}
             styles={selectStyles}
           />
         </div>
