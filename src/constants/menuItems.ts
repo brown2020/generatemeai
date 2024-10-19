@@ -23,6 +23,13 @@ export const MENU_ITEMS: MenuItem[] = [
     header: false,
     footer: true,
   },
+  {
+    label: "Support",
+    href: "/support",
+    show: "everyone",
+    header: false,
+    footer: true,
+  },
 ];
 
 type navItemType = {

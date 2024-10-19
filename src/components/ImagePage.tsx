@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "../firebase/firebaseClient";
 import {
@@ -19,7 +18,8 @@ import {
   LinkedinIcon,
   EmailIcon,
 } from "react-share";
-
+import '../app/globals.css';
+import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { X, Sparkle, Plus } from "lucide-react";
@@ -31,6 +31,7 @@ import useProfileStore from "@/zustand/useProfileStore";
 import { creditsToMinus } from "@/utils/credits";
 import ModalComponent from "./VideoModalComponent";
 import { removeBackground } from "@/actions/removeBackground";
+import { SiStagetimer } from "react-icons/si";
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,6 +60,7 @@ const ImagePage = ({ id }: { id: string }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [loading, setLoading] = useState(false);
 
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
@@ -80,13 +82,13 @@ const ImagePage = ({ id }: { id: string }) => {
   useEffect(() => {
     const fetchImageData = async () => {
       let docRef;
-
       if (uid && !authPending) {
         docRef = doc(db, "profiles", uid, "covers", id);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           const data = docSnap.data();
+
           setImageData({ ...data });
           setIsSharable(data?.isSharable ?? false);
           setTags(data?.tags ?? []);
@@ -124,24 +126,33 @@ const ImagePage = ({ id }: { id: string }) => {
     }
   }, [id, uid, authPending, refreshCounter, isOwner]);
 
+  const getFileTypeFromUrl = (url: string): string | null | undefined => {
+    if (!url) { return; }
+    const fileName = url.split('/').pop();
+    const cleanFileName = fileName?.split('?')[0];
+    const fileParts: string[] | undefined = cleanFileName?.split('.');
+
+    return fileParts && fileParts.length > 1 ? fileParts.pop() : null;
+  }
+
   const handleDownload = async () => {
     if (imageData?.videoDownloadUrl) {
       const videoUrl = imageData.videoDownloadUrl;
       const currentDate = new Date().toISOString().split("T")[0];
-      const fileName = `${imageData?.freestyle}_${currentDate}.mp4`;
-  
+      const fileName = `${imageData?.freestyle}_${currentDate}.${getFileTypeFromUrl(videoUrl)}`;
+
       try {
         const response = await fetch(videoUrl);
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
-  
+
         const link = document.createElement("a");
         link.href = blobUrl;
         link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-  
+
         window.URL.revokeObjectURL(blobUrl);
       } catch (error) {
         console.error("Video download error:", error);
@@ -149,13 +160,14 @@ const ImagePage = ({ id }: { id: string }) => {
       }
     } else {
       const container = document.getElementById("image-container");
+
       if (!container) return;
-  
+
       try {
         const dataUrl = await domtoimage.toPng(container);
         const currentDate = new Date().toISOString().split("T")[0];
         const fileName = `${imageData?.freestyle}_${currentDate}.png`;
-  
+
         const link = document.createElement("a");
         link.href = dataUrl;
         link.download = fileName;
@@ -454,7 +466,8 @@ const ImagePage = ({ id }: { id: string }) => {
           id="image-container"
           style={{ backgroundColor: backgroundColor }}
         >
-          {imageData?.videoDownloadUrl ? (
+          {imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif" ? (
+
             <video
               className="block h-full w-full object-cover"
               src={imageData.videoDownloadUrl}
@@ -464,10 +477,14 @@ const ImagePage = ({ id }: { id: string }) => {
             >
               Your browser does not support the video tag.
             </video>
+
+
+
+
           ) : (
             <img
               className="block h-full w-full object-cover"
-              src={imageData?.downloadUrl}
+              src={getFileTypeFromUrl(imageData?.videoDownloadUrl) == "gif" ? imageData?.videoDownloadUrl : imageData?.downloadUrl}
               alt="Visual Result"
               height={512}
               width={512}
@@ -509,6 +526,7 @@ const ImagePage = ({ id }: { id: string }) => {
           Download
         </button>
       )}
+
       {uid && isOwner && (
         <button
           className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
@@ -538,7 +556,7 @@ const ImagePage = ({ id }: { id: string }) => {
           className="btn-primary2 h-12 flex items-center justify-center mx-3"
           onClick={openModal}
         >
-          Generate Video/GIF
+          Generate Video/Animation
         </button>
       )}
 
@@ -746,7 +764,32 @@ const ImagePage = ({ id }: { id: string }) => {
           Next: Generate Your Image
         </button>
       )}
+      {(imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif") && <div className="p-2">
+        <button onClick={async () => {
+          try {
+            setLoading(true);
+            const response = await processVideoToGIF(imageData?.videoDownloadUrl, id, uid);
+            setLoading(false);
+            toast.success(`GIF Created Successfully!`);
+            router.push(`${response}`);
+          } catch (error: unknown) {
+            if (error instanceof Error) {
+              toast.error(`${error.message}`);
+            } else {
+              toast.error(`An unexpected error occurred.`);
+            }
+          }
 
+        }} className="btn-primary2  flex h-12 items-center justify-center  w-full  " disabled={loading}>
+          {loading ? <span className="flex flex-row  items-center space-x-2">
+            <span className="rotating-icon">
+              <SiStagetimer />
+            </span> <span> Converting ... </span>
+
+          </span> : <span> Create GIF </span>}
+        </button>
+
+      </div>}
       {!imageData?.videoDownloadUrl && uid && isOwner && (
         <button
           className="btn-primary2 h-12 flex items-center justify-center mx-3"
