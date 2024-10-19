@@ -2,7 +2,6 @@ import "./globals.css";
 import { ClientProvider } from "@/components/ClientProvider";
 import Header from "@/components/Header";
 import BottomBar from "@/components/BottomBar";
-import Footer from "@/components/Footer";
 
 export const metadata = {
   title: "Generate.me",
@@ -33,7 +32,6 @@ export default function RootLayout({
             <Header />
             <div className="flex flex-col h-container-small md:h-container-custom overflow-y-scroll">
               <div className="flex flex-col h-full flex-1">{children}</div>
-              <Footer />
             </div>
             <BottomBar />
           </div>
