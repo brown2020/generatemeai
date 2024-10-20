@@ -15,28 +15,28 @@ import {
 import fetch from "node-fetch";
 
 interface RequestBody {
-   prompt ? : string;
-   n ? : number;
-   size ? : string;
-   cfg_scale ? : number;
-   height ? : number;
-   width ? : number;
-   samples ? : number;
-   steps ? : number;
-   seed ? : number;
-   style_preset ? : string;
-   safety_check ? : boolean;
-   sampler ? : string;
-   input ? : {
+   prompt?: string;
+   n?: number;
+   size?: string;
+   cfg_scale?: number;
+   height?: number;
+   width?: number;
+   samples?: number;
+   steps?: number;
+   seed?: number;
+   style_preset?: string;
+   safety_check?: boolean;
+   sampler?: string;
+   input?: {
       text: string
    };
-   version ? : string;
+   version?: string;
 }
 
 interface DalleResponse {
    data: {
       url: string
-   } [];
+   }[];
 }
 
 // Function to check credits
@@ -88,7 +88,7 @@ export async function generateImage(data: FormData) {
             apiUrl = `https://api.openai.com/v1/images/edits`;
             headers = {
                Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
-            }`,
+                  }`,
             };
          } else {
             apiUrl = `https://api.openai.com/v1/images/generations`;
@@ -100,7 +100,7 @@ export async function generateImage(data: FormData) {
             headers = {
                "Content-Type": "application/json",
                Authorization: `Bearer ${useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
-            }`,
+                  }`,
             };
          }
       }
@@ -122,7 +122,7 @@ export async function generateImage(data: FormData) {
             headers = {
                Accept: "image/jpeg",
                Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
+                  }`,
             };
          } else {
             apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0`;
@@ -140,7 +140,7 @@ export async function generateImage(data: FormData) {
                "Content-Type": "application/json",
                Accept: "image/jpeg",
                Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
+                  }`,
             };
          }
       }
@@ -164,7 +164,7 @@ export async function generateImage(data: FormData) {
          headers = {
             Accept: "image/*",
             Authorization: `Bearer ${useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
-          }`,
+               }`,
          };
       }
       // Handling for Playground V2 Model
@@ -185,7 +185,7 @@ export async function generateImage(data: FormData) {
             headers = {
                Accept: "image/jpeg",
                Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
+                  }`,
             };
          } else {
             apiUrl =
@@ -204,11 +204,12 @@ export async function generateImage(data: FormData) {
                "Content-Type": "application/json",
                Accept: "image/jpeg",
                Authorization: `Bearer ${useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
-            }`,
+                  }`,
             };
          }
       } else if (model === "flux-schnell") {
          const { default: Replicate } = await import('replicate');
+         const { default: sharp } = await import('sharp');
 
          const replicate = new Replicate({
             auth: useCredits ? process.env.REPLICATE_API_KEY! : replicateAPIKey!
@@ -222,8 +223,7 @@ export async function generateImage(data: FormData) {
          });
 
          let attemptCount = 0;
-
-         let output
+         let output;
 
          while (attemptCount++ < 24) {
             await new Promise(resolve => setTimeout(resolve, 5000));
@@ -232,10 +232,14 @@ export async function generateImage(data: FormData) {
          }
 
          if (output?.status != "succeeded") {
-            throw new Error("Failed generating image via Replicate API.")
+            throw new Error("Failed generating image via Replicate API.");
          }
 
-         imageData = await fetch(output.output[0]).then((res) => res.arrayBuffer())
+         const webpImageData = await fetch(output.output[0]).then((res) => res.arrayBuffer());
+
+         imageData = await sharp(Buffer.from(webpImageData))
+            .toFormat('jpeg')
+            .toBuffer();
       }
 
       // Send the request to the external API
