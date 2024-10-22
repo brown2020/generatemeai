@@ -188,7 +188,7 @@ const ModalComponent: React.FC<ModalProps> = ({
                 ? "bg-[#2563EB] text-white"
                 : "bg-gray-200 text-black-500"
                 }`}
-              onClick={() => setMode("video")}
+              onClick={() => { setMode("video"); setVideoModel("d-id"); }}
             >
               Video
             </button>
@@ -197,7 +197,7 @@ const ModalComponent: React.FC<ModalProps> = ({
                 ? "bg-[#2563EB] text-white"
                 : "bg-gray-200 text-black-500"
                 }`}
-              onClick={() => setMode("animation")}
+              onClick={() => { setMode("animation"); setVideoModel("d-id"); }}
             >
               Silent Animation
             </button>
@@ -226,6 +226,9 @@ const ModalComponent: React.FC<ModalProps> = ({
                 }
                 defaultValue={findModelByValue(
                   initialData?.videoModel || "d-id"
+                )}
+                value={findModelByValue(
+                  videoModel || "d-id"
                 )}
                 options={models.filter(
                   (m) =>
