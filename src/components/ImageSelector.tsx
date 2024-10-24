@@ -108,7 +108,7 @@ const ImageListPage = () => {
 
   return (
     <div className="flex flex-col w-[98%] mx-auto h-full gap-2">
-      <div className="flex items-center gap-4 my-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 my-4">
         <input
           type="text"
           value={searchQuery}
@@ -139,8 +139,8 @@ const ImageListPage = () => {
             Videos
           </button>
         </div>
-
       </div>
+
       {/* <div className="flex gap-2 flex-wrap mb-4">
         {allTags.map((tag, index) => (
           <button
