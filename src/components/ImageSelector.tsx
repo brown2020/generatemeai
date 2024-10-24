@@ -63,35 +63,35 @@ const ImageListPage = () => {
 
   const handleSearch = () => {
     const formattedSelectedTags = selectedTags.map((tag) => tag.trim().toLowerCase());
-    
+
     const filteredImages = images.filter((image) => {
-      
+
       const freestyleMatch = image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const tagsMatch = image.tags?.some((tag) =>
         tag.trim().toLowerCase().includes(searchQuery.toLowerCase())
       );
-  
-      
+
+
       const tagsFilterMatch =
         formattedSelectedTags.length === 0 ||
         formattedSelectedTags.every((tag) =>
           image.tags?.map((t) => t.trim().toLowerCase()).includes(tag)
         );
-  
-     
+
+
       const typeMatch =
         filterType === 'all' ||
         (filterType === 'image' && !image.videoDownloadUrl) ||
         (filterType === 'video' && image.videoDownloadUrl);
-  
-      
+
+
       return (freestyleMatch || tagsMatch) && tagsFilterMatch && typeMatch;
     });
-  
+
     return filteredImages;
   };
-  
+
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -116,28 +116,25 @@ const ImageListPage = () => {
           placeholder="Search..."
           className="p-2 border border-gray-300 rounded-md"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-scroll">
           <button
             onClick={() => setFilterType('all')}
-            className={`px-3 py-1 rounded-md ${
-              filterType === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
+            className={`px-3 py-1 rounded-md ${filterType === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
           >
             All
           </button>
           <button
             onClick={() => setFilterType('image')}
-            className={`px-3 py-1 rounded-md ${
-              filterType === 'image' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
+            className={`px-3 py-1 rounded-md ${filterType === 'image' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
           >
             Images
           </button>
           <button
             onClick={() => setFilterType('video')}
-            className={`px-3 py-1 rounded-md ${
-              filterType === 'video' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
+            className={`px-3 py-1 rounded-md ${filterType === 'video' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
           >
             Videos
           </button>
@@ -162,9 +159,8 @@ const ImageListPage = () => {
           <button
             key={index}
             onClick={() => toggleTag(tag)}
-            className={`px-3 py-1 rounded-md ${
-              selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
+            className={`px-3 py-1 rounded-md ${selectedTags.includes(tag) ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
           >
             {tag}
           </button>
@@ -228,9 +224,8 @@ const ImageListPage = () => {
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className={`px-4 py-2 rounded-md text-white ${
-              currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
-            } transition duration-150 ease-in-out`}
+            className={`px-4 py-2 rounded-md text-white ${currentPage === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+              } transition duration-150 ease-in-out`}
           >
             Previous
           </button>
@@ -240,11 +235,10 @@ const ImageListPage = () => {
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className={`px-4 py-2 rounded-md text-white ${
-              currentPage === totalPages
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600'
-            } transition duration-150 ease-in-out`}
+            className={`px-4 py-2 rounded-md text-white ${currentPage === totalPages
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600'
+              } transition duration-150 ease-in-out`}
           >
             Next
           </button>
