@@ -2,7 +2,7 @@ import { StylesConfig } from "react-select";
 import { CSSObject } from "@emotion/react";
 
 export const selectStyles: StylesConfig<
-  { id: number; value: string; label: string },
+  { value: string; label: string },
   false
 > = {
   option: (provided: CSSObject): CSSObject => ({
