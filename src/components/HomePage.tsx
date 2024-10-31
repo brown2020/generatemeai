@@ -17,16 +17,18 @@ export default function HomePage() {
           orderBy("timestamp", "desc"),
           limit(30)
         );
-        
+
         const imageSnapshot = await getDocs(imageQuery);
-        const filteredImages = imageSnapshot.docs.filter(doc => {
+        const filteredImages = imageSnapshot.docs.filter((doc) => {
           const data = doc.data();
-          return !data.password || data.password === '';
+          return !data.password || data.password === "";
         });
-        
-        const images = filteredImages.map((doc) => doc.data().downloadUrl as string);
-        
-        if(images.length >= 15) setBackgroundImages(images);
+
+        const images = filteredImages.map(
+          (doc) => doc.data().downloadUrl as string
+        );
+
+        if (images.length >= 15) setBackgroundImages(images);
       } catch (error) {
         console.error("Error fetching images from Firestore:", error);
       }
@@ -48,32 +50,36 @@ export default function HomePage() {
       {backgroundImages.length >= 5 && (
         <div className="absolute top-0 left-0 w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 p-2 z-0">
           {displayedImages.map((image, index) => (
-            <motion.div
+            <div
               key={index}
               className="bg-cover bg-center rounded-lg shadow-lg"
               style={{
                 backgroundImage: `url(${image})`,
-                width: '100%',
-                height: '0',
-                paddingBottom: '100%',
-                cursor: 'pointer'
+                width: "100%",
+                height: "0",
+                paddingBottom: "100%",
+                cursor: "pointer",
               }}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.5)",
-              }}
-              animate={{
-                rotate: [0, 1, -1, 0],
-                scale: [1, 1.02, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                repeatType: "loop",
-                ease: "easeInOut",
-              }}
-              whileTap={{ scale: 0.98 }}
-            />
+            >
+              <motion.div
+                style={{ width: "100%", height: "100%" }}
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: "0 8px 30px rgba(0, 0, 0, 0.5)",
+                }}
+                animate={{
+                  rotate: [0, 1, -1, 0],
+                  scale: [1, 1.02, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  ease: "easeInOut",
+                }}
+                whileTap={{ scale: 0.98 }}
+              />
+            </div>
           ))}
         </div>
       )}

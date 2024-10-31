@@ -181,7 +181,7 @@ function handleError(
     partial:
       | Partial<PaymentsStoreState>
       | ((state: PaymentsStoreState) => Partial<PaymentsStoreState>),
-    replace?: boolean
+    replace?: false // Make replace explicitly false or undefined
   ) => void,
   error: unknown,
   defaultMessage: string

@@ -6,7 +6,7 @@ import { db } from "@/firebase/firebaseClient";
 import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { useState } from "react";
 import { PromptDataType } from "@/types/promptdata";
-import Select from "react-select";
+import Select, { SingleValue } from "react-select";
 import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
 import { findModelByValue, models, SelectModel } from "@/constants/models";
@@ -54,7 +54,9 @@ const ModalComponent: React.FC<ModalProps> = ({
   const [scriptPrompt, setScriptPrompt] = useState<string>(
     initialData?.scriptPrompt || ""
   );
-  const [videoModel, setVideoModel] = useState<model>(initialData?.videoModel || "d-id");
+  const [videoModel, setVideoModel] = useState<model>(
+    initialData?.videoModel || "d-id"
+  );
   const [audio, setAudio] = useState<string>(initialData?.audio || "Matthew");
   const [animation, setAnimation] = useState<string>(
     initialData?.animation || "nostalgia"
@@ -82,7 +84,9 @@ const ModalComponent: React.FC<ModalProps> = ({
       audio: audio || "",
       videoModel: videoModel || "",
       scriptPrompt: scriptPrompt,
-      animation: findModelByValue(videoModel as model)?.hasAnimationType ? animation || "" : ""
+      animation: findModelByValue(videoModel as model)?.hasAnimationType
+        ? animation || ""
+        : "",
     };
 
     await setDoc(docRef, finalPromptData);
@@ -112,7 +116,7 @@ const ModalComponent: React.FC<ModalProps> = ({
         toast.error(
           `Failed to generate video: ${result?.error || "Unknown error"}`
         );
-        console.log(result)
+        console.log(result);
         throw new Error("Failed to generate video.");
       }
 
@@ -184,20 +188,28 @@ const ModalComponent: React.FC<ModalProps> = ({
         <div className="p-4 md:p-5 space-y-6">
           <div className="flex w-full">
             <button
-              className={`w-1/2 px-4 py-2 rounded-md rounded-r-none ${mode === "video"
-                ? "bg-[#2563EB] text-white"
-                : "bg-gray-200 text-black-500"
-                }`}
-              onClick={() => { setMode("video"); setVideoModel("d-id"); }}
+              className={`w-1/2 px-4 py-2 rounded-md rounded-r-none ${
+                mode === "video"
+                  ? "bg-[#2563EB] text-white"
+                  : "bg-gray-200 text-black-500"
+              }`}
+              onClick={() => {
+                setMode("video");
+                setVideoModel("d-id");
+              }}
             >
               Video
             </button>
             <button
-              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${mode === "animation"
-                ? "bg-[#2563EB] text-white"
-                : "bg-gray-200 text-black-500"
-                }`}
-              onClick={() => { setMode("animation"); setVideoModel("d-id"); }}
+              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${
+                mode === "animation"
+                  ? "bg-[#2563EB] text-white"
+                  : "bg-gray-200 text-black-500"
+              }`}
+              onClick={() => {
+                setMode("animation");
+                setVideoModel("d-id");
+              }}
             >
               Silent Animation
             </button>
@@ -221,15 +233,13 @@ const ModalComponent: React.FC<ModalProps> = ({
                 isClearable={true}
                 isSearchable={true}
                 name="videoModel"
-                onChange={(v) =>
-                  setVideoModel(v ? (v as SelectModel).value : "d-id")
+                onChange={(v: SingleValue<SelectModel>) =>
+                  setVideoModel(v ? v.value : "d-id")
                 }
                 defaultValue={findModelByValue(
                   initialData?.videoModel || "d-id"
                 )}
-                value={findModelByValue(
-                  videoModel || "d-id"
-                )}
+                value={findModelByValue(videoModel || "d-id")}
                 options={models.filter(
                   (m) =>
                     (m.type === "video" || m.type === "both") &&
@@ -246,7 +256,9 @@ const ModalComponent: React.FC<ModalProps> = ({
                   isClearable
                   isSearchable
                   name="audio"
-                  onChange={(v) => setAudio(v ? v.value : "Matthew")}
+                  onChange={(v: SingleValue<SelectModel>) =>
+                    setAudio(v ? v.value : "Matthew")
+                  }
                   defaultValue={{ label: "Matthew", value: "Matthew" }}
                   options={audios.map((audio) => ({
                     id: audio.id,
@@ -267,7 +279,7 @@ const ModalComponent: React.FC<ModalProps> = ({
                     isClearable
                     isSearchable
                     name="animation"
-                    onChange={(v) =>
+                    onChange={(v: SingleValue<SelectModel>) =>
                       setAnimation(
                         v ? v.value : initialData?.animation || "nostalgia"
                       )
