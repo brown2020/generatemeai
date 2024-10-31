@@ -1,7 +1,13 @@
 import ImagePage from "@/components/ImagePage";
 
-type Params = { params: { id: string } }
+type Params = { params: Promise<{ id: string }> }
 
-export default function Page({ params: { id } } : Params) {
+export default async function Page(props: Params) {
+  const params = await props.params;
+
+  const {
+    id
+  } = params;
+
   return <ImagePage id={id} />;
 }
