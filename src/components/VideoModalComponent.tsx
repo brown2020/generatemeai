@@ -256,12 +256,11 @@ const ModalComponent: React.FC<ModalProps> = ({
                   isClearable
                   isSearchable
                   name="audio"
-                  onChange={(v: SingleValue<SelectModel>) =>
-                    setAudio(v ? v.value : "Matthew")
-                  }
+                  onChange={(
+                    v: SingleValue<{ label: string; value: string }>
+                  ) => setAudio(v ? v.value : "Matthew")}
                   defaultValue={{ label: "Matthew", value: "Matthew" }}
                   options={audios.map((audio) => ({
-                    id: audio.id,
                     label: audio.label,
                     value: audio.value,
                   }))}
@@ -279,7 +278,9 @@ const ModalComponent: React.FC<ModalProps> = ({
                     isClearable
                     isSearchable
                     name="animation"
-                    onChange={(v: SingleValue<SelectModel>) =>
+                    onChange={(
+                      v: SingleValue<{ label: string; value: string }>
+                    ) =>
                       setAnimation(
                         v ? v.value : initialData?.animation || "nostalgia"
                       )
@@ -288,10 +289,9 @@ const ModalComponent: React.FC<ModalProps> = ({
                       label: initialData?.animation || "nostalgia",
                       value: initialData?.animation || "nostalgia",
                     }}
-                    options={animations.map((audio) => ({
-                      id: audio.id,
-                      label: audio.label,
-                      value: audio.value,
+                    options={animations.map((animation) => ({
+                      label: animation.label,
+                      value: animation.value,
                     }))}
                     placeholder="Select animation"
                   />
