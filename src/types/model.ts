@@ -8,6 +8,7 @@ export type model =
   | "d-id"
   | "chatgpt"
   | "flux-schnell"
-  |"runway-ml"
-  |"tavus"
-  |"imagen"
+  | "runway-ml"
+  | "tavus"
+  | "imagen"
+  | "ideogram-ai";
