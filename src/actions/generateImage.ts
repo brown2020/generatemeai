@@ -23,7 +23,6 @@ interface RequestBody {
     text: string;
   };
   version?: string;
-  // Ideogram-specific fields
   image_request?: {
     prompt: string;
     aspect_ratio?: AspectRatio;
@@ -180,6 +179,7 @@ export async function generateImage(data: FormData) {
     const fireworksAPIKey = data.get("fireworksAPIKey") as string | null;
     const stabilityAPIKey = data.get("stabilityAPIKey") as string | null;
     const replicateAPIKey = data.get("replicateAPIKey") as string | null;
+    const ideogramAPIKey = data.get("ideogramAPIKey") as string | null;
     const useCredits = data.get("useCredits") as boolean | null;
     const credits = data.get("credits") as string | null;
     const model = data.get("model") as string | null;
@@ -211,7 +211,7 @@ export async function generateImage(data: FormData) {
         apiUrl = `https://api.openai.com/v1/images/edits`;
         headers = {
           Authorization: `Bearer ${
-            useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+            !useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
           }`,
         };
       } else {
@@ -224,13 +224,11 @@ export async function generateImage(data: FormData) {
         headers = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${
-            useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+            !useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
           }`,
         };
       }
-    }
-    // Handling for Stable Diffusion XL Model
-    else if (model === "stable-diffusion-xl") {
+    } else if (model === "stable-diffusion-xl") {
       if (img) {
         formData = new FormData();
         formData.append("init_image", img);
@@ -247,7 +245,7 @@ export async function generateImage(data: FormData) {
         headers = {
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
           }`,
         };
       } else {
@@ -266,13 +264,11 @@ export async function generateImage(data: FormData) {
           "Content-Type": "application/json",
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
           }`,
         };
       }
-    }
-    // Handling for Stability SD3 Turbo Model
-    else if (model === "stability-sd3-turbo") {
+    } else if (model === "stability-sd3-turbo") {
       formData = new FormData();
       if (img) {
         formData.append("mode", "image-to-image");
@@ -291,12 +287,10 @@ export async function generateImage(data: FormData) {
       headers = {
         Accept: "image/*",
         Authorization: `Bearer ${
-          useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
+          !useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
         }`,
       };
-    }
-    // Handling for Playground V2 Model
-    else if (model === "playground-v2" || model === "playground-v2-5") {
+    } else if (model === "playground-v2" || model === "playground-v2-5") {
       if (img) {
         formData = new FormData();
         formData.append("init_image", img);
@@ -313,7 +307,7 @@ export async function generateImage(data: FormData) {
         headers = {
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
           }`,
         };
       } else {
@@ -333,7 +327,7 @@ export async function generateImage(data: FormData) {
           "Content-Type": "application/json",
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
           }`,
         };
       }
@@ -342,7 +336,7 @@ export async function generateImage(data: FormData) {
       const { default: sharp } = await import("sharp");
 
       const replicate = new Replicate({
-        auth: useCredits ? process.env.REPLICATE_API_KEY! : replicateAPIKey!,
+        auth: !useCredits ? process.env.REPLICATE_API_KEY! : replicateAPIKey!,
       });
 
       const prediction = await replicate.predictions.create({
@@ -372,10 +366,7 @@ export async function generateImage(data: FormData) {
       imageData = await sharp(Buffer.from(webpImageData))
         .toFormat("jpeg")
         .toBuffer();
-    }
-
-    // Handling for Ideogram
-    if (model === "ideogram-ai") {
+    } else if (model === "ideogram-ai") {
       apiUrl = `https://api.ideogram.ai/generate`;
 
       requestBody = {
@@ -391,7 +382,9 @@ export async function generateImage(data: FormData) {
 
       headers = {
         "Content-Type": "application/json",
-        "Api-Key": process.env.IDEOGRAM_API_KEY!,
+        "Api-Key": !useCredits
+          ? process.env.IDEOGRAM_API_KEY!
+          : ideogramAPIKey!,
       };
     }
 
