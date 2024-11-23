@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import DeleteConfirmModal from "./DeleteConfirmModal";
-import { FaSpinner } from "react-icons/fa";
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
   const router = useRouter();
@@ -251,18 +250,6 @@ export default function ProfileComponent() {
           placeholder="Enter your Runway-ML  API Key"
         />
 
-        <label htmlFor="ideogram-api-key" className="text-sm font-medium">
-          Ideogram API Key:
-        </label>
-        <input
-          type="text"
-          id="ideogram-api-key"
-          value={ideogramApiKey}
-          onChange={(e) => setIdeogramApiKey(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 h-10"
-          placeholder="Enter your ideogram API Key"
-        />
-
         <label htmlFor="replicate-api-key" className="text-sm font-medium">
           Replicate API Key:
         </label>
@@ -273,6 +260,18 @@ export default function ProfileComponent() {
           onChange={(e) => setreplicateApiKey(e.target.value)}
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your Replicate API Key"
+        />
+
+        <label htmlFor="ideogram-api-key" className="text-sm font-medium">
+          Ideogram API Key:
+        </label>
+        <input
+          type="text"
+          id="ideogram-api-key"
+          value={ideogramApiKey}
+          onChange={(e) => setIdeogramApiKey(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          placeholder="Enter your ideogram API Key"
         />
 
         <button
