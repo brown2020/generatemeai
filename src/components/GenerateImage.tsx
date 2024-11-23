@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { PromptDataType } from "@/types/promptdata";
 import { artStyles } from "@/constants/artStyles";
 import { selectStyles } from "@/constants/selectStyles";
-import Select from "react-select";
+import Select, { OnChangeValue } from "react-select";
 import { PulseLoader } from "react-spinners";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -23,7 +23,10 @@ import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
 import { Image as ImageIcon, Mic, StopCircle, XCircle } from "lucide-react";
 import { imageCategories } from "@/constants/imageCategories";
-import { isIOSReactNativeWebView, checkRestrictedWords } from "@/utils/platform"; // Import the platform check function
+import {
+  isIOSReactNativeWebView,
+  checkRestrictedWords,
+} from "@/utils/platform"; // Import the platform check function
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -57,6 +60,7 @@ export default function GenerateImage() {
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
   const replicateAPIKey = useProfileStore((s) => s.profile.replicate_api_key);
+  const ideogramAPIKey = useProfileStore((s) => s.profile.ideogram_api_key);
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
@@ -193,7 +197,7 @@ export default function GenerateImage() {
   async function saveHistory(
     promptData: PromptDataType,
     prompt: string,
-    downloadUrl: string,
+    downloadUrl: string
   ) {
     if (!uid) return;
 
@@ -215,6 +219,12 @@ export default function GenerateImage() {
     await setDoc(docRef, finalPromptData);
   }
 
+  const handleStyleChange = (
+    v: OnChangeValue<{ value: string; label: string }, false>
+  ) => {
+    setImageStyle(v ? v.value : "");
+  };
+
   const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!isPromptValid || !isModelValid) {
@@ -223,8 +233,10 @@ export default function GenerateImage() {
     }
 
     if (isIOSReactNativeWebView() && checkRestrictedWords(imagePrompt)) {
-      toast.error('Your description contains restricted words and cannot be used.')
-      return;  
+      toast.error(
+        "Your description contains restricted words and cannot be used."
+      );
+      return;
     }
 
     try {
@@ -245,6 +257,7 @@ export default function GenerateImage() {
       formData.append("fireworksAPIKey", fireworksAPIKey);
       formData.append("stabilityAPIKey", stabilityAPIKey);
       formData.append("replicateAPIKey", replicateAPIKey);
+      formData.append("ideogramAPIKey", ideogramAPIKey);
       formData.append("useCredits", useCredits.toString());
       formData.append("credits", credits.toString());
       formData.append("model", model);
@@ -393,7 +406,7 @@ export default function GenerateImage() {
             isClearable={true}
             isSearchable={true}
             name="styles"
-            onChange={(v) => setImageStyle(v ? v.value : "")}
+            onChange={handleStyleChange}
             options={artStyles}
             styles={selectStyles}
             defaultInputValue={styleSearchParam || ""}
@@ -401,9 +414,7 @@ export default function GenerateImage() {
         </div>
 
         <div>
-          <div>
-            Use
-          </div>
+          <div>Use</div>
           <Select
             isClearable={true}
             isSearchable={true}
@@ -414,7 +425,9 @@ export default function GenerateImage() {
             defaultValue={findModelByValue(
               (modelSearchParam as model) || "playground-v2"
             )}
-            options={models.filter((m) => m.type === "image" || m.type === "both")}
+            options={models.filter(
+              (m) => m.type === "image" || m.type === "both"
+            )}
             styles={selectStyles}
           />
         </div>
@@ -506,11 +519,7 @@ export default function GenerateImage() {
             handleGenerateSDXL(e);
           }}
         >
-          {loading ? (
-            <PulseLoader color="#fff" size={12} />
-          ) : (
-            "Create an Image"
-          )}
+          {loading ? <PulseLoader color="#fff" size={12} /> : "Create an Image"}
         </button>
       </div>
 

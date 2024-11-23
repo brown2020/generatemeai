@@ -10,19 +10,30 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import DeleteConfirmModal from "./DeleteConfirmModal";
-
 export default function ProfileComponent() {
   const profile = useProfileStore((state) => state.profile);
   const router = useRouter();
   const updateProfile = useProfileStore((state) => state.updateProfile);
+  const [isUpdateLoading, setIsUpdateLoading] = useState<boolean>(false);
 
-  const [fireworksApiKey, setFireworksApiKey] = useState(profile.fireworks_api_key);
+  const [fireworksApiKey, setFireworksApiKey] = useState(
+    profile.fireworks_api_key
+  );
   const [openaiApiKey, setOpenaiApiKey] = useState(profile.openai_api_key);
-  const [stabilityAPIKey, setStabilityAPIKey] = useState(profile.stability_api_key);
+  const [stabilityAPIKey, setStabilityAPIKey] = useState(
+    profile.stability_api_key
+  );
   const [briaApiKey, setBriaApiKey] = useState(profile.bria_api_key);
   const [didApiKey, setdidApiKey] = useState(profile.did_api_key);
-  const [replicateApiKey, setreplicateApiKey] = useState(profile.replicate_api_key);
-  const [runwayMlApiKey, setRunwayMlApiKey] = useState(profile.runway_ml_api_key);
+  const [replicateApiKey, setreplicateApiKey] = useState(
+    profile.replicate_api_key
+  );
+  const [runwayMlApiKey, setRunwayMlApiKey] = useState(
+    profile.runway_ml_api_key
+  );
+  const [ideogramApiKey, setIdeogramApiKey] = useState(
+    profile.ideogram_api_key
+  );
 
   const [useCredits, setUseCredits] = useState(profile.useCredits);
   const [showCreditsSection, setShowCreditsSection] = useState(true);
@@ -40,10 +51,10 @@ export default function ProfileComponent() {
           id: message.message,
           amount: message.amount,
           status: "succeeded",
-          mode: 'iap',
+          mode: "iap",
           platform: message.platform,
           productId: message.productId,
-          currency: message.currency
+          currency: message.currency,
         });
         await addCredits(10000);
       }
@@ -64,6 +75,7 @@ export default function ProfileComponent() {
     setBriaApiKey(profile.bria_api_key);
     setdidApiKey(profile.did_api_key);
     setreplicateApiKey(profile.replicate_api_key);
+    setIdeogramApiKey(profile.ideogram_api_key);
 
     setShowCreditsSection(!isIOSReactNativeWebView());
   }, [
@@ -72,17 +84,20 @@ export default function ProfileComponent() {
     profile.stability_api_key,
     profile.bria_api_key,
     profile.did_api_key,
-    profile.replicate_api_key
+    profile.replicate_api_key,
+    profile.ideogram_api_key,
   ]);
 
   const handleApiKeyChange = async () => {
+    setIsUpdateLoading(true);
     if (
       fireworksApiKey !== profile.fireworks_api_key ||
       openaiApiKey !== profile.openai_api_key ||
       stabilityAPIKey !== profile.stability_api_key ||
       briaApiKey !== profile.bria_api_key ||
       didApiKey !== profile.did_api_key ||
-      replicateApiKey !== profile.replicate_api_key
+      replicateApiKey !== profile.replicate_api_key ||
+      ideogramApiKey !== profile.ideogram_api_key
     ) {
       try {
         await updateProfile({
@@ -91,30 +106,32 @@ export default function ProfileComponent() {
           stability_api_key: stabilityAPIKey,
           bria_api_key: briaApiKey,
           did_api_key: didApiKey,
-          replicate_api_key: replicateApiKey
+          replicate_api_key: replicateApiKey,
+          ideogram_api_key: ideogramApiKey,
         });
         console.log("API keys updated successfully!");
       } catch (error) {
         console.error("Error updating API keys:", error);
+      } finally {
+        setIsUpdateLoading(false);
       }
     }
   };
 
-  const handleCreditsChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCreditsChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     setUseCredits(e.target.value === "credits");
     await updateProfile({ useCredits: e.target.value === "credits" });
   };
 
-  const handleBuyClick = useCallback(
-    () => {
-      if (showCreditsSection) {
-        window.location.href = "/payment-attempt";
-      } else {
-        window.ReactNativeWebView?.postMessage("INIT_IAP");
-      }
-    },
-    [showCreditsSection]
-  );
+  const handleBuyClick = useCallback(() => {
+    if (showCreditsSection) {
+      window.location.href = "/payment-attempt";
+    } else {
+      window.ReactNativeWebView?.postMessage("INIT_IAP");
+    }
+  }, [showCreditsSection]);
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
@@ -133,13 +150,22 @@ export default function ProfileComponent() {
     }
   }, [deleteAccount, clearAuthDetails, router]);
 
-  const areApiKeysAvailable = fireworksApiKey && openaiApiKey && stabilityAPIKey && briaApiKey && didApiKey && replicateApiKey;
+  const areApiKeysAvailable =
+    fireworksApiKey &&
+    openaiApiKey &&
+    stabilityAPIKey &&
+    briaApiKey &&
+    didApiKey &&
+    replicateApiKey &&
+    ideogramApiKey;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row px-5 py-3 gap-3 border border-gray-500 rounded-md">
         <div className="flex gap-2 w-full items-center">
-          <div className="flex-1">Usage Credits: {Math.round(profile.credits)}</div>
+          <div className="flex-1">
+            Usage Credits: {Math.round(profile.credits)}
+          </div>
           <button
             className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 flex-1 text-center"
             onClick={handleBuyClick}
@@ -223,6 +249,7 @@ export default function ProfileComponent() {
           className="border border-gray-300 rounded-md px-3 py-2 h-10"
           placeholder="Enter your Runway-ML  API Key"
         />
+
         <label htmlFor="replicate-api-key" className="text-sm font-medium">
           Replicate API Key:
         </label>
@@ -235,6 +262,18 @@ export default function ProfileComponent() {
           placeholder="Enter your Replicate API Key"
         />
 
+        <label htmlFor="ideogram-api-key" className="text-sm font-medium">
+          Ideogram API Key:
+        </label>
+        <input
+          type="text"
+          id="ideogram-api-key"
+          value={ideogramApiKey}
+          onChange={(e) => setIdeogramApiKey(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 h-10"
+          placeholder="Enter your ideogram API Key"
+        />
+
         <button
           onClick={handleApiKeyChange}
           disabled={
@@ -243,11 +282,12 @@ export default function ProfileComponent() {
             stabilityAPIKey === profile.stability_api_key &&
             briaApiKey === profile.bria_api_key &&
             didApiKey === profile.did_api_key &&
-            replicateApiKey === profile.replicate_api_key
+            replicateApiKey === profile.replicate_api_key &&
+            ideogramApiKey === profile.ideogram_api_key
           }
           className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 disabled:opacity-50"
         >
-          Update API Keys
+          {isUpdateLoading ? "Loading..." : "  Update API Keys"}
         </button>
       </div>
 

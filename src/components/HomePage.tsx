@@ -17,16 +17,18 @@ export default function HomePage() {
           orderBy("timestamp", "desc"),
           limit(30)
         );
-        
+
         const imageSnapshot = await getDocs(imageQuery);
-        const filteredImages = imageSnapshot.docs.filter(doc => {
+        const filteredImages = imageSnapshot.docs.filter((doc) => {
           const data = doc.data();
-          return !data.password || data.password === '';
+          return !data.password || data.password === "";
         });
-        
-        const images = filteredImages.map((doc) => doc.data().downloadUrl as string);
-        
-        if(images.length >= 15) setBackgroundImages(images);
+
+        const images = filteredImages.map(
+          (doc) => doc.data().downloadUrl as string
+        );
+
+        if (images.length >= 15) setBackgroundImages(images);
       } catch (error) {
         console.error("Error fetching images from Firestore:", error);
       }
@@ -50,17 +52,8 @@ export default function HomePage() {
           {displayedImages.map((image, index) => (
             <motion.div
               key={index}
-              className="bg-cover bg-center rounded-lg shadow-lg"
-              style={{
-                backgroundImage: `url(${image})`,
-                width: '100%',
-                height: '0',
-                paddingBottom: '100%',
-                cursor: 'pointer'
-              }}
               whileHover={{
                 scale: 1.05,
-                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.5)",
               }}
               animate={{
                 rotate: [0, 1, -1, 0],
@@ -73,7 +66,17 @@ export default function HomePage() {
                 ease: "easeInOut",
               }}
               whileTap={{ scale: 0.98 }}
-            />
+            >
+              <div
+                className="bg-cover bg-center rounded-lg"
+                style={{
+                  backgroundImage: `url(${image})`,
+                  width: "100%",
+                  height: "100%",
+                  paddingBottom: "100%",
+                }}
+              />
+            </motion.div>
           ))}
         </div>
       )}
