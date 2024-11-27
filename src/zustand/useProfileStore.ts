@@ -21,6 +21,7 @@ export interface ProfileType {
   selectedTalkingPhoto: string;
   useCredits: boolean;
   runway_ml_api_key: string;
+  ideogram_api_key: string;
 }
 
 const defaultProfile: ProfileType = {
@@ -40,6 +41,7 @@ const defaultProfile: ProfileType = {
   selectedTalkingPhoto: "",
   useCredits: true,
   runway_ml_api_key: "",
+  ideogram_api_key: "",
 };
 
 interface ProfileState {
@@ -82,16 +84,16 @@ const useProfileStore = create<ProfileState>((set, get) => ({
 
       const newProfile = docSnap.exists()
         ? mergeProfileWithDefaults(docSnap.data() as ProfileType, {
-          authEmail,
-          authDisplayName,
-          authPhotoUrl,
-        })
+            authEmail,
+            authDisplayName,
+            authPhotoUrl,
+          })
         : createNewProfile(
-          authEmail,
-          authDisplayName,
-          authPhotoUrl,
-          authEmailVerified
-        );
+            authEmail,
+            authDisplayName,
+            authPhotoUrl,
+            authEmailVerified
+          );
 
       console.log(
         docSnap.exists()
@@ -202,6 +204,7 @@ function createNewProfile(
     selectedTalkingPhoto: "",
     useCredits: true,
     runway_ml_api_key: "",
+    ideogram_api_key: "",
   };
 }
 
