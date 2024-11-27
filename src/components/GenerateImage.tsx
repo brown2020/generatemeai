@@ -8,7 +8,9 @@ import { useEffect, useState } from "react";
 import { PromptDataType } from "@/types/promptdata";
 import { artStyles } from "@/constants/artStyles";
 import { selectStyles } from "@/constants/selectStyles";
-import Select, { OnChangeValue } from "react-select";
+
+import Select, { OnChangeValue, SingleValue, MultiValue } from "react-select";
+
 import { PulseLoader } from "react-spinners";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
