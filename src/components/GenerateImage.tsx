@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { PromptDataType } from "@/types/promptdata";
 import { artStyles } from "@/constants/artStyles";
 import { selectStyles } from "@/constants/selectStyles";
-import Select, { MultiValue, SingleValue } from "react-select";
+import Select, { OnChangeValue } from "react-select";
 import { PulseLoader } from "react-spinners";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -60,6 +60,7 @@ export default function GenerateImage() {
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
   const replicateAPIKey = useProfileStore((s) => s.profile.replicate_api_key);
+  const ideogramAPIKey = useProfileStore((s) => s.profile.ideogram_api_key);
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
@@ -218,6 +219,12 @@ export default function GenerateImage() {
     await setDoc(docRef, finalPromptData);
   }
 
+  const handleStyleChange = (
+    v: OnChangeValue<{ value: string; label: string }, false>
+  ) => {
+    setImageStyle(v ? v.value : "");
+  };
+
   const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!isPromptValid || !isModelValid) {
@@ -250,6 +257,7 @@ export default function GenerateImage() {
       formData.append("fireworksAPIKey", fireworksAPIKey);
       formData.append("stabilityAPIKey", stabilityAPIKey);
       formData.append("replicateAPIKey", replicateAPIKey);
+      formData.append("ideogramAPIKey", ideogramAPIKey);
       formData.append("useCredits", useCredits.toString());
       formData.append("credits", credits.toString());
       formData.append("model", model);
@@ -398,9 +406,7 @@ export default function GenerateImage() {
             isClearable={true}
             isSearchable={true}
             name="styles"
-            onChange={(v: SingleValue<{ value: string; label: string }>) =>
-              setImageStyle(v ? v.value : "")
-            }
+            onChange={handleStyleChange}
             options={artStyles}
             styles={selectStyles}
             defaultInputValue={styleSearchParam || ""}

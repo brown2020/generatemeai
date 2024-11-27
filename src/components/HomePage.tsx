@@ -52,34 +52,31 @@ export default function HomePage() {
           {displayedImages.map((image, index) => (
             <div
               key={index}
-              className="bg-cover bg-center rounded-lg shadow-lg"
-              style={{
-                backgroundImage: `url(${image})`,
-                width: "100%",
-                height: "0",
-                paddingBottom: "100%",
-                cursor: "pointer",
+              whileHover={{
+                scale: 1.05,
               }}
+              animate={{
+                rotate: [0, 1, -1, 0],
+                scale: [1, 1.02, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "easeInOut",
+              }}
+              whileTap={{ scale: 0.98 }}
             >
-              <motion.div
-                style={{ width: "100%", height: "100%" }}
-                whileHover={{
-                  scale: 1.05,
-                  boxShadow: "0 8px 30px rgba(0, 0, 0, 0.5)",
+              <div
+                className="bg-cover bg-center rounded-lg"
+                style={{
+                  backgroundImage: `url(${image})`,
+                  width: "100%",
+                  height: "100%",
+                  paddingBottom: "100%",
                 }}
-                animate={{
-                  rotate: [0, 1, -1, 0],
-                  scale: [1, 1.02, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatType: "loop",
-                  ease: "easeInOut",
-                }}
-                whileTap={{ scale: 0.98 }}
               />
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
