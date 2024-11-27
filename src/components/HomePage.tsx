@@ -50,10 +50,19 @@ export default function HomePage() {
       {backgroundImages.length >= 5 && (
         <div className="absolute top-0 left-0 w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 p-2 z-0">
           {displayedImages.map((image, index) => (
-            <div
+            <motion.div
               key={index}
+              className="bg-cover bg-center rounded-lg shadow-lg"
+              style={{
+                backgroundImage: `url(${image})`,
+                width: "100%",
+                height: "0",
+                paddingBottom: "100%",
+                cursor: "pointer",
+              }}
               whileHover={{
                 scale: 1.05,
+                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.5)",
               }}
               animate={{
                 rotate: [0, 1, -1, 0],
@@ -66,17 +75,7 @@ export default function HomePage() {
                 ease: "easeInOut",
               }}
               whileTap={{ scale: 0.98 }}
-            >
-              <div
-                className="bg-cover bg-center rounded-lg"
-                style={{
-                  backgroundImage: `url(${image})`,
-                  width: "100%",
-                  height: "100%",
-                  paddingBottom: "100%",
-                }}
-              />
-            </motion.div>
+            />
           ))}
         </div>
       )}

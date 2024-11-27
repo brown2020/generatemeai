@@ -3,122 +3,7 @@
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
-import { File } from "formdata-node";
 import fetch from "node-fetch";
-
-interface RequestBody {
-  prompt?: string;
-  n?: number;
-  size?: string;
-  cfg_scale?: number;
-  height?: number;
-  width?: number;
-  samples?: number;
-  steps?: number;
-  seed?: number;
-  style_preset?: string;
-  safety_check?: boolean;
-  sampler?: string;
-  input?: {
-    text: string;
-  };
-  version?: string;
-  image_request?: {
-    prompt: string;
-    aspect_ratio?: AspectRatio;
-    model?: "V_1" | "V_1_TURBO" | "V_2" | "V_2_TURBO";
-    magic_prompt_option?: "AUTO" | "OFF" | "ON";
-    seed?: number;
-    style_type?:
-      | "ANIME"
-      | "AUTO"
-      | "DESIGN"
-      | "GENERAL"
-      | "REALISTIC"
-      | "RENDER_3D";
-    //  resolution?:
-    //    | "RESOLUTION_1120_896"
-    //    | "RESOLUTION_1152_704"
-    //    | "RESOLUTION_1152_768"
-    //    | "RESOLUTION_1152_832"
-    //    | "RESOLUTION_1152_864"
-    //    | "RESOLUTION_1152_896"
-    //    | "RESOLUTION_1216_704"
-    //    | "RESOLUTION_1216_768"
-    //    | "RESOLUTION_1216_832"
-    //    | "RESOLUTION_1232_768"
-    //    | "RESOLUTION_1024_1024"
-    //    | "RESOLUTION_1024_640"
-    //    | "RESOLUTION_1024_768"
-    //    | "RESOLUTION_1024_832"
-    //    | "RESOLUTION_1024_896"
-    //    | "RESOLUTION_1024_960"
-    //    | "RESOLUTION_1088_768"
-    //    | "RESOLUTION_1088_832"
-    //    | "RESOLUTION_1088_896"
-    //    | "RESOLUTION_1088_960"
-    //    | "RESOLUTION_1248_832"
-    //    | "RESOLUTION_1280_704"
-    //    | "RESOLUTION_1280_720"
-    //    | "RESOLUTION_1280_768"
-    //    | "RESOLUTION_1280_800"
-    //    | "RESOLUTION_1312_736"
-    //    | "RESOLUTION_1344_640"
-    //    | "RESOLUTION_1344_704"
-    //    | "RESOLUTION_1344_768"
-    //    | "RESOLUTION_1408_576"
-    //    | "RESOLUTION_1408_640"
-    //    | "RESOLUTION_1408_704"
-    //    | "RESOLUTION_1472_576"
-    //    | "RESOLUTION_1472_640"
-    //    | "RESOLUTION_1472_704"
-    //    | "RESOLUTION_1536_512"
-    //    | "RESOLUTION_1536_576"
-    //    | "RESOLUTION_1536_640"
-    //    | "RESOLUTION_512_1536"
-    //    | "RESOLUTION_576_1408"
-    //    | "RESOLUTION_576_1472"
-    //    | "RESOLUTION_576_1536"
-    //    | "RESOLUTION_640_1024"
-    //    | "RESOLUTION_640_1344"
-    //    | "RESOLUTION_640_1408"
-    //    | "RESOLUTION_640_1472"
-    //    | "RESOLUTION_640_1536"
-    //    | "RESOLUTION_704_1152"
-    //    | "RESOLUTION_704_1216"
-    //    | "RESOLUTION_704_1280"
-    //    | "RESOLUTION_704_1344"
-    //    | "RESOLUTION_704_1408"
-    //    | "RESOLUTION_704_1472"
-    //    | "RESOLUTION_720_1280"
-    //    | "RESOLUTION_736_1312"
-    //    | "RESOLUTION_768_1024"
-    //    | "RESOLUTION_768_1088"
-    //    | "RESOLUTION_768_1152"
-    //    | "RESOLUTION_768_1216"
-    //    | "RESOLUTION_768_1232"
-    //    | "RESOLUTION_768_1280"
-    //    | "RESOLUTION_768_1344"
-    //    | "RESOLUTION_832_1024"
-    //    | "RESOLUTION_832_1088"
-    //    | "RESOLUTION_832_1152"
-    //    | "RESOLUTION_832_1216"
-    //    | "RESOLUTION_832_1248"
-    //    | "RESOLUTION_832_960"
-    //    | "RESOLUTION_864_1152"
-    //    | "RESOLUTION_896_1024"
-    //    | "RESOLUTION_896_1088"
-    //    | "RESOLUTION_896_1120"
-    //    | "RESOLUTION_896_1152"
-    //    | "RESOLUTION_896_960"
-    //    | "RESOLUTION_960_1024"
-    //    | "RESOLUTION_960_1088"
-    //    | "RESOLUTION_960_832"
-    //    | "RESOLUTION_960_896";
-    negative_prompt?: string;
-    //  color_palette?: object;
-  };
-}
 
 interface DalleResponse {
   data: {
@@ -138,24 +23,33 @@ interface IdeogramResponse {
   }[];
 }
 
-// Function to check credits
-const checkCredits = (
-  useCredits: boolean | null,
-  credits: string | null,
-  model: string | null
-) => {
-  if (
-    useCredits &&
-    credits &&
-    Number(credits) < creditsToMinus(model as model)
-  ) {
-    throw new Error(
-      "Not enough credits to generate an video. Please purchase credits or use your own API keys."
-    );
-  }
-};
+interface RequestBody {
+  prompt?: string;
+  n?: number;
+  size?: string;
+  cfg_scale?: number;
+  height?: number;
+  width?: number;
+  samples?: number;
+  steps?: number;
+  seed?: number;
+  safety_check?: boolean;
+  image_request?: {
+    prompt: string;
+    aspect_ratio?: AspectRatio;
+    model?: "V_1" | "V_1_TURBO" | "V_2" | "V_2_TURBO";
+    magic_prompt_option?: "AUTO" | "OFF" | "ON";
+    seed?: number;
+    style_type?:
+      | "ANIME"
+      | "AUTO"
+      | "DESIGN"
+      | "GENERAL"
+      | "REALISTIC"
+      | "RENDER_3D";
+  };
+}
 
-// Enum for aspect ratios of Ideogram
 enum AspectRatio {
   ASPECT_10_16 = "ASPECT_10_16",
   ASPECT_16_10 = "ASPECT_16_10",
@@ -170,7 +64,24 @@ enum AspectRatio {
   ASPECT_9_16 = "ASPECT_9_16",
 }
 
-// Main function to generate the image
+// Function to check credits
+function checkCredits(
+  useCredits: string | null,
+  credits: string | null,
+  model: string | null
+) {
+  if (
+    useCredits === "true" &&
+    credits &&
+    model &&
+    Number(credits) < creditsToMinus(model as model)
+  ) {
+    throw new Error(
+      "Not enough credits to generate an image. Please purchase credits or use your own API keys."
+    );
+  }
+}
+
 export async function generateImage(data: FormData) {
   try {
     const message = data.get("message") as string | null;
@@ -180,10 +91,10 @@ export async function generateImage(data: FormData) {
     const stabilityAPIKey = data.get("stabilityAPIKey") as string | null;
     const replicateAPIKey = data.get("replicateAPIKey") as string | null;
     const ideogramAPIKey = data.get("ideogramAPIKey") as string | null;
-    const useCredits = data.get("useCredits") as boolean | null;
+    const useCredits = data.get("useCredits") as string | null;
     const credits = data.get("credits") as string | null;
     const model = data.get("model") as string | null;
-    const img: File | null = data.get("imageField") as File | null;
+    const img = data.get("imageField") as File | null;
 
     if (!message || !uid || !model) {
       throw new Error("Required parameters (message, uid, model) are missing.");
@@ -204,27 +115,27 @@ export async function generateImage(data: FormData) {
       if (img) {
         formData = new FormData();
         formData.append("image", img);
-        formData.append("prompt", message!);
+        formData.append("prompt", message);
         formData.append("n", "1");
         formData.append("size", "1024x1024");
 
         apiUrl = `https://api.openai.com/v1/images/edits`;
         headers = {
           Authorization: `Bearer ${
-            !useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+            useCredits !== "true" ? process.env.OPENAI_API_KEY! : openAPIKey!
           }`,
         };
       } else {
         apiUrl = `https://api.openai.com/v1/images/generations`;
         requestBody = {
-          prompt: message!,
+          prompt: message,
           n: 1,
           size: "1024x1024",
         };
         headers = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${
-            !useCredits ? process.env.OPENAI_API_KEY! : openAPIKey!
+            useCredits !== "true" ? process.env.OPENAI_API_KEY! : openAPIKey!
           }`,
         };
       }
@@ -232,7 +143,7 @@ export async function generateImage(data: FormData) {
       if (img) {
         formData = new FormData();
         formData.append("init_image", img);
-        formData.append("prompt", message!);
+        formData.append("prompt", message);
         formData.append("init_image_mode", "IMAGE_STRENGTH");
         formData.append("image_strength", "0.5");
         formData.append("cfg_scale", "7");
@@ -245,7 +156,9 @@ export async function generateImage(data: FormData) {
         headers = {
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            useCredits !== "true"
+              ? process.env.FIREWORKS_API_KEY!
+              : fireworksAPIKey!
           }`,
         };
       } else {
@@ -258,13 +171,15 @@ export async function generateImage(data: FormData) {
           steps: 30,
           seed: 0,
           safety_check: false,
-          prompt: message!,
+          prompt: message,
         };
         headers = {
           "Content-Type": "application/json",
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            useCredits !== "true"
+              ? process.env.FIREWORKS_API_KEY!
+              : fireworksAPIKey!
           }`,
         };
       }
@@ -278,7 +193,7 @@ export async function generateImage(data: FormData) {
         formData.append("mode", "text-to-image");
         formData.append("aspect_ratio", "1:1");
       }
-      formData.append("prompt", message!);
+      formData.append("prompt", message);
       formData.append("output_format", "png");
       formData.append("model", "sd3-turbo");
       formData.append("isValidPrompt", "true");
@@ -287,14 +202,16 @@ export async function generateImage(data: FormData) {
       headers = {
         Accept: "image/*",
         Authorization: `Bearer ${
-          !useCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!
+          useCredits !== "true"
+            ? process.env.STABILITY_API_KEY!
+            : stabilityAPIKey!
         }`,
       };
     } else if (model === "playground-v2" || model === "playground-v2-5") {
       if (img) {
         formData = new FormData();
         formData.append("init_image", img);
-        formData.append("prompt", message!);
+        formData.append("prompt", message);
         formData.append("init_image_mode", "IMAGE_STRENGTH");
         formData.append("image_strength", "0.5");
         formData.append("cfg_scale", "7");
@@ -307,7 +224,9 @@ export async function generateImage(data: FormData) {
         headers = {
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            useCredits !== "true"
+              ? process.env.FIREWORKS_API_KEY!
+              : fireworksAPIKey!
           }`,
         };
       } else {
@@ -321,13 +240,15 @@ export async function generateImage(data: FormData) {
           steps: 30,
           seed: 0,
           safety_check: false,
-          prompt: message!,
+          prompt: message,
         };
         headers = {
           "Content-Type": "application/json",
           Accept: "image/jpeg",
           Authorization: `Bearer ${
-            !useCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!
+            useCredits !== "true"
+              ? process.env.FIREWORKS_API_KEY!
+              : fireworksAPIKey!
           }`,
         };
       }
@@ -336,7 +257,10 @@ export async function generateImage(data: FormData) {
       const { default: sharp } = await import("sharp");
 
       const replicate = new Replicate({
-        auth: !useCredits ? process.env.REPLICATE_API_KEY! : replicateAPIKey!,
+        auth:
+          useCredits !== "true"
+            ? process.env.REPLICATE_API_KEY!
+            : replicateAPIKey!,
       });
 
       const prediction = await replicate.predictions.create({
@@ -352,10 +276,10 @@ export async function generateImage(data: FormData) {
       while (attemptCount++ < 24) {
         await new Promise((resolve) => setTimeout(resolve, 5000));
         output = await replicate.predictions.get(prediction.id);
-        if (output.status != "processing") break;
+        if (output.status !== "processing") break;
       }
 
-      if (output?.status != "succeeded") {
+      if (output?.status !== "succeeded") {
         throw new Error("Failed generating image via Replicate API.");
       }
 
@@ -371,7 +295,7 @@ export async function generateImage(data: FormData) {
 
       requestBody = {
         image_request: {
-          prompt: message!,
+          prompt: message,
           aspect_ratio: AspectRatio.ASPECT_9_16,
           model: "V_2",
           magic_prompt_option: "AUTO",
@@ -382,9 +306,10 @@ export async function generateImage(data: FormData) {
 
       headers = {
         "Content-Type": "application/json",
-        "Api-Key": !useCredits
-          ? process.env.IDEOGRAM_API_KEY!
-          : ideogramAPIKey!,
+        "Api-Key":
+          useCredits !== "true"
+            ? process.env.IDEOGRAM_API_KEY!
+            : ideogramAPIKey!,
       };
     }
 
@@ -403,8 +328,7 @@ export async function generateImage(data: FormData) {
       }
 
       if (model === "dall-e") {
-        const dalleResponse: DalleResponse =
-          (await response.json()) as DalleResponse;
+        const dalleResponse = (await response.json()) as DalleResponse;
         const imageUrl = dalleResponse.data[0].url;
         imageData = await fetch(imageUrl).then((res) => res.arrayBuffer());
       } else if (model === "ideogram-ai") {
@@ -421,8 +345,9 @@ export async function generateImage(data: FormData) {
     }
 
     if (imageData) {
-      const finalImage = Buffer.from(imageData);
-
+      // const finalImage = Buffer.from(imageData);
+      // const finalImage = imageData instanceof Buffer ? imageData : Buffer.from(imageData);
+      const finalImage = Buffer.from(new Uint8Array(imageData));
       // Save the generated image to Firebase
       const fileName = `generated/${uid}/${Date.now()}.jpg`;
       const file = adminBucket.file(fileName);
@@ -433,7 +358,7 @@ export async function generateImage(data: FormData) {
 
       const metadata = {
         metadata: {
-          prompt: message!,
+          prompt: message,
         },
       };
 
