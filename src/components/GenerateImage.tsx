@@ -7,29 +7,28 @@ import { Timestamp, collection, doc, setDoc } from "firebase/firestore";
 import { useEffect, useState, useRef } from "react";
 import { PromptDataType } from "@/types/promptdata";
 import { artStyles } from "@/constants/artStyles";
-import { selectStyles } from "@/constants/selectStyles";
-
-import Select, { OnChangeValue, SingleValue, MultiValue } from "react-select";
-
+import { OnChangeValue } from "react-select";
 import { PulseLoader } from "react-spinners";
 import { generatePrompt } from "@/utils/promptUtils";
 import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
-import { findModelByValue, models, SelectModel } from "@/constants/models";
+import { models, SelectModel } from "@/constants/models";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
 import { colors, getColorFromLabel } from "@/constants/colors";
 import { getLightingFromLabel, lightings } from "@/constants/lightings";
 import { useSearchParams } from "next/navigation";
-import CreatableSelect from "react-select/creatable";
 import { suggestTags } from "@/actions/suggestTags";
-import { Image as ImageIcon, Mic, StopCircle, XCircle, Check, ChevronLeft, ChevronRight } from "lucide-react";
-import { imageCategories } from "@/constants/imageCategories";
+import { Image as ImageIcon, Mic, StopCircle, XCircle, Check, ChevronLeft, ChevronRight, Wand2 } from "lucide-react";
 import {
   isIOSReactNativeWebView,
   checkRestrictedWords,
-} from "@/utils/platform"; // Import the platform check function
-import Image from 'next/image';
+} from "@/utils/platform";
+import { perspectives, getPerspectiveFromLabel } from "@/constants/perspectives";
+import { compositions, getCompositionFromLabel } from "@/constants/compositions";
+import { mediums, getMediumFromLabel } from "@/constants/mediums";
+import { moods, getMoodFromLabel } from "@/constants/moods";
+import { optimizePrompt } from '@/utils/promptOptimizer';
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -45,10 +44,8 @@ interface SpeechRecognitionErrorEvent extends Event {
   error: string;
 }
 
-// Import the server action
 import { generateImage } from "@/actions/generateImage";
 
-// Add this utility function at the top level
 const checkImageExists = async (src: string): Promise<boolean> => {
   try {
     const res = await fetch(src, { method: 'HEAD' });
@@ -64,59 +61,6 @@ const normalizeValue = (value: string): string => {
 
 const isPreviewMarkingEnabled = process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING === 'true';
 
-const OptionPreview = ({ type, value }: { type: string; value: string }) => {
-  const [images, setImages] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadImages = async () => {
-      setLoading(true);
-      const possibleImages = Array.from({ length: 6 }, (_, i) => 
-        `/previews/${type}s/${value}/${i + 1}.jpg`
-      );
-
-      const existingImages = [];
-      for (const img of possibleImages) {
-        const exists = await checkImageExists(img);
-        if (exists) {
-          existingImages.push(img);
-        }
-      }
-
-      setImages(existingImages);
-      setLoading(false);
-    };
-
-    if (value && value !== "None") {
-      loadImages();
-    }
-  }, [type, value]);
-
-  if (!value || value === "None" || loading || images.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="mt-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
-      <div className="grid grid-cols-3 gap-2">
-        {images.slice(0, 3).map((src, index) => (
-          <div key={index} className="relative aspect-square rounded-md overflow-hidden">
-            <img
-              src={src}
-              alt={`${type} preview ${index + 1}`}
-              className="object-cover w-full h-full hover:scale-105 transition-transform"
-            />
-          </div>
-        ))}
-      </div>
-      <div className="mt-2 text-center text-sm text-gray-600">
-        Example images using {value}
-      </div>
-    </div>
-  );
-};
-
-// Add this new type
 type GridProps = {
   items: any[];
   itemsPerPage: number;
@@ -124,7 +68,6 @@ type GridProps = {
   className?: string;
 };
 
-// Add this new component for paginated grid
 const PaginatedGrid = ({ items, itemsPerPage, renderItem, className = "" }: GridProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const totalPages = Math.ceil(items.length / itemsPerPage);
@@ -173,7 +116,6 @@ const PaginatedGrid = ({ items, itemsPerPage, renderItem, className = "" }: Grid
   );
 };
 
-// Modify the ModelCard and StyleCard components to be slightly larger
 const ModelCard = ({ model: modelOption, isSelected, onClick }: { 
   model: SelectModel; 
   isSelected: boolean; 
@@ -244,7 +186,6 @@ const StyleCard = ({ style, isSelected, onClick }: {
   useEffect(() => {
     const loadPreview = async () => {
       try {
-        // Normalize the style value to match the folder name
         const normalizedValue = normalizeValue(style.value);
         const possibleImages = Array.from({ length: 3 }, (_, i) => 
           `/previews/styles/${normalizedValue}/${i + 1}.jpg`
@@ -271,7 +212,6 @@ const StyleCard = ({ style, isSelected, onClick }: {
     loadPreview();
   }, [style.value]);
 
-  // Log debug information to console
   useEffect(() => {
     if (debugLog.length > 0) {
       console.log(`Debug log for style ${style.label}:`, debugLog);
@@ -327,6 +267,10 @@ export default function GenerateImage() {
   const tagsSearchParam = searchterm.get("tags")?.split(",");
   const imageReferenceSearchParam = searchterm.get("imageReference");
   const imageCategorySearchParam = searchterm.get("imageCategory");
+  const perspectiveSearchParam = searchterm.get("perspective");
+  const compositionSearchParam = searchterm.get("composition");
+  const mediumSearchParam = searchterm.get("medium");
+  const moodSearchParam = searchterm.get("mood");
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
@@ -335,76 +279,76 @@ export default function GenerateImage() {
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
-  const [imagePrompt, setImagePrompt] = useState<string>(
-    freestyleSearchParam || ""
-  );
-
-  const [imageStyle, setImageStyle] = useState<string>(styleSearchParam || "");
-  const [model, setModel] = useState<model>(
-    (modelSearchParam as model) || "playground-v2"
-  );
-  const [colorScheme, setColorScheme] = useState<string>(
-    colorSearchParam || "None"
-  );
-  const [lighting, setLighting] = useState<string>(
-    lightingSearchParam || "None"
-  );
-  const [tags, setTags] = useState<string[]>(
-    (tagsSearchParam as unknown as string[]) || []
-  );
-  const [tagInputValue, settagInputValue] = useState(
-    tagsSearchParam
-      ? tagsSearchParam.map((str) => {
-          return { label: str, value: str };
-        })
-      : []
-  );
+  const [imagePrompt, setImagePrompt] = useState<string>(freestyleSearchParam ?? "");
+  const [imageStyle, setImageStyle] = useState<string>(styleSearchParam ?? "");
+  const [model, setModel] = useState<model>((modelSearchParam as model) ?? "playground-v2");
+  const [colorScheme, setColorScheme] = useState<string>(() => {
+    const colorOption = colors.find(c => c.value === colorSearchParam);
+    if (colorOption) {
+      return colorOption.label;
+    }
+    const colorByLabel = colors.find(c => 
+      c.label.toLowerCase() === colorSearchParam?.toLowerCase()
+    );
+    return colorByLabel?.label ?? "None";
+  });
+  const [lighting, setLighting] = useState<string>(() => {
+    const lightingOption = lightings.find(l => l.value === lightingSearchParam);
+    if (lightingOption) {
+      return lightingOption.label;
+    }
+    const lightingByLabel = lightings.find(l => 
+      l.label.toLowerCase() === lightingSearchParam?.toLowerCase()
+    );
+    return lightingByLabel?.label ?? "None";
+  });
+  const [perspective, setPerspective] = useState<string>(perspectiveSearchParam ?? "None");
+  const [composition, setComposition] = useState<string>(compositionSearchParam ?? "None");
+  const [medium, setMedium] = useState<string>(mediumSearchParam ?? "None");
+  const [mood, setMood] = useState<string>(moodSearchParam ?? "None");
+  const [selectedCategory, setSelectedCategory] = useState<string>(imageCategorySearchParam ?? "");
+  const [tags, setTags] = useState<string[]>(tagsSearchParam ?? []);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    imageCategorySearchParam || ""
-  );
   const [promptData, setPromptData] = useState<PromptDataType>({
-    style: "",
-    freestyle: "",
-    downloadUrl: "",
-    prompt: "",
-    model,
-    colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
-    lighting: getLightingFromLabel(lighting) || lightings[0].value,
-    tags: tags,
+    style: styleSearchParam ?? "",
+    freestyle: freestyleSearchParam ?? "",
+    model: (modelSearchParam as model) ?? "playground-v2",
+    colorScheme: colorSearchParam ?? colors[0].value,
+    lighting: lightingSearchParam ?? lightings[0].value,
+    perspective: perspectiveSearchParam ?? "None",
+    composition: compositionSearchParam ?? "None",
+    medium: mediumSearchParam ?? "None",
+    mood: moodSearchParam ?? "None",
+    tags: tagsSearchParam ?? [],
   });
 
   const [isPromptValid, setIsPromptValid] = useState<boolean>(false);
   const [isModelValid, setIsModelValid] = useState<boolean>(true);
 
-  // Add new state for preview modals
   const [showPreview, setShowPreview] = useState<{
-    type: 'model' | 'color' | 'lighting' | 'style' | null;
+    type: 'model' | 'color' | 'lighting' | 'style' | 'perspective' | 'composition' | 'medium' | 'mood' | null;
     value: string | null;
   }>({ type: null, value: null });
 
-  // Add new state for marking as preview
   const [showMarkAsPreview, setShowMarkAsPreview] = useState(false);
 
-  // Add ref for preview card
   const previewRef = useRef<HTMLDivElement>(null);
   const markAsPreviewRef = useRef<HTMLDivElement>(null);
 
-  // Add click outside handler
+  const [isOptimizing, setIsOptimizing] = useState(false);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Close preview card if clicking outside
       if (showPreview.type && 
           previewRef.current && 
           !previewRef.current.contains(event.target as Node)) {
         setShowPreview({ type: null, value: null });
       }
 
-      // Close mark as preview dropdown if clicking outside
       if (showMarkAsPreview && 
           markAsPreviewRef.current && 
           !markAsPreviewRef.current.contains(event.target as Node)) {
@@ -422,13 +366,6 @@ export default function GenerateImage() {
     setIsPromptValid(!!imagePrompt.trim());
     setIsModelValid(!!model);
   }, [imagePrompt, model]);
-
-  const colorLabels = colors.map(
-    (color: { value: string; label: string }) => color.label
-  );
-  const lightingLabels = lightings.map(
-    (lightingss: { value: string; label: string }) => lightingss.label
-  );
 
   const loadImageFromUrl = async (url: string) => {
     const response = await fetch(url);
@@ -555,7 +492,12 @@ export default function GenerateImage() {
         imageStyle,
         getColorFromLabel(colorScheme) || colors[0].value,
         getLightingFromLabel(lighting) || lightings[0].value,
-        selectedCategory // Pass the selected category to the prompt generation
+        selectedCategory,
+        perspective,
+        composition,
+        medium,
+        mood,
+        tags
       );
 
       const formData = new FormData();
@@ -572,7 +514,6 @@ export default function GenerateImage() {
       if (uploadedImage) {
         formData.append("imageField", uploadedImage);
       }
-      // Call the server action instead of the API route
       const result = await generateImage(formData);
 
       if (!result || result.error) {
@@ -604,6 +545,10 @@ export default function GenerateImage() {
             colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
             imageReference,
             imageCategory: selectedCategory,
+            perspective: perspective,
+            composition: composition,
+            medium: medium,
+            mood: mood,
           },
           prompt,
           downloadURL
@@ -620,14 +565,44 @@ export default function GenerateImage() {
     }
   };
 
-  // Modify the PreviewCard component
+  const handleClearAll = () => {
+    setImagePrompt('');
+    setImageStyle('');
+    setColorScheme('None');
+    setLighting('None');
+    setPerspective('None');
+    setComposition('None');
+    setMedium('None');
+    setMood('None');
+    setTags([]);
+    setSelectedCategory('');
+    setUploadedImage(null);
+    setGeneratedImage('');
+    setPromptData({
+      freestyle: '',
+      style: '',
+      model: 'playground-v2',
+      colorScheme: '',
+      lighting: '',
+      perspective: '',
+      composition: '',
+      medium: '',
+      mood: '',
+      tags: [],
+    });
+  };
+
   const PreviewCard = ({ type, value }: { type: string; value: string }) => {
     const [loadedImages, setLoadedImages] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+      if (value === 'none' || !value) {
+        setLoadedImages([]);
+        return;
+      }
+
       const loadImages = async () => {
-        setLoading(true);
+        setLoadedImages([]);
         const possibleImages = Array.from({ length: 6 }, (_, i) => 
           `/previews/${type}s/${value}/${i + 1}.jpg`
         );
@@ -641,23 +616,16 @@ export default function GenerateImage() {
         }
 
         setLoadedImages(existingImages);
-        setLoading(false);
       };
 
       loadImages();
     }, [type, value]);
 
-    const baseClassName = "absolute z-50 bg-white rounded-lg shadow-xl p-3 w-64 transform -translate-x-1/2 left-1/2 mt-2";
-
-    if (loading) {
-      return (
-        <div ref={previewRef} className={baseClassName}>
-          <div className="flex justify-center items-center h-32">
-            <PulseLoader color="#3B82F6" size={8} />
-          </div>
-        </div>
-      );
+    if (value === 'none' || !value) {
+      return null;
     }
+
+    const baseClassName = "absolute z-50 bg-white rounded-lg shadow-xl p-3 w-64 transform -translate-x-1/2 left-1/2 mt-2";
 
     if (loadedImages.length === 0) {
       return (
@@ -689,8 +657,7 @@ export default function GenerateImage() {
     );
   };
 
-  // Modify the handleSaveAsPreview function
-  const handleSaveAsPreview = async (previewType: 'model' | 'color' | 'lighting' | 'style') => {
+  const handleSaveAsPreview = async (previewType: 'model' | 'color' | 'lighting' | 'style' | 'perspective' | 'composition' | 'medium' | 'mood') => {
     if (!generatedImage) return;
 
     let value = '';
@@ -699,16 +666,50 @@ export default function GenerateImage() {
         value = model;
         break;
       case 'color':
+        if (colorScheme === 'None') {
+          toast.error("Cannot save 'None' as a preview");
+          return;
+        }
         value = colorScheme;
         break;
       case 'lighting':
+        if (lighting === 'None') {
+          toast.error("Cannot save 'None' as a preview");
+          return;
+        }
         value = lighting;
         break;
       case 'style':
-        // Find the style object to get the correct value
         const styleObj = artStyles.find(s => s.label === imageStyle);
-        // Normalize the style value
         value = styleObj ? normalizeValue(styleObj.value) : normalizeValue(imageStyle);
+        break;
+      case 'perspective':
+        if (perspective === 'None') {
+          toast.error("Cannot save 'None' as a preview");
+          return;
+        }
+        value = getPerspectiveFromLabel(perspective);
+        break;
+      case 'composition':
+        if (composition === 'None') {
+          toast.error("Cannot save 'None' as a preview");
+          return;
+        }
+        value = getCompositionFromLabel(composition);
+        break;
+      case 'medium':
+        if (medium === 'None') {
+          toast.error("Cannot save 'None' as a preview");
+          return;
+        }
+        value = getMediumFromLabel(medium);
+        break;
+      case 'mood':
+        if (mood === 'None') {
+          toast.error("Cannot save 'None' as a preview");
+          return;
+        }
+        value = getMoodFromLabel(mood);
         break;
     }
 
@@ -751,11 +752,13 @@ export default function GenerateImage() {
       setShowMarkAsPreview(false);
       setShowPreview({ type: null, value: null });
 
-      // Force refresh all cards
       setTimeout(() => {
-        // Force a re-render of the component
         setModel(prev => prev);
         setImageStyle(prev => prev);
+        setPerspective(prev => prev);
+        setComposition(prev => prev);
+        setMedium(prev => prev);
+        setMood(prev => prev);
       }, 100);
     } catch (error) {
       toast.error('Failed to save preview image');
@@ -763,9 +766,34 @@ export default function GenerateImage() {
     }
   };
 
+  const handleOptimizePrompt = async () => {
+    if (!imagePrompt || isOptimizing) return;
+    
+    try {
+      setIsOptimizing(true);
+      const optimizedPrompt = await optimizePrompt(imagePrompt, openAPIKey);
+      setImagePrompt(optimizedPrompt);
+      toast.success("Prompt optimized!");
+    } catch (error) {
+      toast.error("Failed to optimize prompt. Please try again.");
+      console.error("Optimization error:", error);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center w-full p-3 bg-white">
       <div className="flex flex-col w-full max-w-4xl space-y-4 relative">
+        <div className="flex justify-end">
+          <button
+            onClick={handleClearAll}
+            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+          >
+            Clear All Options
+          </button>
+        </div>
+
         <div className="relative rounded-lg shadow-sm">
           <TextareaAutosize
             autoFocus
@@ -802,6 +830,25 @@ export default function GenerateImage() {
               title={isRecording ? "Stop Recording" : "Start Voice Input"}
             >
               {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
+            </button>
+
+            <button
+              onClick={handleOptimizePrompt}
+              disabled={!imagePrompt || isOptimizing}
+              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors shadow-md
+                ${!imagePrompt || isOptimizing
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-700 text-white"
+                }`}
+              title="Optimize prompt with AI"
+            >
+              {isOptimizing ? (
+                <div className="flex items-center justify-center">
+                  <PulseLoader size={4} color="#ffffff" margin={2} />
+                </div>
+              ) : (
+                <Wand2 size={20} />
+              )}
             </button>
           </div>
         </div>
@@ -873,26 +920,24 @@ export default function GenerateImage() {
           <div className="space-y-2 relative">
             <label className="text-sm font-medium text-gray-700">Color Scheme</label>
             <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {colorLabels.map((option) => (
-                option !== "None" && (
-                  <button
-                    key={option}
-                    className={`px-2 py-1 rounded-full text-xs transition-colors
-                      ${colorScheme === option 
-                        ? "bg-blue-600 text-white" 
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                      }`}
-                    onClick={() => {
-                      setColorScheme(option);
-                      setShowPreview({ type: null, value: null });
-                      setTimeout(() => {
-                        setShowPreview({ type: 'color', value: option });
-                      }, 100);
-                    }}
-                  >
-                    {option}
-                  </button>
-                )
+              {colors.map((option) => (
+                <button
+                  key={option.value}
+                  className={`px-2 py-1 rounded-full text-xs transition-colors
+                    ${colorScheme === option.label 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-white border border-gray-300 hover:bg-gray-100"
+                    }`}
+                  onClick={() => {
+                    setColorScheme(option.label);
+                    setShowPreview({ type: null, value: null });
+                    setTimeout(() => {
+                      setShowPreview({ type: 'color', value: option.value });
+                    }, 100);
+                  }}
+                >
+                  {option.label}
+                </button>
               ))}
             </div>
             {showPreview.type === 'color' && showPreview.value && (
@@ -903,30 +948,142 @@ export default function GenerateImage() {
           <div className="space-y-2 relative">
             <label className="text-sm font-medium text-gray-700">Lighting</label>
             <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {lightingLabels.map((option) => (
-                option !== "None" && (
-                  <button
-                    key={option}
-                    className={`px-2 py-1 rounded-full text-xs transition-colors
-                      ${lighting === option 
-                        ? "bg-blue-600 text-white" 
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                      }`}
-                    onClick={() => {
-                      setLighting(option);
-                      setShowPreview({ type: null, value: null });
-                      setTimeout(() => {
-                        setShowPreview({ type: 'lighting', value: option });
-                      }, 100);
-                    }}
-                  >
-                    {option}
-                  </button>
-                )
+              {lightings.map((option) => (
+                <button
+                  key={option.value}
+                  className={`px-2 py-1 rounded-full text-xs transition-colors
+                    ${lighting === option.label 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-white border border-gray-300 hover:bg-gray-100"
+                    }`}
+                  onClick={() => {
+                    setLighting(option.label);
+                    setShowPreview({ type: null, value: null });
+                    setTimeout(() => {
+                      setShowPreview({ type: 'lighting', value: option.value });
+                    }, 100);
+                  }}
+                >
+                  {option.label}
+                </button>
               ))}
             </div>
             {showPreview.type === 'lighting' && showPreview.value && (
               <PreviewCard type="lighting" value={showPreview.value} />
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2 relative">
+            <label className="text-sm font-medium text-gray-700">Perspective</label>
+            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
+              {perspectives.map((option) => (
+                <button
+                  key={option.value}
+                  className={`px-2 py-1 rounded-full text-xs transition-colors
+                    ${perspective === option.label 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-white border border-gray-300 hover:bg-gray-100"
+                    }`}
+                  onClick={() => {
+                    setPerspective(option.label);
+                    setShowPreview({ type: null, value: null });
+                    setTimeout(() => {
+                      setShowPreview({ type: 'perspective', value: option.value });
+                    }, 100);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {showPreview.type === 'perspective' && showPreview.value && (
+              <PreviewCard type="perspective" value={showPreview.value} />
+            )}
+          </div>
+
+          <div className="space-y-2 relative">
+            <label className="text-sm font-medium text-gray-700">Composition</label>
+            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
+              {compositions.map((option) => (
+                <button
+                  key={option.value}
+                  className={`px-2 py-1 rounded-full text-xs transition-colors
+                    ${composition === option.label 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-white border border-gray-300 hover:bg-gray-100"
+                    }`}
+                  onClick={() => {
+                    setComposition(option.label);
+                    setShowPreview({ type: null, value: null });
+                    setTimeout(() => {
+                      setShowPreview({ type: 'composition', value: option.value });
+                    }, 100);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {showPreview.type === 'composition' && showPreview.value && (
+              <PreviewCard type="composition" value={showPreview.value} />
+            )}
+          </div>
+
+          <div className="space-y-2 relative">
+            <label className="text-sm font-medium text-gray-700">Medium</label>
+            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
+              {mediums.map((option) => (
+                <button
+                  key={option.value}
+                  className={`px-2 py-1 rounded-full text-xs transition-colors
+                    ${medium === option.label 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-white border border-gray-300 hover:bg-gray-100"
+                    }`}
+                  onClick={() => {
+                    setMedium(option.label);
+                    setShowPreview({ type: null, value: null });
+                    setTimeout(() => {
+                      setShowPreview({ type: 'medium', value: option.value });
+                    }, 100);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {showPreview.type === 'medium' && showPreview.value && (
+              <PreviewCard type="medium" value={showPreview.value} />
+            )}
+          </div>
+
+          <div className="space-y-2 relative">
+            <label className="text-sm font-medium text-gray-700">Mood</label>
+            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
+              {moods.map((option) => (
+                <button
+                  key={option.value}
+                  className={`px-2 py-1 rounded-full text-xs transition-colors
+                    ${mood === option.label 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-white border border-gray-300 hover:bg-gray-100"
+                    }`}
+                  onClick={() => {
+                    setMood(option.label);
+                    setShowPreview({ type: null, value: null });
+                    setTimeout(() => {
+                      setShowPreview({ type: 'mood', value: option.value });
+                    }, 100);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {showPreview.type === 'mood' && showPreview.value && (
+              <PreviewCard type="mood" value={showPreview.value} />
             )}
           </div>
         </div>
@@ -947,6 +1104,10 @@ export default function GenerateImage() {
               style: imageStyle,
               colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
               lighting: getLightingFromLabel(lighting) || lightings[0].value,
+              perspective: perspective,
+              composition: composition,
+              medium: medium,
+              mood: mood,
               tags,
             });
             handleGenerateSDXL(e);
@@ -1000,18 +1161,54 @@ export default function GenerateImage() {
                       >
                         Current Style
                       </button>
-                      <button
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
-                        onClick={() => handleSaveAsPreview('color')}
-                      >
-                        Current Color Scheme
-                      </button>
-                      <button
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
-                        onClick={() => handleSaveAsPreview('lighting')}
-                      >
-                        Current Lighting
-                      </button>
+                      {colorScheme !== 'None' && (
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          onClick={() => handleSaveAsPreview('color')}
+                        >
+                          Current Color Scheme
+                        </button>
+                      )}
+                      {lighting !== 'None' && (
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          onClick={() => handleSaveAsPreview('lighting')}
+                        >
+                          Current Lighting
+                        </button>
+                      )}
+                      {perspective !== 'None' && (
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          onClick={() => handleSaveAsPreview('perspective')}
+                        >
+                          Current Perspective
+                        </button>
+                      )}
+                      {composition !== 'None' && (
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          onClick={() => handleSaveAsPreview('composition')}
+                        >
+                          Current Composition
+                        </button>
+                      )}
+                      {medium !== 'None' && (
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          onClick={() => handleSaveAsPreview('medium')}
+                        >
+                          Current Medium
+                        </button>
+                      )}
+                      {mood !== 'None' && (
+                        <button
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          onClick={() => handleSaveAsPreview('mood')}
+                        >
+                          Current Mood
+                        </button>
+                      )}
                     </div>
                   )}
                 </>

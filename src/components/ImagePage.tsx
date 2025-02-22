@@ -22,7 +22,7 @@ import '../app/globals.css';
 import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
-import { X, Sparkle, Plus } from "lucide-react";
+import { X, Sparkle, Plus, Download, Lock, Share2, Trash2, Info, Tag } from "lucide-react";
 import domtoimage from "dom-to-image";
 import { useRouter } from "next/navigation";
 import TextareaAutosize from "react-textarea-autosize";
@@ -70,10 +70,6 @@ const ImagePage = ({ id }: { id: string }) => {
   const minusCredits = useProfileStore((state) => state.minusCredits);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -459,221 +455,279 @@ const ImagePage = ({ id }: { id: string }) => {
   const currentPageUrl = `${window.location.origin}/image/${id}`;
 
   return (
-    <div className="flex flex-col w-full max-w-4xl mx-auto h-full gap-2">
+    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
       {imageData && (
-        <div
-          className="relative inline-block"
-          id="image-container"
-          style={{ backgroundColor: backgroundColor }}
-        >
-          {imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif" ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div
+            className="relative aspect-square"
+            id="image-container"
+            style={{ backgroundColor: backgroundColor }}
+          >
+            {imageData?.videoDownloadUrl && getFileTypeFromUrl(imageData?.videoDownloadUrl) != "gif" ? (
+              <video
+                className="w-full h-full object-contain"
+                src={imageData.videoDownloadUrl}
+                controls
+                height={512}
+                width={512}
+              >
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              <img
+                className="w-full h-full object-contain"
+                src={getFileTypeFromUrl(imageData?.videoDownloadUrl) == "gif" ? imageData?.videoDownloadUrl : imageData?.downloadUrl}
+                alt="Visual Result"
+                height={512}
+                width={512}
+              />
+            )}
 
-            <video
-              className="block h-full w-full object-cover"
-              src={imageData.videoDownloadUrl}
-              controls
-              height={512}
-              width={512}
-            >
-              Your browser does not support the video tag.
-            </video>
-
-
-
-
-          ) : (
-            <img
-              className="block h-full w-full object-cover"
-              src={getFileTypeFromUrl(imageData?.videoDownloadUrl) == "gif" ? imageData?.videoDownloadUrl : imageData?.downloadUrl}
-              alt="Visual Result"
-              height={512}
-              width={512}
-            />
-          )}
-
-          {caption && (
-            <div className="absolute inset-0 flex items-end justify-center cursor-default">
-              <div className="bg-[#000] bg-opacity-50 text-white text-xl md:text-3xl rounded-md text-center mb-4 h-[40%] md:h-[30%] w-[90%] md:w-[80%] overflow-hidden flex justify-center items-center select-none">
-                {caption}
+            {caption && (
+              <div className="absolute inset-0 flex items-end justify-center cursor-default p-4">
+                <div className="bg-black/60 backdrop-blur-sm text-white text-xl md:text-2xl rounded-lg text-center p-4 w-full max-w-2xl">
+                  {caption}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
       {imageData && isSharable && (
-        <div className="flex gap-4 mt-4 justify-center">
+        <div className="flex gap-3 justify-center py-4">
           <FacebookShareButton url={currentPageUrl}>
-            <FacebookIcon size={48} />
+            <FacebookIcon size={40} round className="hover:opacity-80 transition-opacity" />
           </FacebookShareButton>
           <TwitterShareButton url={currentPageUrl}>
-            <TwitterIcon size={48} />
+            <TwitterIcon size={40} round className="hover:opacity-80 transition-opacity" />
           </TwitterShareButton>
           <LinkedinShareButton url={currentPageUrl}>
-            <LinkedinIcon size={48} />
+            <LinkedinIcon size={40} round className="hover:opacity-80 transition-opacity" />
           </LinkedinShareButton>
           <EmailShareButton url={currentPageUrl}>
-            <EmailIcon size={48} />
+            <EmailIcon size={40} round className="hover:opacity-80 transition-opacity" />
           </EmailShareButton>
         </div>
       )}
 
+      <div className="flex flex-wrap gap-3">
+        {imageData && (
+          <button
+            className="flex-1 min-w-[200px] px-4 py-3 bg-blue-600 text-white rounded-lg font-medium 
+              hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            onClick={handleDownload}
+          >
+            <Download className="w-5 h-5" />
+            Download
+          </button>
+        )}
+
+        {uid && isOwner && (
+          <button
+            className="flex-1 min-w-[200px] px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium 
+              hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+            onClick={() => {
+              if (isSharable) {
+                toggleSharable();
+                return;
+              }
+              setShowPasswordModal(true);
+            }}
+          >
+            {isSharable ? (
+              <>
+                <Lock className="w-5 h-5" />
+                Make Private
+              </>
+            ) : (
+              <>
+                <Share2 className="w-5 h-5" />
+                Make Sharable
+              </>
+            )}
+          </button>
+        )}
+
+        {imageData && uid && isOwner && (
+          <button
+            className="flex-1 min-w-[200px] px-4 py-3 bg-red-50 text-red-600 rounded-lg font-medium 
+              hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+            onClick={handleDelete}
+          >
+            <Trash2 className="w-5 h-5" />
+            Delete
+          </button>
+        )}
+      </div>
+
       {imageData && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={handleDownload}
-        >
-          Download
-        </button>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-6 space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <Info className="w-5 h-5 text-gray-500" />
+            Metadata
+          </h2>
+          
+          <div className="grid gap-3 text-sm">
+            {imageData?.freestyle && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Freestyle:</span>
+                <span>{imageData.freestyle}</span>
+              </div>
+            )}
+            {imageData?.style && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Style:</span>
+                <span>{imageData.style}</span>
+              </div>
+            )}
+            {imageData?.model && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Model:</span>
+                <span>{imageData.model}</span>
+              </div>
+            )}
+            {imageData?.colorScheme && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Color:</span>
+                <span>{imageData.colorScheme}</span>
+              </div>
+            )}
+            {imageData?.lighting && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Lighting:</span>
+                <span>{imageData.lighting}</span>
+              </div>
+            )}
+            {imageData?.perspective && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Perspective:</span>
+                <span>{imageData.perspective}</span>
+              </div>
+            )}
+            {imageData?.composition && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Composition:</span>
+                <span>{imageData.composition}</span>
+              </div>
+            )}
+            {imageData?.medium && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Medium:</span>
+                <span>{imageData.medium}</span>
+              </div>
+            )}
+            {imageData?.mood && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Mood:</span>
+                <span>{imageData.mood}</span>
+              </div>
+            )}
+            {imageData?.imageCategory && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Category:</span>
+                <span>{imageData.imageCategory}</span>
+              </div>
+            )}
+            {imageData?.timestamp?.seconds && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Timestamp:</span>
+                <span>{new Date(imageData.timestamp.seconds * 1000).toLocaleString()}</span>
+              </div>
+            )}
+            {imageData?.videoModel && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Video Model:</span>
+                <span>{imageData.videoModel}</span>
+              </div>
+            )}
+            {imageData?.audio && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Audio:</span>
+                <span>{imageData.audio}</span>
+              </div>
+            )}
+            {imageData?.scriptPrompt && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Script:</span>
+                <span>{imageData.scriptPrompt}</span>
+              </div>
+            )}
+            {!imageData?.scriptPrompt && imageData?.animation && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">Animation:</span>
+                <span>{imageData.animation}</span>
+              </div>
+            )}
+            {(imageData?.imageReference || (imageData?.downloadUrl && imageData?.videoDownloadUrl)) && (
+              <div className="grid grid-cols-[120px,1fr] gap-2">
+                <span className="font-medium text-gray-600">{imageData?.imageReference ? 'Image Reference' : 'Avatar'} Used:</span>
+                <img
+                  className="w-32 h-32 object-cover rounded-md border-2 border-black-600"
+                  src={imageData?.imageReference || imageData?.downloadUrl}
+                  alt="image reference used"
+                ></img>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {uid && isOwner && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-          onClick={() => {
-            if (isSharable) {
-              toggleSharable();
-              return;
-            }
-            setShowPasswordModal(true);
-          }}
-        >
-          {isSharable ? "Make Private" : "Make Sharable"}
-        </button>
-      )}
-
-      {imageData && uid && isOwner && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={handleDelete}
-        >
-          Delete
-        </button>
-      )}
-
-      {!imageData?.videoDownloadUrl && uid && isOwner && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={openModal}
-        >
-          Generate Video/Animation
-        </button>
-      )}
-
-      {imageData && (
-        <div className="mt-4 p-3 py-0">
-          <h2 className="text-2xl mb-3 font-bold">Metadata: </h2>
-          {imageData?.freestyle && (
-            <p>
-              <strong>Freestyle:</strong> {imageData?.freestyle}
-            </p>
-          )}
-          {imageData?.style && (
-            <p>
-              <strong>Style:</strong> {imageData?.style}
-            </p>
-          )}
-          {imageData?.model && (
-            <p>
-              <strong>Model:</strong> {imageData?.model}
-            </p>
-          )}
-          {imageData?.videoModel && (
-            <p>
-              <strong>Video Model:</strong> {imageData?.videoModel}
-            </p>
-          )}
-          {imageData?.audio && (
-            <p>
-              <strong>Audio:</strong> {imageData?.audio}
-            </p>
-          )}
-          {imageData?.colorScheme && (
-            <p>
-              <strong>Color:</strong> {imageData?.colorScheme}
-            </p>
-          )}
-          {imageData?.lighting && (
-            <p>
-              <strong>Lighting:</strong> {imageData?.lighting}
-            </p>
-          )}
-          {imageData?.imageCategory && (
-            <p>
-              <strong>Category:</strong> {imageData?.imageCategory}
-            </p>
-          )}
-          {imageData?.timestamp?.seconds && (
-            <p>
-              <strong>Timestamp:</strong>{" "}
-              {new Date(imageData?.timestamp.seconds * 1000).toLocaleString()}
-            </p>
-          )}
-          {imageData?.scriptPrompt && (
-            <p>
-              <strong>Script: </strong>
-              {imageData?.scriptPrompt}
-            </p>
-          )}
-          {!imageData?.scriptPrompt && imageData?.animation && (
-            <p>
-              <strong>Animation:</strong> {imageData?.animation}
-            </p>
-          )}
-          {(imageData?.imageReference || (imageData?.downloadUrl && imageData?.videoDownloadUrl)) && (
-            <p>
-              <strong>{imageData?.imageReference ? 'Image Reference' : 'Avatar'} Used: </strong>{" "}
-              <img
-                className="w-32 h-32 object-cover rounded-md border-2 border-black-600"
-                src={imageData?.imageReference || imageData?.downloadUrl}
-                alt="image reference used"
-              ></img>
-            </p>
-          )}
-          {uid && isOwner && (
-            <div className="mt-4 overflow-x-scroll w-full">
-              <h3 className="text-xl mb-3 font-semibold text-gray-800">
-                Tags:
-              </h3>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {tags.map((tag, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-gray-200 border border-gray-400 rounded-md px-3 py-1 transition hover:bg-gray-300"
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-6">
+          <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
+            <Tag className="w-5 h-5 text-gray-500" />
+            Tags
+          </h3>
+          
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg 
+                    text-gray-700 hover:bg-gray-200 transition-colors group"
+                >
+                  <span>{tag}</span>
+                  <button
+                    onClick={() => handleRemoveTag(tag)}
+                    className="text-gray-400 group-hover:text-red-500 transition-colors"
                   >
-                    <span className="text-gray-700">{tag}</span>
-                    <button
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-gray-500 hover:text-red-600"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <div className="relative flex-1">
                 <input
                   type="text"
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Add new tag"
-                  className="p-2 py-[0.58rem] border border-gray-300 rounded-l-md focus:outline-none focus:drop-shadow-none focus:shadow-none"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 
+                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <button
-                  onClick={() => handleAddTag()}
-                  className="px-5 md:px-2 h-[2.76rem] mt-0 text-sm btn-primary2 rounded-none rounded-r-lg"
-                >
-                  Add <Plus />
-                </button>
-                <button
-                  className="ml-2 flex items-center px-3 py-2 text-sm rounded-full border border-blue-500 text-blue-500 hover:bg-blue-100 transition"
-                  onClick={handleSuggestions}
-                >
-                  <Sparkle className="mr-1" /> Suggestions
-                </button>
               </div>
+              <button
+                onClick={() => handleAddTag()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium 
+                  hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Add
+              </button>
+              <button
+                onClick={handleSuggestions}
+                className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg font-medium 
+                  hover:bg-purple-100 transition-colors flex items-center gap-2"
+              >
+                <Sparkle className="w-5 h-5" />
+                Suggestions
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -804,13 +858,17 @@ const ImagePage = ({ id }: { id: string }) => {
                 tags,
                 imageReference,
                 imageCategory,
-                videoModel,
-                audio,
-                scriptPrompt,
+                perspective,
+                composition,
+                medium,
+                mood,
               } = imageData;
 
-              const addQueryParam = (key: string, value: string) => {
+              const addQueryParam = (key: string, value: string | string[] | undefined) => {
                 if (value) {
+                  if (Array.isArray(value)) {
+                    return `${key}=${encodeURIComponent(value.join(","))}`;
+                  }
                   return `${key}=${encodeURIComponent(value)}`;
                 }
                 return null;
@@ -822,12 +880,13 @@ const ImagePage = ({ id }: { id: string }) => {
                 addQueryParam("model", model),
                 addQueryParam("color", colorScheme),
                 addQueryParam("lighting", lighting),
-                addQueryParam("tags", tags.join(",")),
+                addQueryParam("tags", tags),
                 addQueryParam("imageReference", imageReference),
                 addQueryParam("imageCategory", imageCategory),
-                addQueryParam("videoModel", videoModel),
-                addQueryParam("audio", audio),
-                addQueryParam("scriptPrompt", scriptPrompt),
+                addQueryParam("perspective", perspective),
+                addQueryParam("composition", composition),
+                addQueryParam("medium", medium),
+                addQueryParam("mood", mood),
               ].filter(Boolean);
 
               if (queryParams.length > 0) {

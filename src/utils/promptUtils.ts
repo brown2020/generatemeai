@@ -1,47 +1,44 @@
-// promptUtils.ts
-
-import { imageCategories } from "@/constants/imageCategories";
-
 export const generatePrompt = (
-  visual: string = "An inspiring scene",
-  artStyle?: string,
-  colorScheme?: string,
-  lighting?: string,
-  imageCategory?: string | null
-): string => {
-  let promptDesign;
+  basePrompt: string,
+  style: string,
+  color: string,
+  lighting: string,
+  category: string,
+  perspective: string,
+  composition: string,
+  medium: string,
+  mood: string,
+  tags: string[]
+) => {
+  let prompt = basePrompt;
 
-  // Start with the basic prompt based on the visual
-  promptDesign = visual;
-
-  // Apply the artistic style, if provided
-  if (artStyle) {
-    promptDesign += `\n\nPainted in the following artistic style: ${artStyle}`;
+  if (style && style !== "None") {
+    prompt += `, ${style} style`;
   }
-
-  // Add no-text rule
-  promptDesign += `\n\nThe image should be without words. No text or logos.`;
-
-  // Apply the color scheme, if provided and valid
-  if (colorScheme && colorScheme !== "None") {
-    promptDesign += `\n\nUse this for color scheme: ${colorScheme}`;
+  if (color && color !== "None") {
+    prompt += `, ${color} color scheme`;
   }
-
-  // Apply the lighting, if provided
   if (lighting && lighting !== "None") {
-    promptDesign += `\n\nUse this for lighting: ${lighting}`;
+    prompt += `, ${lighting} lighting`;
+  }
+  if (perspective && perspective !== "None") {
+    prompt += `, ${perspective} perspective`;
+  }
+  if (composition && composition !== "None") {
+    prompt += `, ${composition} composition`;
+  }
+  if (medium && medium !== "None") {
+    prompt += `, ${medium} medium`;
+  }
+  if (mood && mood !== "None") {
+    prompt += `, ${mood} mood`;
+  }
+  if (category) {
+    prompt += `, ${category}`;
+  }
+  if (tags.length > 0) {
+    prompt += `, ${tags.join(", ")}`;
   }
 
-  // Apply the image category's specific prompt engineering, if provided
-  if (imageCategory) {
-    const selectedCategory = imageCategories.find(
-      (category) => category.type === imageCategory
-    );
-
-    if (selectedCategory) {
-      promptDesign += `\n\n${selectedCategory.prompt_addition}`;
-    }
-  }
-
-  return promptDesign;
+  return prompt;
 };

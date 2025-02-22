@@ -1,7 +1,7 @@
 export const colors = [
     {
         id: 1,
-        value: "None",
+        value: "none",
         label: "None",
     },
     {
@@ -81,7 +81,6 @@ export const colors = [
     },
 ];
 
-export const getColorFromLabel = (label: string) => {
-    const color = colors.find(color => color.label === label);
-    return color ? color.value : null;
+export const getColorFromLabel = (label: string): string => {
+    return label === "None" ? "" : label.toLowerCase().replace(/\s+/g, '_');
 }
