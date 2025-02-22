@@ -74,14 +74,14 @@ const normalizeValue = (value: string): string => {
 
 const isPreviewMarkingEnabled = process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING === 'true';
 
-type GridProps = {
-  items: Array<unknown>;
+type GridProps<T> = {
+  items: T[];
   itemsPerPage: number;
-  renderItem: (item: unknown) => JSX.Element;
+  renderItem: (item: T) => JSX.Element;
   className?: string;
 };
 
-const PaginatedGrid = ({ items, itemsPerPage, renderItem, className = "" }: GridProps) => {
+const PaginatedGrid = <T,>({ items, itemsPerPage, renderItem, className = "" }: GridProps<T>) => {
   const [currentPage, setCurrentPage] = useState(0);
   const totalPages = Math.ceil(items.length / itemsPerPage);
 
@@ -482,7 +482,7 @@ export default function GenerateImage() {
     setImageStyle(v ? v.value : "");
   };
 
-  const handleGenerateSDXL = async (_e: React.FormEvent<HTMLButtonElement>) => {
+  const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!isPromptValid || !isModelValid) {
       toast.error("Please fill in all required fields.");
@@ -913,7 +913,7 @@ export default function GenerateImage() {
             <label className="text-sm font-medium text-gray-700">
               AI Model
             </label>
-            <PaginatedGrid
+            <PaginatedGrid<SelectModel>
               items={models.filter((m) => m.type === "image" || m.type === "both")}
               itemsPerPage={8}
               className="grid grid-cols-2 sm:grid-cols-4 gap-4"
@@ -932,7 +932,7 @@ export default function GenerateImage() {
             <label className="text-sm font-medium text-gray-700">
               Artistic Style
             </label>
-            <PaginatedGrid
+            <PaginatedGrid<{ value: string; label: string }>
               items={artStyles}
               itemsPerPage={8}
               className="grid grid-cols-2 sm:grid-cols-4 gap-4"
