@@ -19,7 +19,18 @@ import { colors, getColorFromLabel } from "@/constants/colors";
 import { getLightingFromLabel, lightings } from "@/constants/lightings";
 import { useSearchParams } from "next/navigation";
 import { suggestTags } from "@/actions/suggestTags";
-import { Image as ImageIcon, Mic, StopCircle, XCircle, Check, ChevronLeft, ChevronRight, Wand2 } from "lucide-react";
+import { 
+  Image as ImageIcon, 
+  Mic, 
+  StopCircle, 
+  XCircle, 
+  Check, 
+  ChevronLeft, 
+  ChevronRight, 
+  ImagePlus, 
+  Sparkles, 
+  Loader2 
+} from "lucide-react";
 import {
   isIOSReactNativeWebView,
   checkRestrictedWords,
@@ -794,60 +805,81 @@ export default function GenerateImage() {
           </button>
         </div>
 
-        <div className="relative rounded-lg shadow-sm">
+        <div className="relative rounded-lg">
           <TextareaAutosize
             autoFocus
             minRows={3}
             maxRows={5}
             value={imagePrompt || ""}
-            placeholder="Describe your image in detail... or use voice input"
+            placeholder="Describe your image in detail..."
             onChange={(e) => {
               setImagePrompt(e.target.value);
               handleTagSuggestions(e.target.value);
             }}
-            className="border-2 text-xl border-blue-500 bg-blue-50 rounded-lg px-4 py-3 w-full transition-colors focus:outline-none focus:border-blue-600 focus:bg-white"
+            className="block w-full px-4 py-3 pr-32 text-lg border-2 border-blue-200 
+              rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 
+              transition-all duration-200 ease-in-out"
           />
 
-          <div className="absolute bottom-3 right-3 flex space-x-2">
+          <div className="absolute bottom-3 right-3 flex items-center gap-2">
             {model !== "dall-e" && model !== "flux-schnell" && (
               <button
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-md"
                 onClick={() => {
                   const fileInput = document.getElementById("imageUpload");
                   fileInput?.click();
                 }}
-                title="Upload Reference Image"
+                className="group relative inline-flex items-center justify-center w-9 h-9 
+                  rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 
+                  transition-all duration-200 hover:shadow-md"
+                title="Upload reference image"
               >
-                <ImageIcon size={20} />
+                <ImagePlus 
+                  className="w-5 h-5 text-gray-600 group-hover:text-gray-800 
+                    transition-colors" 
+                />
               </button>
             )}
-            
+
             <button
-              className={`w-10 h-10 flex items-center justify-center rounded-full 
-                ${isRecording ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"} 
-                text-white transition-colors shadow-md`}
               onClick={isRecording ? () => setIsRecording(false) : startAudioRecording}
-              title={isRecording ? "Stop Recording" : "Start Voice Input"}
+              className={`group relative inline-flex items-center justify-center w-9 h-9 
+                rounded-lg transition-all duration-200 hover:shadow-md
+                ${isRecording 
+                  ? 'bg-red-50 hover:bg-red-100 border border-red-200' 
+                  : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                }`}
+              title={isRecording ? "Stop recording" : "Start voice input"}
             >
-              {isRecording ? <StopCircle size={16} /> : <Mic size={16} />}
+              {isRecording ? (
+                <StopCircle className="w-5 h-5 text-red-600 group-hover:text-red-700" />
+              ) : (
+                <Mic 
+                  className={`w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors`}
+                />
+              )}
             </button>
 
             <button
               onClick={handleOptimizePrompt}
               disabled={!imagePrompt || isOptimizing}
-              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors shadow-md
+              className={`group relative inline-flex items-center justify-center w-9 h-9 
+                rounded-lg transition-all duration-200 hover:shadow-md
                 ${!imagePrompt || isOptimizing
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-purple-600 hover:bg-purple-700 text-white"
+                  ? 'bg-gray-100 cursor-not-allowed'
+                  : 'bg-purple-50 hover:bg-purple-100 border border-purple-200'
                 }`}
-              title="Optimize prompt with AI"
+              title="Enhance prompt with AI"
             >
               {isOptimizing ? (
-                <div className="flex items-center justify-center">
-                  <PulseLoader size={4} color="#ffffff" margin={2} />
-                </div>
+                <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
               ) : (
-                <Wand2 size={20} />
+                <Sparkles 
+                  className={`w-5 h-5 ${
+                    !imagePrompt 
+                      ? 'text-gray-400' 
+                      : 'text-purple-600 group-hover:text-purple-700'
+                  } transition-colors`}
+                />
               )}
             </button>
           </div>
