@@ -4,6 +4,7 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { usePaymentsStore } from "@/zustand/usePaymentsStore";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useEffect } from "react";
+import { isIOSReactNativeWebView } from "@/utils/platform";
 
 export default function PaymentsPage() {
   const uid = useAuthStore((state) => state.uid);
@@ -20,6 +21,10 @@ export default function PaymentsPage() {
   const handleBuyCredits = () => {
     window.location.href = "/payment-attempt";
   };
+
+  if (isIOSReactNativeWebView()) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
