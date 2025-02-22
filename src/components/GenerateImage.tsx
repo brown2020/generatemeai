@@ -19,17 +19,17 @@ import { colors, getColorFromLabel } from "@/constants/colors";
 import { getLightingFromLabel, lightings } from "@/constants/lightings";
 import { useSearchParams } from "next/navigation";
 import { suggestTags } from "@/actions/suggestTags";
-import { 
-  Image as ImageIcon, 
-  Mic, 
-  StopCircle, 
-  XCircle, 
-  Check, 
-  ChevronLeft, 
-  ChevronRight, 
-  ImagePlus, 
-  Sparkles, 
-  Loader2 
+import {
+  Image as ImageIcon,
+  Mic,
+  StopCircle,
+  XCircle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import {
   isIOSReactNativeWebView,
@@ -40,6 +40,8 @@ import { compositions, getCompositionFromLabel } from "@/constants/compositions"
 import { mediums, getMediumFromLabel } from "@/constants/mediums";
 import { moods, getMoodFromLabel } from "@/constants/moods";
 import { optimizePrompt } from '@/utils/promptOptimizer';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 interface SpeechRecognitionEvent extends Event {
   results: {
@@ -73,51 +75,50 @@ const normalizeValue = (value: string): string => {
 const isPreviewMarkingEnabled = process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING === 'true';
 
 type GridProps = {
-  items: any[];
+  items: Array<unknown>;
   itemsPerPage: number;
-  renderItem: (item: any) => JSX.Element;
+  renderItem: (item: unknown) => JSX.Element;
   className?: string;
 };
 
 const PaginatedGrid = ({ items, itemsPerPage, renderItem, className = "" }: GridProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const totalPages = Math.ceil(items.length / itemsPerPage);
-  
+
   const startIndex = currentPage * itemsPerPage;
   const visibleItems = items.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="relative">
       <div className={className}>
-        {visibleItems.map((item, index) => renderItem(item))}
+        {/* eslint-disable @typescript-eslint/no-unused-vars */}
+        {visibleItems.map((item, _index) => renderItem(item))}
       </div>
-      
+
       {totalPages > 1 && (
         <div className="flex justify-center items-center mt-2 space-x-2">
           <button
             onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
             disabled={currentPage === 0}
-            className={`p-1 rounded-full ${
-              currentPage === 0 
-                ? 'text-gray-400' 
+            className={`p-1 rounded-full ${currentPage === 0
+                ? 'text-gray-400'
                 : 'text-blue-600 hover:bg-blue-50'
-            }`}
+              }`}
           >
             <ChevronLeft size={20} />
           </button>
-          
+
           <span className="text-sm text-gray-600">
             {currentPage + 1} / {totalPages}
           </span>
-          
+
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={currentPage === totalPages - 1}
-            className={`p-1 rounded-full ${
-              currentPage === totalPages - 1 
-                ? 'text-gray-400' 
+            className={`p-1 rounded-full ${currentPage === totalPages - 1
+                ? 'text-gray-400'
                 : 'text-blue-600 hover:bg-blue-50'
-            }`}
+              }`}
           >
             <ChevronRight size={20} />
           </button>
@@ -127,16 +128,16 @@ const PaginatedGrid = ({ items, itemsPerPage, renderItem, className = "" }: Grid
   );
 };
 
-const ModelCard = ({ model: modelOption, isSelected, onClick }: { 
-  model: SelectModel; 
-  isSelected: boolean; 
+const ModelCard = ({ model: modelOption, isSelected, onClick }: {
+  model: SelectModel;
+  isSelected: boolean;
   onClick: () => void;
 }) => {
   const [previewImage, setPreviewImage] = useState<string>('');
 
   useEffect(() => {
     const loadPreview = async () => {
-      const possibleImages = Array.from({ length: 3 }, (_, i) => 
+      const possibleImages = Array.from({ length: 3 }, (_, i) =>
         `/previews/models/${modelOption.value}/${i + 1}.jpg`
       );
 
@@ -157,8 +158,8 @@ const ModelCard = ({ model: modelOption, isSelected, onClick }: {
       <button
         onClick={onClick}
         className={`relative group w-full h-full rounded-lg overflow-hidden transition-all
-          ${isSelected 
-            ? 'ring-2 ring-blue-500 scale-[0.98]' 
+          ${isSelected
+            ? 'ring-2 ring-blue-500 scale-[0.98]'
             : 'hover:scale-[0.98] hover:shadow-lg'
           }
         `}
@@ -186,9 +187,9 @@ const ModelCard = ({ model: modelOption, isSelected, onClick }: {
   );
 };
 
-const StyleCard = ({ style, isSelected, onClick }: { 
-  style: { value: string; label: string }; 
-  isSelected: boolean; 
+const StyleCard = ({ style, isSelected, onClick }: {
+  style: { value: string; label: string };
+  isSelected: boolean;
   onClick: () => void;
 }) => {
   const [previewImage, setPreviewImage] = useState<string>('');
@@ -198,7 +199,7 @@ const StyleCard = ({ style, isSelected, onClick }: {
     const loadPreview = async () => {
       try {
         const normalizedValue = normalizeValue(style.value);
-        const possibleImages = Array.from({ length: 3 }, (_, i) => 
+        const possibleImages = Array.from({ length: 3 }, (_, i) =>
           `/previews/styles/${normalizedValue}/${i + 1}.jpg`
         );
 
@@ -207,7 +208,7 @@ const StyleCard = ({ style, isSelected, onClick }: {
         for (const img of possibleImages) {
           const exists = await checkImageExists(img);
           setDebugLog(prev => [...prev, `Path ${img}: ${exists ? 'exists' : 'not found'}`]);
-          
+
           if (exists) {
             setPreviewImage(img);
             break;
@@ -234,8 +235,8 @@ const StyleCard = ({ style, isSelected, onClick }: {
       <button
         onClick={onClick}
         className={`relative group w-full h-full rounded-lg overflow-hidden transition-all
-          ${isSelected 
-            ? 'ring-2 ring-blue-500 scale-[0.98]' 
+          ${isSelected
+            ? 'ring-2 ring-blue-500 scale-[0.98]'
             : 'hover:scale-[0.98] hover:shadow-lg'
           }
         `}
@@ -298,7 +299,7 @@ export default function GenerateImage() {
     if (colorOption) {
       return colorOption.label;
     }
-    const colorByLabel = colors.find(c => 
+    const colorByLabel = colors.find(c =>
       c.label.toLowerCase() === colorSearchParam?.toLowerCase()
     );
     return colorByLabel?.label ?? "None";
@@ -308,7 +309,7 @@ export default function GenerateImage() {
     if (lightingOption) {
       return lightingOption.label;
     }
-    const lightingByLabel = lightings.find(l => 
+    const lightingByLabel = lightings.find(l =>
       l.label.toLowerCase() === lightingSearchParam?.toLowerCase()
     );
     return lightingByLabel?.label ?? "None";
@@ -354,15 +355,15 @@ export default function GenerateImage() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showPreview.type && 
-          previewRef.current && 
-          !previewRef.current.contains(event.target as Node)) {
+      if (showPreview.type &&
+        previewRef.current &&
+        !previewRef.current.contains(event.target as Node)) {
         setShowPreview({ type: null, value: null });
       }
 
-      if (showMarkAsPreview && 
-          markAsPreviewRef.current && 
-          !markAsPreviewRef.current.contains(event.target as Node)) {
+      if (showMarkAsPreview &&
+        markAsPreviewRef.current &&
+        !markAsPreviewRef.current.contains(event.target as Node)) {
         setShowMarkAsPreview(false);
       }
     };
@@ -481,7 +482,7 @@ export default function GenerateImage() {
     setImageStyle(v ? v.value : "");
   };
 
-  const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
+  const handleGenerateSDXL = async (_e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!isPromptValid || !isModelValid) {
       toast.error("Please fill in all required fields.");
@@ -614,7 +615,7 @@ export default function GenerateImage() {
 
       const loadImages = async () => {
         setLoadedImages([]);
-        const possibleImages = Array.from({ length: 6 }, (_, i) => 
+        const possibleImages = Array.from({ length: 6 }, (_, i) =>
           `/previews/${type}s/${value}/${i + 1}.jpg`
         );
 
@@ -731,7 +732,7 @@ export default function GenerateImage() {
 
     try {
       const loadingToast = toast.loading('Saving preview...');
-      
+
       console.log('Saving preview:', {
         type: `${previewType}s`,
         value: value,
@@ -779,7 +780,7 @@ export default function GenerateImage() {
 
   const handleOptimizePrompt = async () => {
     if (!imagePrompt || isOptimizing) return;
-    
+
     try {
       setIsOptimizing(true);
       const optimizedPrompt = await optimizePrompt(imagePrompt, openAPIKey);
@@ -833,9 +834,9 @@ export default function GenerateImage() {
                   transition-all duration-200 hover:shadow-md"
                 title="Upload reference image"
               >
-                <ImagePlus 
+                <ImagePlus
                   className="w-5 h-5 text-gray-600 group-hover:text-gray-800 
-                    transition-colors" 
+                    transition-colors"
                 />
               </button>
             )}
@@ -844,8 +845,8 @@ export default function GenerateImage() {
               onClick={isRecording ? () => setIsRecording(false) : startAudioRecording}
               className={`group relative inline-flex items-center justify-center w-9 h-9 
                 rounded-lg transition-all duration-200 hover:shadow-md
-                ${isRecording 
-                  ? 'bg-red-50 hover:bg-red-100 border border-red-200' 
+                ${isRecording
+                  ? 'bg-red-50 hover:bg-red-100 border border-red-200'
                   : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
                 }`}
               title={isRecording ? "Stop recording" : "Start voice input"}
@@ -853,7 +854,7 @@ export default function GenerateImage() {
               {isRecording ? (
                 <StopCircle className="w-5 h-5 text-red-600 group-hover:text-red-700" />
               ) : (
-                <Mic 
+                <Mic
                   className={`w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors`}
                 />
               )}
@@ -873,12 +874,11 @@ export default function GenerateImage() {
               {isOptimizing ? (
                 <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
               ) : (
-                <Sparkles 
-                  className={`w-5 h-5 ${
-                    !imagePrompt 
-                      ? 'text-gray-400' 
+                <Sparkles
+                  className={`w-5 h-5 ${!imagePrompt
+                      ? 'text-gray-400'
                       : 'text-purple-600 group-hover:text-purple-700'
-                  } transition-colors`}
+                    } transition-colors`}
                 />
               )}
             </button>
@@ -956,8 +956,8 @@ export default function GenerateImage() {
                 <button
                   key={option.value}
                   className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${colorScheme === option.label 
-                      ? "bg-blue-600 text-white" 
+                    ${colorScheme === option.label
+                      ? "bg-blue-600 text-white"
                       : "bg-white border border-gray-300 hover:bg-gray-100"
                     }`}
                   onClick={() => {
@@ -984,8 +984,8 @@ export default function GenerateImage() {
                 <button
                   key={option.value}
                   className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${lighting === option.label 
-                      ? "bg-blue-600 text-white" 
+                    ${lighting === option.label
+                      ? "bg-blue-600 text-white"
                       : "bg-white border border-gray-300 hover:bg-gray-100"
                     }`}
                   onClick={() => {
@@ -1014,8 +1014,8 @@ export default function GenerateImage() {
                 <button
                   key={option.value}
                   className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${perspective === option.label 
-                      ? "bg-blue-600 text-white" 
+                    ${perspective === option.label
+                      ? "bg-blue-600 text-white"
                       : "bg-white border border-gray-300 hover:bg-gray-100"
                     }`}
                   onClick={() => {
@@ -1042,8 +1042,8 @@ export default function GenerateImage() {
                 <button
                   key={option.value}
                   className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${composition === option.label 
-                      ? "bg-blue-600 text-white" 
+                    ${composition === option.label
+                      ? "bg-blue-600 text-white"
                       : "bg-white border border-gray-300 hover:bg-gray-100"
                     }`}
                   onClick={() => {
@@ -1070,8 +1070,8 @@ export default function GenerateImage() {
                 <button
                   key={option.value}
                   className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${medium === option.label 
-                      ? "bg-blue-600 text-white" 
+                    ${medium === option.label
+                      ? "bg-blue-600 text-white"
                       : "bg-white border border-gray-300 hover:bg-gray-100"
                     }`}
                   onClick={() => {
@@ -1098,8 +1098,8 @@ export default function GenerateImage() {
                 <button
                   key={option.value}
                   className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${mood === option.label 
-                      ? "bg-blue-600 text-white" 
+                    ${mood === option.label
+                      ? "bg-blue-600 text-white"
                       : "bg-white border border-gray-300 hover:bg-gray-100"
                     }`}
                   onClick={() => {
@@ -1122,8 +1122,8 @@ export default function GenerateImage() {
 
         <button
           className={`py-2 px-4 rounded-lg font-medium text-white transition-all
-            ${loading 
-              ? "bg-blue-400 cursor-not-allowed" 
+            ${loading
+              ? "bg-blue-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700 active:transform active:scale-[0.98]"
             }
             ${!isPromptValid || !isModelValid ? "opacity-50 cursor-not-allowed" : ""}
@@ -1162,7 +1162,7 @@ export default function GenerateImage() {
                 src={generatedImage}
                 alt="Generated visualization"
               />
-              
+
               {isPreviewMarkingEnabled && (
                 <>
                   <button
@@ -1174,7 +1174,7 @@ export default function GenerateImage() {
                   </button>
 
                   {showMarkAsPreview && (
-                    <div 
+                    <div
                       ref={markAsPreviewRef}
                       className="absolute top-16 right-4 bg-white rounded-lg shadow-xl p-2 space-y-2 z-50"
                     >
