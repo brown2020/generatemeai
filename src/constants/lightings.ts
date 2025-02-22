@@ -1,7 +1,7 @@
 export const lightings = [
     {
         id: 1,
-        value: "None",
+        value: "none",
         label: "None",
     },
     {
@@ -101,7 +101,6 @@ export const lightings = [
     },
 ];
 
-export const getLightingFromLabel = (label: string) => {
-    const lighting = lightings.find(lighting => lighting.label === label);
-    return lighting ? lighting.value : null;
+export const getLightingFromLabel = (label: string): string => {
+    return label === "None" ? "" : label.toLowerCase().replace(/\s+/g, '_');
 }

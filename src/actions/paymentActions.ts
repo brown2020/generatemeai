@@ -1,4 +1,3 @@
-// paymentActions.ts
 "use server";
 
 import Stripe from "stripe";
@@ -30,7 +29,6 @@ export async function validatePaymentIntent(paymentIntentId: string) {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status === "succeeded") {
-      // Convert the Stripe object to a plain object
       return {
         id: paymentIntent.id,
         amount: paymentIntent.amount,
