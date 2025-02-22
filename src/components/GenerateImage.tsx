@@ -276,7 +276,7 @@ export default function GenerateImage() {
   const modelSearchParam = searchterm.get("model");
   const colorSearchParam = searchterm.get("color");
   const lightingSearchParam = searchterm.get("lighting");
-  const tagsSearchParam = searchterm.get("tags")?.split(",");
+  const tagsSearchParam = searchterm.get("tags")?.split(",").filter(Boolean) || [];
   const imageReferenceSearchParam = searchterm.get("imageReference");
   const imageCategorySearchParam = searchterm.get("imageCategory");
   const perspectiveSearchParam = searchterm.get("perspective");
@@ -319,7 +319,7 @@ export default function GenerateImage() {
   const [medium, setMedium] = useState<string>(mediumSearchParam ?? "None");
   const [mood, setMood] = useState<string>(moodSearchParam ?? "None");
   const [selectedCategory, setSelectedCategory] = useState<string>(imageCategorySearchParam ?? "");
-  const [tags, setTags] = useState<string[]>(tagsSearchParam ?? []);
+  const [tags, setTags] = useState<string[]>(tagsSearchParam);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedImage, setGeneratedImage] = useState<string>("");
@@ -335,7 +335,7 @@ export default function GenerateImage() {
     composition: compositionSearchParam ?? "None",
     medium: mediumSearchParam ?? "None",
     mood: moodSearchParam ?? "None",
-    tags: tagsSearchParam ?? [],
+    tags: tagsSearchParam,
   });
 
   const [isPromptValid, setIsPromptValid] = useState<boolean>(false);
