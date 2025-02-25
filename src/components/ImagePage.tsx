@@ -387,7 +387,7 @@ const ImagePage = ({ id }: { id: string }) => {
           type="password"
           value={enteredPassword}
           onChange={(e) => setEnteredPassword(e.target.value)}
-          className="p-2 border rounded mb-4"
+          className="p-2 border rounded-sm mb-4"
         />
         <button onClick={handlePasswordSubmit} className="btn-primary2">
           Submit
@@ -457,7 +457,7 @@ const ImagePage = ({ id }: { id: string }) => {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
       {imageData && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div
             className="relative aspect-square"
             id="image-container"
@@ -485,7 +485,7 @@ const ImagePage = ({ id }: { id: string }) => {
 
             {caption && (
               <div className="absolute inset-0 flex items-end justify-center cursor-default p-4">
-                <div className="bg-black/60 backdrop-blur-sm text-white text-xl md:text-2xl rounded-lg text-center p-4 w-full max-w-2xl">
+                <div className="bg-black/60 backdrop-blur-xs text-white text-xl md:text-2xl rounded-lg text-center p-4 w-full max-w-2xl">
                   {caption}
                 </div>
               </div>
@@ -562,7 +562,7 @@ const ImagePage = ({ id }: { id: string }) => {
       </div>
 
       {imageData && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-6 space-y-4">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden p-6 space-y-4">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
             <Info className="w-5 h-5 text-gray-500" />
             Metadata
@@ -570,97 +570,97 @@ const ImagePage = ({ id }: { id: string }) => {
           
           <div className="grid gap-3 text-sm">
             {imageData?.freestyle && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Freestyle:</span>
                 <span>{imageData.freestyle}</span>
               </div>
             )}
             {imageData?.style && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Style:</span>
                 <span>{imageData.style}</span>
               </div>
             )}
             {imageData?.model && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Model:</span>
                 <span>{imageData.model}</span>
               </div>
             )}
             {imageData?.colorScheme && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Color:</span>
                 <span>{imageData.colorScheme}</span>
               </div>
             )}
             {imageData?.lighting && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Lighting:</span>
                 <span>{imageData.lighting}</span>
               </div>
             )}
             {imageData?.perspective && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Perspective:</span>
                 <span>{imageData.perspective}</span>
               </div>
             )}
             {imageData?.composition && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Composition:</span>
                 <span>{imageData.composition}</span>
               </div>
             )}
             {imageData?.medium && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Medium:</span>
                 <span>{imageData.medium}</span>
               </div>
             )}
             {imageData?.mood && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Mood:</span>
                 <span>{imageData.mood}</span>
               </div>
             )}
             {imageData?.imageCategory && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Category:</span>
                 <span>{imageData.imageCategory}</span>
               </div>
             )}
             {imageData?.timestamp?.seconds && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Timestamp:</span>
                 <span>{new Date(imageData.timestamp.seconds * 1000).toLocaleString()}</span>
               </div>
             )}
             {imageData?.videoModel && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Video Model:</span>
                 <span>{imageData.videoModel}</span>
               </div>
             )}
             {imageData?.audio && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Audio:</span>
                 <span>{imageData.audio}</span>
               </div>
             )}
             {imageData?.scriptPrompt && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Script:</span>
                 <span>{imageData.scriptPrompt}</span>
               </div>
             )}
             {!imageData?.scriptPrompt && imageData?.animation && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">Animation:</span>
                 <span>{imageData.animation}</span>
               </div>
             )}
             {(imageData?.imageReference || (imageData?.downloadUrl && imageData?.videoDownloadUrl)) && (
-              <div className="grid grid-cols-[120px,1fr] gap-2">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="font-medium text-gray-600">{imageData?.imageReference ? 'Image Reference' : 'Avatar'} Used:</span>
                 <img
                   className="w-32 h-32 object-cover rounded-md border-2 border-black-600"
@@ -674,7 +674,7 @@ const ImagePage = ({ id }: { id: string }) => {
       )}
 
       {uid && isOwner && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-6">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden p-6">
           <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
             <Tag className="w-5 h-5 text-gray-500" />
             Tags
@@ -926,7 +926,7 @@ const ImagePage = ({ id }: { id: string }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password (optional)"
-              className="w-full p-2 border rounded mb-4"
+              className="w-full p-2 border rounded-sm mb-4"
             />
             <div className="flex justify-end">
               <button

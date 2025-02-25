@@ -12,7 +12,7 @@ export default function BottomBar() {
       {navItems.map((item, index) => (
         <div
           key={index}
-          className={`flex flex-col items-center px-3 py-2 flex-grow cursor-pointer text-white hover:text-white hover:opacity-100 transition-colors duration-300 ${
+          className={`flex flex-col items-center px-3 py-2 grow cursor-pointer text-white hover:text-white hover:opacity-100 transition-colors duration-300 ${
             pathname.slice(0, 5) === item.path.slice(0, 5) && pathname !== "/"
               ? "opacity-100 bg-white/30"
               : "opacity-50"
