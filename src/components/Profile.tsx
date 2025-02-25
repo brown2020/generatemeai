@@ -21,17 +21,17 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500"/>
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 relative overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 to-purple-500"/>
           <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage your API keys and credits
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
               <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"/>
@@ -86,7 +86,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
               <div className="w-2 h-2 rounded-full bg-purple-500 mr-2"/>
@@ -155,7 +155,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
               <div className="w-2 h-2 rounded-full bg-green-500 mr-2"/>
@@ -165,7 +165,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
               <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"/>

@@ -175,7 +175,7 @@ const ModelCard = ({
   }, [modelOption.value]);
 
   return (
-    <div className="w-full aspect-[3/4]">
+    <div className="w-full aspect-3/4">
       <button
         onClick={onClick}
         className={`relative group w-full h-full rounded-lg overflow-hidden transition-all
@@ -199,7 +199,7 @@ const ModelCard = ({
             </div>
           )}
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-8 pb-3 px-2">
+        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent pt-8 pb-3 px-2">
           <div className="text-center text-white text-sm font-medium">
             {modelOption.label}
           </div>
@@ -265,7 +265,7 @@ const StyleCard = ({
   }, [debugLog, style.label]);
 
   return (
-    <div className="w-full aspect-[3/4]">
+    <div className="w-full aspect-3/4">
       <button
         onClick={onClick}
         className={`relative group w-full h-full rounded-lg overflow-hidden transition-all
@@ -293,7 +293,7 @@ const StyleCard = ({
             </div>
           )}
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-8 pb-3 px-2">
+        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent pt-8 pb-3 px-2">
           <div className="text-center text-white text-sm font-medium">
             {style.label}
           </div>
@@ -1299,20 +1299,20 @@ export default function GenerateImage() {
                         Save as preview for:
                       </div>
                       <button
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                         onClick={() => handleSaveAsPreview("model")}
                       >
                         Current Model
                       </button>
                       <button
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                         onClick={() => handleSaveAsPreview("style")}
                       >
                         Current Style
                       </button>
                       {colorScheme !== "None" && (
                         <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                           onClick={() => handleSaveAsPreview("color")}
                         >
                           Current Color Scheme
@@ -1320,7 +1320,7 @@ export default function GenerateImage() {
                       )}
                       {lighting !== "None" && (
                         <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                           onClick={() => handleSaveAsPreview("lighting")}
                         >
                           Current Lighting
@@ -1328,7 +1328,7 @@ export default function GenerateImage() {
                       )}
                       {perspective !== "None" && (
                         <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                           onClick={() => handleSaveAsPreview("perspective")}
                         >
                           Current Perspective
@@ -1336,7 +1336,7 @@ export default function GenerateImage() {
                       )}
                       {composition !== "None" && (
                         <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                           onClick={() => handleSaveAsPreview("composition")}
                         >
                           Current Composition
@@ -1344,7 +1344,7 @@ export default function GenerateImage() {
                       )}
                       {medium !== "None" && (
                         <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                           onClick={() => handleSaveAsPreview("medium")}
                         >
                           Current Medium
@@ -1352,7 +1352,7 @@ export default function GenerateImage() {
                       )}
                       {mood !== "None" && (
                         <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded transition-colors"
+                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
                           onClick={() => handleSaveAsPreview("mood")}
                         >
                           Current Mood

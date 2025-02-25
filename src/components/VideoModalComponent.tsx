@@ -157,7 +157,7 @@ const ModalComponent: React.FC<ModalProps> = ({
       ariaHideApp={ariaHideApp}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
-      <div className="relative w-full max-w-md bg-white rounded-lg shadow">
+      <div className="relative w-full max-w-md bg-white rounded-lg shadow-sm">
         <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-300">
           <h3 className="text-xl font-semibold text-gray-900">
             {mode === "video" ? "Create Video" : "Create Silent Animation"}

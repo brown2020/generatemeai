@@ -1,24 +1,238 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 6px;
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.7);
+@utility h-container-max {
+  max-height: calc(100vh - 4rem);
+  overscroll-behavior-y: contain;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+@utility h-container-custom {
+  height: calc(100vh - 4rem);
+  overscroll-behavior-y: contain;
+}
+
+@utility h-container-small {
+  height: calc(100vh - 8rem);
+  overscroll-behavior-y: contain;
+}
+
+@utility sidebar-closed {
+  transform-origin: top left;
+  transform: scale(0);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
+    visibility 0s 0.5s;
+}
+
+@utility sidebar-open {
+  transform-origin: top left;
+  transform: scale(1);
+  opacity: 1;
+  visibility: visible;
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+@utility menu-closed {
+  transform-origin: top right;
+  transform: scale(0);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
+    visibility 0s 0.5s;
+}
+
+@utility menu-open {
+  transform-origin: top right;
+  transform: scale(1);
+  opacity: 1;
+  visibility: visible;
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+@utility overlay-closed {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
+  visibility: hidden;
+}
+
+@utility overlay-open {
+  opacity: 0.3;
+  transition: opacity 0.3s ease-in-out;
+  visibility: visible;
+  transition-delay: 0.2s;
+}
+
+@utility noscroll {
+  overflow: hidden;
+}
+
+@utility overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+@utility btn {
+  @apply flex items-center justify-center px-3 py-2 hover:opacity-50 rounded-md gap-1 disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-[#2563EB] text-white font-semibold hover:bg-[#2563EB]/30 rounded-full disabled:bg-[#2563EB]/30 disabled:hover:bg-[#2563EB]/30 disabled:cursor-not-allowed;
+}
+
+@utility btn-blue {
+  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-blue-500 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-danger {
+  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-red-500 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-white {
+  @apply cursor-pointer flex outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-white text-black font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-muted {
+  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-gray-400 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-primary2 {
+  @apply cursor-pointer flex outline-hidden items-center gap-2 mt-2 px-6 py-2 bg-black/20 text-black font-semibold hover:bg-black/30 rounded-full disabled:bg-white/10 disabled:hover:bg-white/10 disabled:cursor-not-allowed;
+}
+
+@utility btn-secondary {
+  @apply cursor-pointer flex outline-hidden items-center gap-2 mt-2 px-6 py-2 bg-white/10 text-black/50 font-semibold hover:bg-white/30 ml-auto rounded-full;
+}
+
+@utility input-primary {
+  @apply w-full text-black px-4 py-2 outline-hidden border border-[#111113]/20  bg-white rounded-lg;
+}
+
+@utility text-wrapper {
+  @apply flex flex-col space-y-3 max-w-4xl mx-auto;
+  & h3 {
+    @apply text-2xl;
+  }
+  & h4 {
+    @apply text-lg;
+  }
+  & ul {
+    @apply list-disc mx-4 space-y-3;
+  }
+}
+
+@utility form-wrapper {
+  @apply flex flex-col space-y-3 w-full;
+  & form {
+    @apply flex flex-col space-y-3;
+  }
+  & label {
+    @apply flex flex-col space-y-1;
+  }
+  & input {
+    @apply px-3 py-2 outline-hidden border rounded-md;
+  }
+  & textarea {
+    @apply px-3 py-2 outline-hidden border rounded-md;
+  }
+  & button {
+    @apply mr-auto py-2 px-3 bg-orange-500 text-black rounded-md cursor-pointer disabled:opacity-50 hover:opacity-50;
+  }
+}
+
+@utility response {
+  @apply p-3 bg-orange-500 my-3 bg-black/20 rounded-md whitespace-pre-wrap;
+}
+
+@utility form-input {
+  @apply px-2 py-2 border  border-[#111113]/20  w-full outline-hidden text-sm rounded-[4px];
+}
+
+@utility form-input-required {
+  @apply px-2 py-2 border border-red-500 w-full outline-hidden text-sm rounded-[4px];
+}
+
+@utility checkbox-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px; /* Adjust as needed */
+}
+
+@utility custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #fff; /* Default background */
+  border-color: rgba(66, 80, 102, 0.4); /* Border color */
+  border-width: 1px;
+  box-shadow: 0px 0px 2px 4px rgba(66, 80, 102, 0.1);
+  padding: 10px; /* Size of the checkbox */
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  vertical-align: middle;
+  margin-right: 8px; /* Space between checkbox and label */
+
+  &:checked {
+    background-color: #fbbf24; /* Bright yellow background */
+  }
+
+  &:checked:after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px; /* Adjust size of checkmark */
+    color: #000000;
+  }
+}
+
+@layer utilities {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+  }
 }
 
 @layer base {
@@ -30,192 +244,6 @@
     overflow-x: hidden;
     overflow-y: hidden;
     background-color: #ffffff;
-    color: #000000;
-  }
-}
-
-@layer components {
-  .h-container-max {
-    max-height: calc(100vh - 4rem);
-    overscroll-behavior-y: contain;
-  }
-
-  .h-container-custom {
-    height: calc(100vh - 4rem);
-    overscroll-behavior-y: contain;
-  }
-  .h-container-small {
-    height: calc(100vh - 8rem);
-    overscroll-behavior-y: contain;
-  }
-
-  .sidebar-closed {
-    transform-origin: top left;
-    transform: scale(0);
-    opacity: 0;
-    visibility: hidden;
-    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
-      visibility 0s 0.5s;
-  }
-
-  .sidebar-open {
-    transform-origin: top left;
-    transform: scale(1);
-    opacity: 1;
-    visibility: visible;
-    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-  }
-
-  .menu-closed {
-    transform-origin: top right;
-    transform: scale(0);
-    opacity: 0;
-    visibility: hidden;
-    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
-      visibility 0s 0.5s;
-  }
-
-  .menu-open {
-    transform-origin: top right;
-    transform: scale(1);
-    opacity: 1;
-    visibility: visible;
-    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-  }
-
-  .overlay-closed {
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
-    visibility: hidden;
-  }
-
-  .overlay-open {
-    opacity: 0.3;
-    transition: opacity 0.3s ease-in-out;
-    visibility: visible;
-    transition-delay: 0.2s;
-  }
-
-  .noscroll {
-    overflow: hidden;
-  }
-
-  .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 100;
-    background: rgba(0, 0, 0, 0.3);
-  }
-
-  .btn {
-    @apply flex items-center justify-center px-3 py-2 hover:opacity-50 rounded-md gap-1 disabled:opacity-50;
-  }
-  .btn-primary {
-    @apply cursor-pointer flex w-full outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-[#2563EB] text-white font-semibold hover:bg-[#2563EB]/30 rounded-full disabled:bg-[#2563EB]/30 disabled:hover:bg-[#2563EB]/30 disabled:cursor-not-allowed;
-  }
-
-  .btn-blue {
-    @apply cursor-pointer flex w-full outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-blue-500 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-danger {
-    @apply cursor-pointer flex w-full outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-red-500 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-white {
-    @apply cursor-pointer flex outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-white text-black font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-muted {
-    @apply cursor-pointer flex w-full outline-none text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-gray-400 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-primary2 {
-    @apply cursor-pointer flex outline-none items-center gap-2 mt-2 px-6 py-2 bg-black/20 text-black font-semibold hover:bg-black/30 rounded-full disabled:bg-white/10 disabled:hover:bg-white/10 disabled:cursor-not-allowed;
-  }
-  .btn-secondary {
-    @apply cursor-pointer flex outline-none items-center gap-2 mt-2 px-6 py-2 bg-white/10 text-black/50 font-semibold hover:bg-white/30 ml-auto rounded-full;
-  }
-
-  .input-primary {
-    @apply w-full text-black px-4 py-2 outline-none border border-[#111113]/20  bg-white rounded-lg;
-  }
-
-  .text-wrapper {
-    @apply flex flex-col space-y-3 max-w-4xl mx-auto;
-  }
-  .text-wrapper h3 {
-    @apply text-2xl;
-  }
-  .text-wrapper h4 {
-    @apply text-lg;
-  }
-  .text-wrapper ul {
-    @apply list-disc mx-4 space-y-3;
-  }
-
-  .form-wrapper {
-    @apply flex flex-col space-y-3 w-full;
-  }
-  .form-wrapper form {
-    @apply flex flex-col space-y-3;
-  }
-  .form-wrapper label {
-    @apply flex flex-col space-y-1;
-  }
-  .form-wrapper input,
-  .form-wrapper textarea {
-    @apply px-3 py-2 outline-none border rounded-md;
-  }
-  .form-wrapper button {
-    @apply mr-auto py-2 px-3 bg-orange-500 text-black rounded-md cursor-pointer disabled:opacity-50 hover:opacity-50;
-  }
-  .response {
-    @apply p-3 bg-orange-500 bg-opacity-20 my-3 rounded-md whitespace-pre-wrap;
-  }
-
-  .form-input {
-    @apply px-2 py-2 border  border-[#111113]/20  w-full outline-none text-sm rounded-[4px];
-  }
-  .form-input-required {
-    @apply px-2 py-2 border border-red-500 w-full outline-none text-sm rounded-[4px];
-  }
-
-  .checkbox-container {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px; /* Adjust as needed */
-  }
-
-  .custom-checkbox {
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: #fff; /* Default background */
-    border-color: rgba(66, 80, 102, 0.4); /* Border color */
-    border-width: 1px;
-    box-shadow: 0px 0px 2px 4px rgba(66, 80, 102, 0.1);
-    padding: 10px; /* Size of the checkbox */
-    display: inline-block;
-    position: relative;
-    cursor: pointer;
-    vertical-align: middle;
-    margin-right: 8px; /* Space between checkbox and label */
-  }
-
-  .custom-checkbox:checked {
-    background-color: #fbbf24; /* Bright yellow background */
-  }
-
-  .custom-checkbox:checked:after {
-    content: "✓";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 16px; /* Adjust size of checkmark */
     color: #000000;
   }
 }
