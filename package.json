@@ -38,7 +38,7 @@
     "react-modal": "^3.16.1",
     "react-select": "^5.8.1",
     "react-share": "^5.1.0",
-    "react-spinners": "^0.16.1",
+    "react-spinners": "^0.17.0",
     "react-textarea-autosize": "^8.5.3",
     "react-toastify": "^11.0.5",
     "replicate": "^1.0.0",
