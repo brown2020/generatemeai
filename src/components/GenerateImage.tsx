@@ -331,69 +331,26 @@ export default function GenerateImage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SettingsSelector 
-              label="Color Scheme" 
-              options={colors} 
-              currentValue={colorScheme} 
-              onChange={setColorScheme} 
-              type="color"
+          {[
+            { label: "Color Scheme", options: colors, value: colorScheme, onChange: setColorScheme, type: "color" as const },
+            { label: "Lighting", options: lightings, value: lighting, onChange: setLighting, type: "lighting" as const },
+            { label: "Perspective", options: perspectives, value: perspective, onChange: setPerspective, type: "perspective" as const },
+            { label: "Composition", options: compositions, value: composition, onChange: setComposition, type: "composition" as const },
+            { label: "Medium", options: mediums, value: medium, onChange: setMedium, type: "medium" as const },
+            { label: "Mood", options: moods, value: mood, onChange: setMood, type: "mood" as const },
+          ].map((setting) => (
+            <SettingsSelector
+              key={setting.type}
+              label={setting.label}
+              options={setting.options}
+              currentValue={setting.value}
+              onChange={setting.onChange}
+              type={setting.type}
               previewType={previewType}
               previewValue={previewValue}
               setPreview={setPreview}
             />
-            <SettingsSelector 
-              label="Lighting" 
-              options={lightings} 
-              currentValue={lighting} 
-              onChange={setLighting} 
-              type="lighting"
-              previewType={previewType}
-              previewValue={previewValue}
-              setPreview={setPreview}
-            />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SettingsSelector 
-              label="Perspective" 
-              options={perspectives} 
-              currentValue={perspective} 
-              onChange={setPerspective} 
-              type="perspective"
-              previewType={previewType}
-              previewValue={previewValue}
-              setPreview={setPreview}
-            />
-            <SettingsSelector 
-              label="Composition" 
-              options={compositions} 
-              currentValue={composition} 
-              onChange={setComposition} 
-              type="composition"
-              previewType={previewType}
-              previewValue={previewValue}
-              setPreview={setPreview}
-            />
-            <SettingsSelector 
-              label="Medium" 
-              options={mediums} 
-              currentValue={medium} 
-              onChange={setMedium} 
-              type="medium"
-              previewType={previewType}
-              previewValue={previewValue}
-              setPreview={setPreview}
-            />
-            <SettingsSelector 
-              label="Mood" 
-              options={moods} 
-              currentValue={mood} 
-              onChange={setMood} 
-              type="mood"
-              previewType={previewType}
-              previewValue={previewValue}
-              setPreview={setPreview}
-            />
+          ))}
         </div>
 
         <button
