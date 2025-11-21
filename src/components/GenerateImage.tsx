@@ -2,31 +2,27 @@
 
 import TextareaAutosize from "react-textarea-autosize";
 import { useAuthStore } from "@/zustand/useAuthStore";
+import { useGenerationStore, GenerationState } from "@/zustand/useGenerationStore";
+import useProfileStore from "@/zustand/useProfileStore";
 import { db } from "@/firebase/firebaseClient";
 import { Timestamp, collection, doc, setDoc } from "firebase/firestore";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { PromptDataType } from "@/types/promptdata";
 import { artStyles } from "@/constants/artStyles";
-import { OnChangeValue } from "react-select";
 import { PulseLoader } from "react-spinners";
 import { generatePrompt } from "@/utils/promptUtils";
-import useProfileStore from "@/zustand/useProfileStore";
 import toast from "react-hot-toast";
 import { models, SelectModel } from "@/constants/models";
-import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
 import { colors, getColorFromLabel } from "@/constants/colors";
 import { getLightingFromLabel, lightings } from "@/constants/lightings";
 import { useSearchParams } from "next/navigation";
 import { suggestTags } from "@/actions/suggestTags";
 import {
-  Image as ImageIcon,
   Mic,
   StopCircle,
   XCircle,
   Check,
-  ChevronLeft,
-  ChevronRight,
   ImagePlus,
   Sparkles,
   Loader2,
@@ -46,279 +42,24 @@ import {
 import { mediums, getMediumFromLabel } from "@/constants/mediums";
 import { moods, getMoodFromLabel } from "@/constants/moods";
 import { optimizePrompt } from "@/utils/promptOptimizer";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-interface SpeechRecognitionEvent extends Event {
-  results: {
-    [key: number]: {
-      [key: number]: {
-        transcript: string;
-      };
-    };
-  };
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
 import { generateImage } from "@/actions/generateImage";
+import { normalizeValue } from "@/utils/imageUtils";
 
-const checkImageExists = async (src: string): Promise<boolean> => {
-  try {
-    const res = await fetch(src, { method: "HEAD" });
-    return res.ok;
-  } catch {
-    return false;
-  }
-};
-
-const normalizeValue = (value: string): string => {
-  return value.replace(/\s+/g, "");
-};
+import { PaginatedGrid } from "@/components/common/PaginatedGrid";
+import { ModelCard } from "@/components/generation/ModelCard";
+import { StyleCard } from "@/components/generation/StyleCard";
+import { PreviewCard } from "@/components/generation/PreviewCard";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { model } from "@/types/model";
 
 const isPreviewMarkingEnabled =
   process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING === "true";
 
-type GridProps<T> = {
-  items: T[];
-  itemsPerPage: number;
-  renderItem: (item: T) => React.JSX.Element;
-  className?: string;
-};
-
-const PaginatedGrid = <T,>({
-  items,
-  itemsPerPage,
-  renderItem,
-  className = "",
-}: GridProps<T>) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const totalPages = Math.ceil(items.length / itemsPerPage);
-
-  const startIndex = currentPage * itemsPerPage;
-  const visibleItems = items.slice(startIndex, startIndex + itemsPerPage);
-
-  return (
-    <div className="relative">
-      <div className={className}>
-        {/* eslint-disable @typescript-eslint/no-unused-vars */}
-        {visibleItems.map((item, _index) => renderItem(item))}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center mt-2 space-x-2">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-            disabled={currentPage === 0}
-            className={`p-1 rounded-full ${
-              currentPage === 0
-                ? "text-gray-400"
-                : "text-blue-600 hover:bg-blue-50"
-            }`}
-          >
-            <ChevronLeft size={20} />
-          </button>
-
-          <span className="text-sm text-gray-600">
-            {currentPage + 1} / {totalPages}
-          </span>
-
-          <button
-            onClick={() =>
-              setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
-            }
-            disabled={currentPage === totalPages - 1}
-            className={`p-1 rounded-full ${
-              currentPage === totalPages - 1
-                ? "text-gray-400"
-                : "text-blue-600 hover:bg-blue-50"
-            }`}
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const ModelCard = ({
-  model: modelOption,
-  isSelected,
-  onClick,
-}: {
-  model: SelectModel;
-  isSelected: boolean;
-  onClick: () => void;
-}) => {
-  const [previewImage, setPreviewImage] = useState<string>("");
-
-  useEffect(() => {
-    const loadPreview = async () => {
-      const possibleImages = Array.from(
-        { length: 3 },
-        (_, i) => `/previews/models/${modelOption.value}/${i + 1}.jpg`
-      );
-
-      for (const img of possibleImages) {
-        const exists = await checkImageExists(img);
-        if (exists) {
-          setPreviewImage(img);
-          break;
-        }
-      }
-    };
-
-    loadPreview();
-  }, [modelOption.value]);
-
-  return (
-    <div className="w-full aspect-3/4">
-      <button
-        onClick={onClick}
-        className={`relative group w-full h-full rounded-lg overflow-hidden transition-all
-          ${
-            isSelected
-              ? "ring-2 ring-blue-500 scale-[0.98]"
-              : "hover:scale-[0.98] hover:shadow-lg"
-          }
-        `}
-      >
-        <div className="absolute inset-0 bg-gray-100">
-          {previewImage ? (
-            <img
-              src={previewImage}
-              alt={modelOption.label}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <ImageIcon size={32} />
-            </div>
-          )}
-        </div>
-        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent pt-8 pb-3 px-2">
-          <div className="text-center text-white text-sm font-medium">
-            {modelOption.label}
-          </div>
-        </div>
-      </button>
-    </div>
-  );
-};
-
-const StyleCard = ({
-  style,
-  isSelected,
-  onClick,
-}: {
-  style: { value: string; label: string };
-  isSelected: boolean;
-  onClick: () => void;
-}) => {
-  const [previewImage, setPreviewImage] = useState<string>("");
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-
-  useEffect(() => {
-    const loadPreview = async () => {
-      try {
-        const normalizedValue = normalizeValue(style.value);
-        const possibleImages = Array.from(
-          { length: 3 },
-          (_, i) => `/previews/styles/${normalizedValue}/${i + 1}.jpg`
-        );
-
-        setDebugLog((prev) => [
-          ...prev,
-          `Checking paths: ${possibleImages.join(", ")}`,
-        ]);
-
-        for (const img of possibleImages) {
-          const exists = await checkImageExists(img);
-          setDebugLog((prev) => [
-            ...prev,
-            `Path ${img}: ${exists ? "exists" : "not found"}`,
-          ]);
-
-          if (exists) {
-            setPreviewImage(img);
-            break;
-          }
-        }
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        console.error("Error loading preview:", error);
-        setDebugLog((prev) => [...prev, `Error: ${errorMessage}`]);
-      }
-    };
-
-    loadPreview();
-  }, [style.value]);
-
-  useEffect(() => {
-    if (debugLog.length > 0) {
-      console.log(`Debug log for style ${style.label}:`, debugLog);
-    }
-  }, [debugLog, style.label]);
-
-  return (
-    <div className="w-full aspect-3/4">
-      <button
-        onClick={onClick}
-        className={`relative group w-full h-full rounded-lg overflow-hidden transition-all
-          ${
-            isSelected
-              ? "ring-2 ring-blue-500 scale-[0.98]"
-              : "hover:scale-[0.98] hover:shadow-lg"
-          }
-        `}
-      >
-        <div className="absolute inset-0 bg-gray-100">
-          {previewImage ? (
-            <img
-              src={previewImage}
-              alt={style.label}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error(`Failed to load image: ${previewImage}`);
-                setPreviewImage("");
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <ImageIcon size={32} />
-            </div>
-          )}
-        </div>
-        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent pt-8 pb-3 px-2">
-          <div className="text-center text-white text-sm font-medium">
-            {style.label}
-          </div>
-        </div>
-      </button>
-    </div>
-  );
-};
-
 export default function GenerateImage() {
   const uid = useAuthStore((s) => s.uid);
   const searchterm = useSearchParams();
-  const freestyleSearchParam = searchterm.get("freestyle");
-  const styleSearchParam = searchterm.get("style");
-  const modelSearchParam = searchterm.get("model");
-  const colorSearchParam = searchterm.get("color");
-  const lightingSearchParam = searchterm.get("lighting");
-  const tagsSearchParam =
-    searchterm.get("tags")?.split(",").filter(Boolean) || [];
-  const imageReferenceSearchParam = searchterm.get("imageReference");
-  const imageCategorySearchParam = searchterm.get("imageCategory");
-  const perspectiveSearchParam = searchterm.get("perspective");
-  const compositionSearchParam = searchterm.get("composition");
-  const mediumSearchParam = searchterm.get("medium");
-  const moodSearchParam = searchterm.get("mood");
+  
+  // Profile Store
   const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
   const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
@@ -327,97 +68,127 @@ export default function GenerateImage() {
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
-  const [imagePrompt, setImagePrompt] = useState<string>(
-    freestyleSearchParam ?? ""
-  );
-  const [imageStyle, setImageStyle] = useState<string>(styleSearchParam ?? "");
-  const [model, setModel] = useState<model>(
-    (modelSearchParam as model) ?? "playground-v2"
-  );
-  const [colorScheme, setColorScheme] = useState<string>(() => {
-    const colorOption = colors.find((c) => c.value === colorSearchParam);
-    if (colorOption) {
-      return colorOption.label;
-    }
-    const colorByLabel = colors.find(
-      (c) => c.label.toLowerCase() === colorSearchParam?.toLowerCase()
-    );
-    return colorByLabel?.label ?? "None";
-  });
-  const [lighting, setLighting] = useState<string>(() => {
-    const lightingOption = lightings.find(
-      (l) => l.value === lightingSearchParam
-    );
-    if (lightingOption) {
-      return lightingOption.label;
-    }
-    const lightingByLabel = lightings.find(
-      (l) => l.label.toLowerCase() === lightingSearchParam?.toLowerCase()
-    );
-    return lightingByLabel?.label ?? "None";
-  });
-  const [perspective, setPerspective] = useState<string>(
-    perspectiveSearchParam ?? "None"
-  );
-  const [composition, setComposition] = useState<string>(
-    compositionSearchParam ?? "None"
-  );
-  const [medium, setMedium] = useState<string>(mediumSearchParam ?? "None");
-  const [mood, setMood] = useState<string>(moodSearchParam ?? "None");
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    imageCategorySearchParam ?? ""
-  );
-  const [tags, setTags] = useState<string[]>(tagsSearchParam);
-  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [generatedImage, setGeneratedImage] = useState<string>("");
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [promptData, setPromptData] = useState<PromptDataType>({
-    style: styleSearchParam ?? "",
-    freestyle: freestyleSearchParam ?? "",
-    model: (modelSearchParam as model) ?? "playground-v2",
-    colorScheme: colorSearchParam ?? colors[0].value,
-    lighting: lightingSearchParam ?? lightings[0].value,
-    perspective: perspectiveSearchParam ?? "None",
-    composition: compositionSearchParam ?? "None",
-    medium: mediumSearchParam ?? "None",
-    mood: moodSearchParam ?? "None",
-    tags: tagsSearchParam,
-  });
 
-  const [isPromptValid, setIsPromptValid] = useState<boolean>(false);
-  const [isModelValid, setIsModelValid] = useState<boolean>(true);
-
-  const [showPreview, setShowPreview] = useState<{
-    type:
-      | "model"
-      | "color"
-      | "lighting"
-      | "style"
-      | "perspective"
-      | "composition"
-      | "medium"
-      | "mood"
-      | null;
-    value: string | null;
-  }>({ type: null, value: null });
-
-  const [showMarkAsPreview, setShowMarkAsPreview] = useState(false);
+  // Generation Store
+  const {
+    imagePrompt,
+    imageStyle,
+    model,
+    colorScheme,
+    lighting,
+    perspective,
+    composition,
+    medium,
+    mood,
+    selectedCategory,
+    tags,
+    generatedImage,
+    uploadedImage,
+    loading,
+    isOptimizing,
+    showMarkAsPreview,
+    previewType,
+    previewValue,
+    setImagePrompt,
+    setImageStyle,
+    setModel,
+    setColorScheme,
+    setLighting,
+    setPerspective,
+    setComposition,
+    setMedium,
+    setMood,
+    setSelectedCategory,
+    setTags,
+    setSuggestedTags,
+    setGeneratedImage,
+    setUploadedImage,
+    setLoading,
+    setIsOptimizing,
+    setShowMarkAsPreview,
+    setPreview,
+    reset,
+  } = useGenerationStore();
 
   const previewRef = useRef<HTMLDivElement>(null);
   const markAsPreviewRef = useRef<HTMLDivElement>(null);
 
-  const [isOptimizing, setIsOptimizing] = useState(false);
+  const { isRecording, startRecording, stopRecording } = useSpeechRecognition(
+    (transcript) => setImagePrompt(transcript)
+  );
 
+  const isPromptValid = !!imagePrompt.trim();
+  const isModelValid = !!model;
+
+  // Initialize from URL params
+  useEffect(() => {
+    const freestyleSearchParam = searchterm.get("freestyle");
+    const styleSearchParam = searchterm.get("style");
+    const modelSearchParam = searchterm.get("model");
+    const colorSearchParam = searchterm.get("color");
+    const lightingSearchParam = searchterm.get("lighting");
+    const tagsSearchParam = searchterm.get("tags")?.split(",").filter(Boolean);
+    const imageReferenceSearchParam = searchterm.get("imageReference");
+    const imageCategorySearchParam = searchterm.get("imageCategory");
+    const perspectiveSearchParam = searchterm.get("perspective");
+    const compositionSearchParam = searchterm.get("composition");
+    const mediumSearchParam = searchterm.get("medium");
+    const moodSearchParam = searchterm.get("mood");
+
+    if (freestyleSearchParam) setImagePrompt(freestyleSearchParam);
+    if (styleSearchParam) setImageStyle(styleSearchParam);
+    if (modelSearchParam) setModel(modelSearchParam as model);
+    
+    if (colorSearchParam) {
+      const colorOption = colors.find((c) => c.value === colorSearchParam);
+      if (colorOption) setColorScheme(colorOption.label);
+      else {
+          const colorByLabel = colors.find(c => c.label.toLowerCase() === colorSearchParam.toLowerCase());
+          if (colorByLabel) setColorScheme(colorByLabel.label);
+      }
+    }
+    
+    if (lightingSearchParam) {
+      const lightingOption = lightings.find((l) => l.value === lightingSearchParam);
+      if (lightingOption) setLighting(lightingOption.label);
+      else {
+          const lightingByLabel = lightings.find(l => l.label.toLowerCase() === lightingSearchParam.toLowerCase());
+          if (lightingByLabel) setLighting(lightingByLabel.label);
+      }
+    }
+
+    if (tagsSearchParam) setTags(tagsSearchParam);
+    if (imageCategorySearchParam) setSelectedCategory(imageCategorySearchParam);
+    if (perspectiveSearchParam) setPerspective(perspectiveSearchParam);
+    if (compositionSearchParam) setComposition(compositionSearchParam);
+    if (mediumSearchParam) setMedium(mediumSearchParam);
+    if (moodSearchParam) setMood(moodSearchParam);
+
+    if (imageReferenceSearchParam) {
+      const loadImageFromUrl = async (url: string) => {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const file = new File([blob], "default-image.jpg", { type: blob.type });
+        setUploadedImage(file);
+      };
+      loadImageFromUrl(imageReferenceSearchParam);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+        // Option: reset(); // Uncomment if we want to reset store on unmount
+    };
+  }, [searchterm, setImagePrompt, setImageStyle, setModel, setColorScheme, setLighting, setTags, setSelectedCategory, setPerspective, setComposition, setMedium, setMood, setUploadedImage]);
+
+  // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        showPreview.type &&
+        previewType &&
         previewRef.current &&
         !previewRef.current.contains(event.target as Node)
       ) {
-        setShowPreview({ type: null, value: null });
+        setPreview(null, null);
       }
 
       if (
@@ -433,61 +204,8 @@ export default function GenerateImage() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showPreview.type, showMarkAsPreview]);
+  }, [previewType, showMarkAsPreview, setPreview, setShowMarkAsPreview]);
 
-  useEffect(() => {
-    setIsPromptValid(!!imagePrompt.trim());
-    setIsModelValid(!!model);
-  }, [imagePrompt, model]);
-
-  const loadImageFromUrl = async (url: string) => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const file = new File([blob], "default-image.jpg", { type: blob.type });
-    setUploadedImage(file);
-  };
-
-  useEffect(() => {
-    if (imageReferenceSearchParam) {
-      loadImageFromUrl(imageReferenceSearchParam);
-    }
-  }, [imageReferenceSearchParam]);
-
-  useEffect(() => {
-    setPromptData((prevData) => ({
-      ...prevData,
-      style: "",
-      freestyle: "",
-    }));
-  }, []);
-
-  const startAudioRecording = () => {
-    const recognition = new (window.SpeechRecognition ||
-      window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-      setIsRecording(true);
-      console.log("Voice recording started...");
-    };
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
-      setImagePrompt(transcript);
-    };
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("Error occurred in recognition: ", event.error);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-      console.log("Voice recording ended.");
-    };
-
-    recognition.start();
-  };
 
   const handleTagSuggestions = async (prompt: string) => {
     let suggestions = await suggestTags(
@@ -533,15 +251,8 @@ export default function GenerateImage() {
       imageCategory: selectedCategory,
     };
 
-    setPromptData(finalPromptData);
     await setDoc(docRef, finalPromptData);
   }
-
-  const handleStyleChange = (
-    v: OnChangeValue<{ value: string; label: string }, false>
-  ) => {
-    setImageStyle(v ? v.value : "");
-  };
 
   const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -608,7 +319,6 @@ export default function GenerateImage() {
       if (downloadURL) {
         await saveHistory(
           {
-            ...promptData,
             freestyle: imagePrompt,
             style: imageStyle,
             downloadUrl: downloadURL,
@@ -622,6 +332,7 @@ export default function GenerateImage() {
             composition: composition,
             medium: medium,
             mood: mood,
+            tags: tags,
           },
           prompt,
           downloadURL
@@ -639,104 +350,11 @@ export default function GenerateImage() {
   };
 
   const handleClearAll = () => {
-    setImagePrompt("");
-    setImageStyle("");
-    setColorScheme("None");
-    setLighting("None");
-    setPerspective("None");
-    setComposition("None");
-    setMedium("None");
-    setMood("None");
-    setTags([]);
-    setSelectedCategory("");
-    setUploadedImage(null);
-    setGeneratedImage("");
-    setPromptData({
-      freestyle: "",
-      style: "",
-      model: "playground-v2",
-      colorScheme: "",
-      lighting: "",
-      perspective: "",
-      composition: "",
-      medium: "",
-      mood: "",
-      tags: [],
-    });
-  };
-
-  const PreviewCard = ({ type, value }: { type: string; value: string }) => {
-    const [loadedImages, setLoadedImages] = useState<string[]>([]);
-
-    useEffect(() => {
-      if (value === "none" || !value) {
-        setLoadedImages([]);
-        return;
-      }
-
-      const loadImages = async () => {
-        setLoadedImages([]);
-        const possibleImages = Array.from(
-          { length: 6 },
-          (_, i) => `/previews/${type}s/${value}/${i + 1}.jpg`
-        );
-
-        const existingImages = [];
-        for (const img of possibleImages) {
-          const exists = await checkImageExists(img);
-          if (exists) {
-            existingImages.push(img);
-          }
-        }
-
-        setLoadedImages(existingImages);
-      };
-
-      loadImages();
-    }, [type, value]);
-
-    if (value === "none" || !value) {
-      return null;
-    }
-
-    const baseClassName =
-      "absolute z-50 bg-white rounded-lg shadow-xl p-3 w-64 transform -translate-x-1/2 left-1/2 mt-2";
-
-    if (loadedImages.length === 0) {
-      return (
-        <div ref={previewRef} className={baseClassName}>
-          <div className="text-center text-gray-500 py-4">
-            No preview images available
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div ref={previewRef} className={baseClassName}>
-        <div className="grid grid-cols-2 gap-2">
-          {loadedImages.map((src, index) => (
-            <div
-              key={index}
-              className="relative aspect-square rounded-md overflow-hidden"
-            >
-              <img
-                src={src}
-                alt={`${type} preview ${index + 1}`}
-                className="object-cover w-full h-full"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="mt-2 text-center text-sm text-gray-600">
-          Example images using {value}
-        </div>
-      </div>
-    );
+    reset();
   };
 
   const handleSaveAsPreview = async (
-    previewType:
+    type:
       | "model"
       | "color"
       | "lighting"
@@ -749,7 +367,7 @@ export default function GenerateImage() {
     if (!generatedImage) return;
 
     let value = "";
-    switch (previewType) {
+    switch (type) {
       case "model":
         value = model;
         break;
@@ -804,18 +422,12 @@ export default function GenerateImage() {
     }
 
     if (!value) {
-      toast.error(`Please select a ${previewType} first`);
+      toast.error(`Please select a ${type} first`);
       return;
     }
 
     try {
       const loadingToast = toast.loading("Saving preview...");
-
-      console.log("Saving preview:", {
-        type: `${previewType}s`,
-        value: value,
-        imageUrl: generatedImage,
-      });
 
       const response = await fetch("/api/previews", {
         method: "POST",
@@ -824,7 +436,7 @@ export default function GenerateImage() {
         },
         body: JSON.stringify({
           imageUrl: generatedImage,
-          type: `${previewType}s`,
+          type: `${type}s`,
           value: value,
         }),
       });
@@ -833,23 +445,15 @@ export default function GenerateImage() {
         throw new Error("Failed to save preview");
       }
 
-      const data = await response.json();
-      console.log("Preview saved:", data);
-
-      toast.success(`Saved as preview for ${previewType}: ${value}`, {
+      toast.success(`Saved as preview for ${type}: ${value}`, {
         id: loadingToast,
       });
       setShowMarkAsPreview(false);
-      setShowPreview({ type: null, value: null });
+      setPreview(null, null);
 
-      setTimeout(() => {
-        setModel((prev) => prev);
-        setImageStyle((prev) => prev);
-        setPerspective((prev) => prev);
-        setComposition((prev) => prev);
-        setMedium((prev) => prev);
-        setMood((prev) => prev);
-      }, 100);
+      // Force refresh of the component state to reload previews if needed
+      // (State is in store now, so this timeout trick might need adjustment 
+      // but for now we'll leave it as we just updated the store state)
     } catch (error) {
       toast.error("Failed to save preview image");
       console.error(error);
@@ -871,6 +475,45 @@ export default function GenerateImage() {
       setIsOptimizing(false);
     }
   };
+
+  const renderSelectGroup = (
+      label: string, 
+      options: { value: string; label: string }[], 
+      currentValue: string, 
+      setter: (val: string) => void,
+      type: GenerationState["previewType"]
+  ) => (
+      <div className="space-y-2 relative">
+          <label className="text-sm font-medium text-gray-700">
+              {label}
+          </label>
+          <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
+              {options.map((option) => (
+                  <button
+                      key={option.value}
+                      className={`px-2 py-1 rounded-full text-xs transition-colors
+                          ${
+                              currentValue === option.label
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-white border border-gray-300 hover:bg-gray-100"
+                          }`}
+                      onClick={() => {
+                          setter(option.label);
+                          setPreview(null, null);
+                          setTimeout(() => {
+                              setPreview(type, option.value);
+                          }, 100);
+                      }}
+                  >
+                      {option.label}
+                  </button>
+              ))}
+          </div>
+          {previewType === type && previewValue && (
+              <PreviewCard type={type!} value={previewValue} />
+          )}
+      </div>
+  );
 
   return (
     <div className="flex flex-col items-center w-full p-3 bg-white">
@@ -921,7 +564,7 @@ export default function GenerateImage() {
 
             <button
               onClick={
-                isRecording ? () => setIsRecording(false) : startAudioRecording
+                isRecording ? stopRecording : startRecording
               }
               className={`group relative inline-flex items-center justify-center w-9 h-9 
                 rounded-lg transition-all duration-200 hover:shadow-md
@@ -1028,12 +671,7 @@ export default function GenerateImage() {
                   key={style.value}
                   style={style}
                   isSelected={imageStyle === style.value}
-                  onClick={() =>
-                    handleStyleChange({
-                      value: style.value,
-                      label: style.label,
-                    })
-                  }
+                  onClick={() => setImageStyle(style.value)}
                 />
               )}
             />
@@ -1041,195 +679,15 @@ export default function GenerateImage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2 relative">
-            <label className="text-sm font-medium text-gray-700">
-              Color Scheme
-            </label>
-            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {colors.map((option) => (
-                <button
-                  key={option.value}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${
-                      colorScheme === option.label
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setColorScheme(option.label);
-                    setShowPreview({ type: null, value: null });
-                    setTimeout(() => {
-                      setShowPreview({ type: "color", value: option.value });
-                    }, 100);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {showPreview.type === "color" && showPreview.value && (
-              <PreviewCard type="color" value={showPreview.value} />
-            )}
-          </div>
-
-          <div className="space-y-2 relative">
-            <label className="text-sm font-medium text-gray-700">
-              Lighting
-            </label>
-            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {lightings.map((option) => (
-                <button
-                  key={option.value}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${
-                      lighting === option.label
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setLighting(option.label);
-                    setShowPreview({ type: null, value: null });
-                    setTimeout(() => {
-                      setShowPreview({ type: "lighting", value: option.value });
-                    }, 100);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {showPreview.type === "lighting" && showPreview.value && (
-              <PreviewCard type="lighting" value={showPreview.value} />
-            )}
-          </div>
+            {renderSelectGroup("Color Scheme", colors, colorScheme, setColorScheme, "color")}
+            {renderSelectGroup("Lighting", lightings, lighting, setLighting, "lighting")}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2 relative">
-            <label className="text-sm font-medium text-gray-700">
-              Perspective
-            </label>
-            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {perspectives.map((option) => (
-                <button
-                  key={option.value}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${
-                      perspective === option.label
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setPerspective(option.label);
-                    setShowPreview({ type: null, value: null });
-                    setTimeout(() => {
-                      setShowPreview({
-                        type: "perspective",
-                        value: option.value,
-                      });
-                    }, 100);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {showPreview.type === "perspective" && showPreview.value && (
-              <PreviewCard type="perspective" value={showPreview.value} />
-            )}
-          </div>
-
-          <div className="space-y-2 relative">
-            <label className="text-sm font-medium text-gray-700">
-              Composition
-            </label>
-            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {compositions.map((option) => (
-                <button
-                  key={option.value}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${
-                      composition === option.label
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setComposition(option.label);
-                    setShowPreview({ type: null, value: null });
-                    setTimeout(() => {
-                      setShowPreview({
-                        type: "composition",
-                        value: option.value,
-                      });
-                    }, 100);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {showPreview.type === "composition" && showPreview.value && (
-              <PreviewCard type="composition" value={showPreview.value} />
-            )}
-          </div>
-
-          <div className="space-y-2 relative">
-            <label className="text-sm font-medium text-gray-700">Medium</label>
-            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {mediums.map((option) => (
-                <button
-                  key={option.value}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${
-                      medium === option.label
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setMedium(option.label);
-                    setShowPreview({ type: null, value: null });
-                    setTimeout(() => {
-                      setShowPreview({ type: "medium", value: option.value });
-                    }, 100);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {showPreview.type === "medium" && showPreview.value && (
-              <PreviewCard type="medium" value={showPreview.value} />
-            )}
-          </div>
-
-          <div className="space-y-2 relative">
-            <label className="text-sm font-medium text-gray-700">Mood</label>
-            <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {moods.map((option) => (
-                <button
-                  key={option.value}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors
-                    ${
-                      mood === option.label
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 hover:bg-gray-100"
-                    }`}
-                  onClick={() => {
-                    setMood(option.label);
-                    setShowPreview({ type: null, value: null });
-                    setTimeout(() => {
-                      setShowPreview({ type: "mood", value: option.value });
-                    }, 100);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {showPreview.type === "mood" && showPreview.value && (
-              <PreviewCard type="mood" value={showPreview.value} />
-            )}
-          </div>
+            {renderSelectGroup("Perspective", perspectives, perspective, setPerspective, "perspective")}
+            {renderSelectGroup("Composition", compositions, composition, setComposition, "composition")}
+            {renderSelectGroup("Medium", mediums, medium, setMedium, "medium")}
+            {renderSelectGroup("Mood", moods, mood, setMood, "mood")}
         </div>
 
         <button
@@ -1246,21 +704,7 @@ export default function GenerateImage() {
             }
           `}
           disabled={loading || !isPromptValid || !isModelValid}
-          onClick={(e) => {
-            setPromptData({
-              ...promptData,
-              freestyle: imagePrompt,
-              style: imageStyle,
-              colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
-              lighting: getLightingFromLabel(lighting) || lightings[0].value,
-              perspective: perspective,
-              composition: composition,
-              medium: medium,
-              mood: mood,
-              tags,
-            });
-            handleGenerateSDXL(e);
-          }}
+          onClick={handleGenerateSDXL}
         >
           {loading ? (
             <div className="flex items-center justify-center">
@@ -1284,7 +728,7 @@ export default function GenerateImage() {
                 <>
                   <button
                     className="absolute top-4 right-4 bg-white/90 hover:bg-white text-blue-600 p-2 rounded-full shadow-lg transition-colors"
-                    onClick={() => setShowMarkAsPreview((prev) => !prev)}
+                    onClick={() => setShowMarkAsPreview(!showMarkAsPreview)}
                     title="Mark as Preview"
                   >
                     <Check size={24} />
