@@ -1,181 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import {
-  GoogleAuthProvider,
-  sendSignInLinkToEmail,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signOut,
-} from "firebase/auth";
-
 import Link from "next/link";
 import { MailIcon, XIcon, LockIcon } from "lucide-react";
 import { PulseLoader } from "react-spinners";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { auth } from "@/firebase/firebaseClient";
-import toast from "react-hot-toast";
-
 import googleLogo from "@/app/assets/google.svg";
 import Image from "next/image";
-import { isIOSReactNativeWebView } from "@/utils/platform";
+import { useAuthLogic } from "@/hooks/useAuthLogic";
 
 export default function AuthComponent() {
-  const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
-  const clearAuthDetails = useAuthStore((s) => s.clearAuthDetails);
   const uid = useAuthStore((s) => s.uid);
   const authEmail = useAuthStore((s) => s.authEmail);
   const authDisplayName = useAuthStore((s) => s.authDisplayName);
   const authPending = useAuthStore((s) => s.authPending);
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [name, setName] = useState<string>("");
-  const [acceptTerms, setAcceptTerms] = useState<boolean>(true);
-  const formRef = useRef<HTMLFormElement>(null);
-  const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [isEmailLinkLogin, setIsEmailLinkLogin] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const [showGoogleSignIn, setShowGoogleSignIn] = useState(true);
-
-  const showModal = () => setIsVisible(true);
-  const hideModal = () => setIsVisible(false);
-
-  useEffect(() => {
-    // Hide Google Sign-In button and the divider if in a React Native WebView on iOS
-    setShowGoogleSignIn(!isIOSReactNativeWebView());
-  }, []);
-
-  const signInWithGoogle = async () => {
-    if (!acceptTerms) {
-      if (formRef.current) {
-        formRef.current.reportValidity();
-      }
-      return;
-    }
-
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      if (isFirebaseError(error)) {
-        if (error.code === "auth/account-exists-with-different-credential") {
-          toast.error(
-            "An account with the same email exists with a different sign-in provider."
-          );
-        } else {
-          toast.error(
-            "Something went wrong signing in with Google\n" + error.message
-          );
-        }
-      }
-    } finally {
-      hideModal();
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      clearAuthDetails();
-    } catch (error) {
-      console.error("Error signing out:", error);
-      alert("An error occurred while signing out.");
-    } finally {
-      hideModal();
-    }
-  };
-
-  const handlePasswordLogin = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      window.localStorage.setItem("generateEmail", email);
-      window.localStorage.setItem("generateName", email.split("@")[0]);
-    } catch (error: unknown) {
-      handleAuthError(error);
-    } finally {
-      hideModal();
-    }
-  };
-
-  const handlePasswordSignup = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      window.localStorage.setItem("generateEmail", email);
-      window.localStorage.setItem("generateName", email.split("@")[0]);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        if ((error as { code?: string }).code === "auth/email-already-in-use") {
-          handlePasswordLogin();
-          return;
-        }
-      }
-      hideModal();
-      handleAuthError(error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const actionCodeSettings = {
-      url: `${window.location.origin}/loginfinish`,
-      handleCodeInApp: true,
-    };
-
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem("generateEmail", email);
-      window.localStorage.setItem("generateName", name);
-      setAuthDetails({ authPending: true });
-    } catch (error) {
-      console.error("Error sending sign-in link:", error);
-      alert("An error occurred while sending the sign-in link.");
-      hideModal();
-    }
-  };
-
-  // Forgot password handler
-  const handlePasswordReset = async () => {
-    if (!email) {
-      toast.error("Please enter your email to reset your password.");
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast.success(`Password reset email sent to ${email}`);
-    } catch (error) {
-      handleAuthError(error);
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        hideModal();
-      }
-    };
-
-    if (isVisible) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isVisible]);
-
-  const handleAuthError = (error: unknown) => {
-    if (isFirebaseError(error)) {
-      toast.error(error.message);
-    }
-  };
+  
+  const {
+    email, setEmail,
+    password, setPassword,
+    name, setName,
+    acceptTerms, setAcceptTerms,
+    isVisible, showModal, hideModal,
+    isEmailLinkLogin, setIsEmailLinkLogin,
+    showGoogleSignIn,
+    formRef,
+    modalRef,
+    signInWithGoogle,
+    handleSignOut,
+    handlePasswordSignup,
+    handleSubmit,
+    handlePasswordReset,
+  } = useAuthLogic();
 
   return (
     <>
@@ -359,17 +213,6 @@ export default function AuthComponent() {
         </div>
       )}
     </>
-  );
-}
-
-function isFirebaseError(
-  error: unknown
-): error is { code: string; message: string } {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    "message" in error
   );
 }
 
