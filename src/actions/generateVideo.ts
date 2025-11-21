@@ -1,6 +1,5 @@
 "use server";
 
-import fetch from "node-fetch";
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { creditsToMinus } from "@/utils/credits";
 import { model } from "@/types/model";
