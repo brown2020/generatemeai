@@ -3,7 +3,6 @@
 import { adminBucket } from "@/firebase/firebaseAdmin";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
-import fetch from "node-fetch";
 
 interface DalleResponse {
   data: {
@@ -21,33 +20,6 @@ interface IdeogramResponse {
     style_type: string;
     url: string;
   }[];
-}
-
-interface RequestBody {
-  prompt?: string;
-  n?: number;
-  size?: string;
-  cfg_scale?: number;
-  height?: number;
-  width?: number;
-  samples?: number;
-  steps?: number;
-  seed?: number;
-  safety_check?: boolean;
-  image_request?: {
-    prompt: string;
-    aspect_ratio?: AspectRatio;
-    model?: "V_1" | "V_1_TURBO" | "V_2" | "V_2_TURBO";
-    magic_prompt_option?: "AUTO" | "OFF" | "ON";
-    seed?: number;
-    style_type?:
-      | "ANIME"
-      | "AUTO"
-      | "DESIGN"
-      | "GENERAL"
-      | "REALISTIC"
-      | "RENDER_3D";
-  };
 }
 
 enum AspectRatio {
@@ -68,18 +40,282 @@ enum AspectRatio {
 function checkCredits(
   useCredits: string | null,
   credits: string | null,
-  model: string | null
+  modelName: string | null
 ) {
   if (
     useCredits === "true" &&
     credits &&
-    model &&
-    Number(credits) < creditsToMinus(model as model)
+    modelName &&
+    Number(credits) < creditsToMinus(modelName as model)
   ) {
     throw new Error(
       "Not enough credits to generate an image. Please purchase credits or use your own API keys."
     );
   }
+}
+
+interface StrategyContext {
+  message: string;
+  img: File | null;
+  apiKey: string;
+  useCredits: boolean;
+}
+
+type GenerationStrategy = (context: StrategyContext) => Promise<ArrayBuffer | Buffer>;
+
+const strategies: Record<string, GenerationStrategy> = {
+  "dall-e": async ({ message, img, apiKey, useCredits }) => {
+    let apiUrl: string;
+    let body: any;
+    let formData: FormData | undefined;
+    
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    if (img) {
+      formData = new FormData();
+      formData.append("image", img);
+      formData.append("prompt", message);
+      formData.append("n", "1");
+      formData.append("size", "1024x1024");
+      apiUrl = `https://api.openai.com/v1/images/edits`;
+    } else {
+      apiUrl = `https://api.openai.com/v1/images/generations`;
+      body = {
+        prompt: message,
+        n: 1,
+        size: "1024x1024",
+      };
+      headers["Content-Type"] = "application/json";
+    }
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers,
+      body: formData || JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error from DALL-E API: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as DalleResponse;
+    const imageUrl = data.data[0].url;
+    return await fetch(imageUrl).then((res) => res.arrayBuffer());
+  },
+
+  "stable-diffusion-xl": async ({ message, img, apiKey }) => {
+    let apiUrl: string;
+    let body: any;
+    let formData: FormData | undefined;
+    
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "image/jpeg",
+    };
+
+    if (img) {
+      formData = new FormData();
+      formData.append("init_image", img);
+      formData.append("prompt", message);
+      formData.append("init_image_mode", "IMAGE_STRENGTH");
+      formData.append("image_strength", "0.5");
+      formData.append("cfg_scale", "7");
+      formData.append("seed", "1");
+      formData.append("steps", "30");
+      formData.append("safety_check", "false");
+      apiUrl = "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0/image_to_image";
+    } else {
+      apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0`;
+      body = {
+        cfg_scale: 7,
+        height: 1024,
+        width: 1024,
+        samples: 1,
+        steps: 30,
+        seed: 0,
+        safety_check: false,
+        prompt: message,
+      };
+      headers["Content-Type"] = "application/json";
+    }
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers,
+      body: formData || JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error from Fireworks API: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.arrayBuffer();
+  },
+
+  "stability-sd3-turbo": async ({ message, img, apiKey }) => {
+    const formData = new FormData();
+    if (img) {
+      formData.append("mode", "image-to-image");
+      formData.append("image", img);
+      formData.append("strength", "0.7");
+    } else {
+      formData.append("mode", "text-to-image");
+      formData.append("aspect_ratio", "1:1");
+    }
+    formData.append("prompt", message);
+    formData.append("output_format", "png");
+    formData.append("model", "sd3-turbo");
+    formData.append("isValidPrompt", "true");
+
+    const apiUrl = "https://api.stability.ai/v2beta/stable-image/generate/sd3";
+    const headers = {
+      Accept: "image/*",
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error from Stability API: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.arrayBuffer();
+  },
+  
+  "playground-v2": async (context) => generatePlayground(context, "playground-v2-1024px-aesthetic"),
+  "playground-v2-5": async (context) => generatePlayground(context, "playground-v2-1024px-aesthetic"),
+
+  "flux-schnell": async ({ message, apiKey, useCredits }) => {
+    const { default: Replicate } = await import("replicate");
+    const { default: sharp } = await import("sharp");
+
+    const replicate = new Replicate({
+      auth: apiKey,
+    });
+
+    const prediction = await replicate.predictions.create({
+      model: "black-forest-labs/flux-schnell",
+      input: {
+        prompt: message,
+      },
+    });
+
+    let attemptCount = 0;
+    let output;
+
+    while (attemptCount++ < 24) {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      output = await replicate.predictions.get(prediction.id);
+      if (output.status !== "processing") break;
+    }
+
+    if (output?.status !== "succeeded") {
+      throw new Error("Failed generating image via Replicate API.");
+    }
+
+    const webpImageData = await fetch(output.output[0]).then((res) =>
+      res.arrayBuffer()
+    );
+
+    return await sharp(Buffer.from(webpImageData))
+      .toFormat("jpeg")
+      .toBuffer();
+  },
+
+  "ideogram-ai": async ({ message, apiKey }) => {
+    const apiUrl = `https://api.ideogram.ai/generate`;
+
+    const requestBody = {
+      image_request: {
+        prompt: message,
+        aspect_ratio: AspectRatio.ASPECT_9_16,
+        model: "V_2",
+        magic_prompt_option: "AUTO",
+        seed: 0,
+        style_type: "AUTO",
+      },
+    };
+
+    const headers = {
+      "Content-Type": "application/json",
+      "Api-Key": apiKey,
+    };
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error from Ideogram API: ${response.status} ${response.statusText}`);
+    }
+
+    const jsonResponse = (await response.json()) as IdeogramResponse;
+    const imageUrl = jsonResponse.data[0].url;
+    const imageResponse = await fetch(imageUrl);
+    
+    if (!imageResponse.ok) {
+         throw new Error(`Error fetching Ideogram image: ${imageResponse.statusText}`);
+    }
+    return await imageResponse.arrayBuffer();
+  },
+};
+
+// Helper for Playground models to avoid duplication
+async function generatePlayground({ message, img, apiKey }: StrategyContext, modelName: string) {
+    let apiUrl: string;
+    let body: any;
+    let formData: FormData | undefined;
+    
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "image/jpeg",
+    };
+
+    if (img) {
+      formData = new FormData();
+      formData.append("init_image", img);
+      formData.append("prompt", message);
+      formData.append("init_image_mode", "IMAGE_STRENGTH");
+      formData.append("image_strength", "0.5");
+      formData.append("cfg_scale", "7");
+      formData.append("seed", "1");
+      formData.append("steps", "30");
+      formData.append("safety_check", "false");
+      apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/${modelName}/image_to_image`;
+    } else {
+      apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/${modelName}`;
+      body = {
+        cfg_scale: 7,
+        height: 1024,
+        width: 1024,
+        samples: 1,
+        steps: 30,
+        seed: 0,
+        safety_check: false,
+        prompt: message,
+      };
+      headers["Content-Type"] = "application/json";
+    }
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers,
+      body: formData || JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error from Playground API: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.arrayBuffer();
 }
 
 export async function generateImage(data: FormData) {
@@ -93,260 +329,57 @@ export async function generateImage(data: FormData) {
     const ideogramAPIKey = data.get("ideogramAPIKey") as string | null;
     const useCredits = data.get("useCredits") as string | null;
     const credits = data.get("credits") as string | null;
-    const model = data.get("model") as string | null;
+    const modelName = data.get("model") as string | null;
     const img = data.get("imageField") as File | null;
 
-    if (!message || !uid || !model) {
+    if (!message || !uid || !modelName) {
       throw new Error("Required parameters (message, uid, model) are missing.");
     }
 
-    checkCredits(useCredits, credits, model);
+    checkCredits(useCredits, credits, modelName);
 
-    let apiUrl: string | undefined;
-    let requestBody: RequestBody | undefined;
-    let formData: FormData | undefined;
-    let imageData;
+    const strategy = strategies[modelName];
+    if (!strategy) {
+      throw new Error(`Unsupported model: ${modelName}`);
+    }
+
+    // Select correct API Key
+    let apiKey = "";
+    const isUsingCredits = useCredits === "true";
+    
+    switch (modelName) {
+        case "dall-e":
+            apiKey = isUsingCredits ? process.env.OPENAI_API_KEY! : openAPIKey!;
+            break;
+        case "stable-diffusion-xl":
+        case "playground-v2":
+        case "playground-v2-5":
+            apiKey = isUsingCredits ? process.env.FIREWORKS_API_KEY! : fireworksAPIKey!;
+            break;
+        case "stability-sd3-turbo":
+            apiKey = isUsingCredits ? process.env.STABILITY_API_KEY! : stabilityAPIKey!;
+            break;
+        case "flux-schnell":
+            apiKey = isUsingCredits ? process.env.REPLICATE_API_KEY! : replicateAPIKey!;
+            break;
+        case "ideogram-ai":
+            apiKey = isUsingCredits ? process.env.IDEOGRAM_API_KEY! : ideogramAPIKey!;
+            break;
+        default:
+             // Should be caught by strategy check, but fallback
+             apiKey = "";
+    }
+
+    // Generate Image
+    const imageData = await strategy({
+        message,
+        img,
+        apiKey,
+        useCredits: isUsingCredits
+    });
+
     let imageUrl;
-    let headers: {
-      [key: string]: string;
-    } = {};
-
-    if (model === "dall-e") {
-      if (img) {
-        formData = new FormData();
-        formData.append("image", img);
-        formData.append("prompt", message);
-        formData.append("n", "1");
-        formData.append("size", "1024x1024");
-
-        apiUrl = `https://api.openai.com/v1/images/edits`;
-        headers = {
-          Authorization: `Bearer ${
-            useCredits !== "true" ? process.env.OPENAI_API_KEY! : openAPIKey!
-          }`,
-        };
-      } else {
-        apiUrl = `https://api.openai.com/v1/images/generations`;
-        requestBody = {
-          prompt: message,
-          n: 1,
-          size: "1024x1024",
-        };
-        headers = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            useCredits !== "true" ? process.env.OPENAI_API_KEY! : openAPIKey!
-          }`,
-        };
-      }
-    } else if (model === "stable-diffusion-xl") {
-      if (img) {
-        formData = new FormData();
-        formData.append("init_image", img);
-        formData.append("prompt", message);
-        formData.append("init_image_mode", "IMAGE_STRENGTH");
-        formData.append("image_strength", "0.5");
-        formData.append("cfg_scale", "7");
-        formData.append("seed", "1");
-        formData.append("steps", "30");
-        formData.append("safety_check", "false");
-
-        apiUrl =
-          "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0/image_to_image";
-        headers = {
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits !== "true"
-              ? process.env.FIREWORKS_API_KEY!
-              : fireworksAPIKey!
-          }`,
-        };
-      } else {
-        apiUrl = `https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/stable-diffusion-xl-1024-v1-0`;
-        requestBody = {
-          cfg_scale: 7,
-          height: 1024,
-          width: 1024,
-          samples: 1,
-          steps: 30,
-          seed: 0,
-          safety_check: false,
-          prompt: message,
-        };
-        headers = {
-          "Content-Type": "application/json",
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits !== "true"
-              ? process.env.FIREWORKS_API_KEY!
-              : fireworksAPIKey!
-          }`,
-        };
-      }
-    } else if (model === "stability-sd3-turbo") {
-      formData = new FormData();
-      if (img) {
-        formData.append("mode", "image-to-image");
-        formData.append("image", img);
-        formData.append("strength", "0.7");
-      } else {
-        formData.append("mode", "text-to-image");
-        formData.append("aspect_ratio", "1:1");
-      }
-      formData.append("prompt", message);
-      formData.append("output_format", "png");
-      formData.append("model", "sd3-turbo");
-      formData.append("isValidPrompt", "true");
-
-      apiUrl = "https://api.stability.ai/v2beta/stable-image/generate/sd3";
-      headers = {
-        Accept: "image/*",
-        Authorization: `Bearer ${
-          useCredits !== "true"
-            ? process.env.STABILITY_API_KEY!
-            : stabilityAPIKey!
-        }`,
-      };
-    } else if (model === "playground-v2" || model === "playground-v2-5") {
-      if (img) {
-        formData = new FormData();
-        formData.append("init_image", img);
-        formData.append("prompt", message);
-        formData.append("init_image_mode", "IMAGE_STRENGTH");
-        formData.append("image_strength", "0.5");
-        formData.append("cfg_scale", "7");
-        formData.append("seed", "1");
-        formData.append("steps", "30");
-        formData.append("safety_check", "false");
-
-        apiUrl =
-          "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/playground-v2-1024px-aesthetic/image_to_image";
-        headers = {
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits !== "true"
-              ? process.env.FIREWORKS_API_KEY!
-              : fireworksAPIKey!
-          }`,
-        };
-      } else {
-        apiUrl =
-          "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models/playground-v2-1024px-aesthetic";
-        requestBody = {
-          cfg_scale: 7,
-          height: 1024,
-          width: 1024,
-          samples: 1,
-          steps: 30,
-          seed: 0,
-          safety_check: false,
-          prompt: message,
-        };
-        headers = {
-          "Content-Type": "application/json",
-          Accept: "image/jpeg",
-          Authorization: `Bearer ${
-            useCredits !== "true"
-              ? process.env.FIREWORKS_API_KEY!
-              : fireworksAPIKey!
-          }`,
-        };
-      }
-    } else if (model === "flux-schnell") {
-      const { default: Replicate } = await import("replicate");
-      const { default: sharp } = await import("sharp");
-
-      const replicate = new Replicate({
-        auth:
-          useCredits !== "true"
-            ? process.env.REPLICATE_API_KEY!
-            : replicateAPIKey!,
-      });
-
-      const prediction = await replicate.predictions.create({
-        model: "black-forest-labs/flux-schnell",
-        input: {
-          prompt: message,
-        },
-      });
-
-      let attemptCount = 0;
-      let output;
-
-      while (attemptCount++ < 24) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        output = await replicate.predictions.get(prediction.id);
-        if (output.status !== "processing") break;
-      }
-
-      if (output?.status !== "succeeded") {
-        throw new Error("Failed generating image via Replicate API.");
-      }
-
-      const webpImageData = await fetch(output.output[0]).then((res) =>
-        res.arrayBuffer()
-      );
-
-      imageData = await sharp(Buffer.from(webpImageData))
-        .toFormat("jpeg")
-        .toBuffer();
-    } else if (model === "ideogram-ai") {
-      apiUrl = `https://api.ideogram.ai/generate`;
-
-      requestBody = {
-        image_request: {
-          prompt: message,
-          aspect_ratio: AspectRatio.ASPECT_9_16,
-          model: "V_2",
-          magic_prompt_option: "AUTO",
-          seed: 0,
-          style_type: "AUTO",
-        },
-      };
-
-      headers = {
-        "Content-Type": "application/json",
-        "Api-Key":
-          useCredits !== "true"
-            ? process.env.IDEOGRAM_API_KEY!
-            : ideogramAPIKey!,
-      };
-    }
-
-    // Send the request to the external API
-    if ((requestBody || formData) && apiUrl) {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: headers,
-        body: formData || JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Error from Image API: ${response.status} ${response.statusText}`
-        );
-      }
-
-      if (model === "dall-e") {
-        const dalleResponse = (await response.json()) as DalleResponse;
-        const imageUrl = dalleResponse.data[0].url;
-        imageData = await fetch(imageUrl).then((res) => res.arrayBuffer());
-      } else if (model === "ideogram-ai") {
-        const jsonResponse = (await response.json()) as IdeogramResponse;
-        const imageUrl = jsonResponse.data[0].url;
-
-        const imageResponse = await fetch(imageUrl);
-        if (imageResponse.ok) {
-          imageData = await imageResponse.arrayBuffer();
-        }
-      } else {
-        imageData = await response.arrayBuffer();
-      }
-    }
-
     if (imageData) {
-      // const finalImage = Buffer.from(imageData);
-      // const finalImage = imageData instanceof Buffer ? imageData : Buffer.from(imageData);
       const finalImage = Buffer.from(new Uint8Array(imageData));
       // Save the generated image to Firebase
       const fileName = `generated/${uid}/${Date.now()}.jpg`;
@@ -374,12 +407,11 @@ export async function generateImage(data: FormData) {
 
     // Handle uploaded image reference
     if (img) {
-      imageReference = Buffer.from(await img.arrayBuffer());
-
+      const imageBuffer = Buffer.from(await img.arrayBuffer());
       const referenceFileName = `image-references/${uid}/${Date.now()}.jpg`;
       const referenceFile = adminBucket.file(referenceFileName);
 
-      await referenceFile.save(imageReference, {
+      await referenceFile.save(imageBuffer, {
         contentType: "image/jpeg",
       });
 

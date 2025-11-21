@@ -4,10 +4,9 @@ import TextareaAutosize from "react-textarea-autosize";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useGenerationStore, GenerationState } from "@/zustand/useGenerationStore";
 import useProfileStore from "@/zustand/useProfileStore";
-import { db } from "@/firebase/firebaseClient";
-import { Timestamp, collection, doc, setDoc } from "firebase/firestore";
-import { useEffect, useRef } from "react";
+import { useGenerationHistory } from "@/hooks/useGenerationHistory";
 import { PromptDataType } from "@/types/promptdata";
+import { useEffect, useRef } from "react";
 import { artStyles } from "@/constants/artStyles";
 import { PulseLoader } from "react-spinners";
 import { generatePrompt } from "@/utils/promptUtils";
@@ -45,6 +44,7 @@ import { optimizePrompt } from "@/utils/promptOptimizer";
 import { generateImage } from "@/actions/generateImage";
 import { normalizeValue } from "@/utils/imageUtils";
 
+import { SettingsSelector } from "@/components/generation/SettingsSelector";
 import { PaginatedGrid } from "@/components/common/PaginatedGrid";
 import { ModelCard } from "@/components/generation/ModelCard";
 import { StyleCard } from "@/components/generation/StyleCard";
@@ -109,6 +109,8 @@ export default function GenerateImage() {
     setPreview,
     reset,
   } = useGenerationStore();
+
+  const { saveHistory } = useGenerationHistory();
 
   const previewRef = useRef<HTMLDivElement>(null);
   const markAsPreviewRef = useRef<HTMLDivElement>(null);
@@ -230,30 +232,6 @@ export default function GenerateImage() {
     }
   };
 
-  async function saveHistory(
-    promptData: PromptDataType,
-    prompt: string,
-    downloadUrl: string
-  ) {
-    if (!uid) return;
-
-    const coll = collection(db, "profiles", uid, "covers");
-    const docRef = doc(coll);
-
-    const finalPromptData: PromptDataType = {
-      ...promptData,
-      downloadUrl,
-      model,
-      prompt,
-      id: docRef.id,
-      timestamp: Timestamp.now(),
-      tags,
-      imageCategory: selectedCategory,
-    };
-
-    await setDoc(docRef, finalPromptData);
-  }
-
   const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!isPromptValid || !isModelValid) {
@@ -318,24 +296,23 @@ export default function GenerateImage() {
 
       if (downloadURL) {
         await saveHistory(
+          uid,
           {
             freestyle: imagePrompt,
             style: imageStyle,
-            downloadUrl: downloadURL,
-            model,
-            prompt,
             lighting: getLightingFromLabel(lighting) || lightings[0].value,
             colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
             imageReference,
-            imageCategory: selectedCategory,
             perspective: perspective,
             composition: composition,
             medium: medium,
             mood: mood,
-            tags: tags,
           },
           prompt,
-          downloadURL
+          downloadURL,
+          model,
+          tags,
+          selectedCategory
         );
       }
     } catch (error: unknown) {
@@ -475,45 +452,6 @@ export default function GenerateImage() {
       setIsOptimizing(false);
     }
   };
-
-  const renderSelectGroup = (
-      label: string, 
-      options: { value: string; label: string }[], 
-      currentValue: string, 
-      setter: (val: string) => void,
-      type: GenerationState["previewType"]
-  ) => (
-      <div className="space-y-2 relative">
-          <label className="text-sm font-medium text-gray-700">
-              {label}
-          </label>
-          <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
-              {options.map((option) => (
-                  <button
-                      key={option.value}
-                      className={`px-2 py-1 rounded-full text-xs transition-colors
-                          ${
-                              currentValue === option.label
-                                  ? "bg-blue-600 text-white"
-                                  : "bg-white border border-gray-300 hover:bg-gray-100"
-                          }`}
-                      onClick={() => {
-                          setter(option.label);
-                          setPreview(null, null);
-                          setTimeout(() => {
-                              setPreview(type, option.value);
-                          }, 100);
-                      }}
-                  >
-                      {option.label}
-                  </button>
-              ))}
-          </div>
-          {previewType === type && previewValue && (
-              <PreviewCard type={type!} value={previewValue} />
-          )}
-      </div>
-  );
 
   return (
     <div className="flex flex-col items-center w-full p-3 bg-white">
@@ -679,15 +617,69 @@ export default function GenerateImage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderSelectGroup("Color Scheme", colors, colorScheme, setColorScheme, "color")}
-            {renderSelectGroup("Lighting", lightings, lighting, setLighting, "lighting")}
+            <SettingsSelector 
+              label="Color Scheme" 
+              options={colors} 
+              currentValue={colorScheme} 
+              onChange={setColorScheme} 
+              type="color"
+              previewType={previewType}
+              previewValue={previewValue}
+              setPreview={setPreview}
+            />
+            <SettingsSelector 
+              label="Lighting" 
+              options={lightings} 
+              currentValue={lighting} 
+              onChange={setLighting} 
+              type="lighting"
+              previewType={previewType}
+              previewValue={previewValue}
+              setPreview={setPreview}
+            />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderSelectGroup("Perspective", perspectives, perspective, setPerspective, "perspective")}
-            {renderSelectGroup("Composition", compositions, composition, setComposition, "composition")}
-            {renderSelectGroup("Medium", mediums, medium, setMedium, "medium")}
-            {renderSelectGroup("Mood", moods, mood, setMood, "mood")}
+            <SettingsSelector 
+              label="Perspective" 
+              options={perspectives} 
+              currentValue={perspective} 
+              onChange={setPerspective} 
+              type="perspective"
+              previewType={previewType}
+              previewValue={previewValue}
+              setPreview={setPreview}
+            />
+            <SettingsSelector 
+              label="Composition" 
+              options={compositions} 
+              currentValue={composition} 
+              onChange={setComposition} 
+              type="composition"
+              previewType={previewType}
+              previewValue={previewValue}
+              setPreview={setPreview}
+            />
+            <SettingsSelector 
+              label="Medium" 
+              options={mediums} 
+              currentValue={medium} 
+              onChange={setMedium} 
+              type="medium"
+              previewType={previewType}
+              previewValue={previewValue}
+              setPreview={setPreview}
+            />
+            <SettingsSelector 
+              label="Mood" 
+              options={moods} 
+              currentValue={mood} 
+              onChange={setMood} 
+              type="mood"
+              previewType={previewType}
+              previewValue={previewValue}
+              setPreview={setPreview}
+            />
         </div>
 
         <button
