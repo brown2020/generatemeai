@@ -3,15 +3,24 @@
 import PaymentsPage from "./PaymentsPage";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { useAuthLogic } from "@/hooks/useAuthLogic";
+import { Eye, EyeOff, Copy, Check, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useRouter } from "next/navigation";
 
 export default function Profile() {
   const profile = useProfileStore((state) => state.profile);
   const { uid, authEmail } = useAuthStore((state) => state);
   const [showApiKey, setShowApiKey] = useState<{[key: string]: boolean}>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { handleSignOut } = useAuthLogic();
+  const router = useRouter();
+
+  const onSignOut = async () => {
+    await handleSignOut();
+    router.push("/");
+  };
 
   const handleCopyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -23,12 +32,22 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 relative overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 relative overflow-hidden flex justify-between items-center">
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 to-purple-500"/>
-          <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your API keys and credits
-          </p>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage your API keys and credits
+            </p>
+          </div>
+          <button
+            onClick={onSignOut}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium 
+              hover:bg-gray-200 transition-colors active:bg-gray-300 flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" /> 
+            <span className="hidden sm:inline">Sign Out</span>
+          </button>
         </div>
 
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
