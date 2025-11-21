@@ -16,6 +16,7 @@
     "@stripe/react-stripe-js": "^5.4.0",
     "@stripe/stripe-js": "^8.5.2",
     "ai": "^5.0.44",
+    "clsx": "^2.1.1",
     "cookies-next": "^6.1.0",
     "dom-to-image": "^2.6.0",
     "ffmpeg-static": "^5.2.0",
@@ -42,6 +43,7 @@
     "replicate": "^1.0.0",
     "sharp": "^0.34.1",
     "stripe": "^20.0.0",
+    "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.1"
   },
   "devDependencies": {
