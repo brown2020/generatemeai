@@ -2,20 +2,15 @@
 
 import TextareaAutosize from "react-textarea-autosize";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { useGenerationStore, GenerationState } from "@/zustand/useGenerationStore";
+import { useGenerationStore } from "@/zustand/useGenerationStore";
 import useProfileStore from "@/zustand/useProfileStore";
-import { useGenerationHistory } from "@/hooks/useGenerationHistory";
-import { PromptDataType } from "@/types/promptdata";
 import { useEffect, useRef } from "react";
 import { artStyles } from "@/constants/artStyles";
 import { PulseLoader } from "react-spinners";
-import { generatePrompt } from "@/utils/promptUtils";
 import toast from "react-hot-toast";
 import { models, SelectModel } from "@/constants/models";
-import { creditsToMinus } from "@/utils/credits";
-import { colors, getColorFromLabel } from "@/constants/colors";
-import { getLightingFromLabel, lightings } from "@/constants/lightings";
-import { useSearchParams } from "next/navigation";
+import { colors } from "@/constants/colors";
+import { lightings } from "@/constants/lightings";
 import { suggestTags } from "@/actions/suggestTags";
 import {
   Mic,
@@ -26,48 +21,29 @@ import {
   Sparkles,
   Loader2,
 } from "lucide-react";
-import {
-  isIOSReactNativeWebView,
-  checkRestrictedWords,
-} from "@/utils/platform";
-import {
-  perspectives,
-  getPerspectiveFromLabel,
-} from "@/constants/perspectives";
-import {
-  compositions,
-  getCompositionFromLabel,
-} from "@/constants/compositions";
-import { mediums, getMediumFromLabel } from "@/constants/mediums";
-import { moods, getMoodFromLabel } from "@/constants/moods";
+import { perspectives } from "@/constants/perspectives";
+import { compositions } from "@/constants/compositions";
+import { mediums } from "@/constants/mediums";
+import { moods } from "@/constants/moods";
 import { optimizePrompt } from "@/utils/promptOptimizer";
-import { generateImage } from "@/actions/generateImage";
-import { normalizeValue } from "@/utils/imageUtils";
 
 import { SettingsSelector } from "@/components/generation/SettingsSelector";
 import { PaginatedGrid } from "@/components/common/PaginatedGrid";
 import { ModelCard } from "@/components/generation/ModelCard";
 import { StyleCard } from "@/components/generation/StyleCard";
-import { PreviewCard } from "@/components/generation/PreviewCard";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { model } from "@/types/model";
+import { useUrlSync } from "@/hooks/useUrlSync";
+import { useImageGenerator } from "@/hooks/useImageGenerator";
+import { usePreviewSaver } from "@/hooks/usePreviewSaver";
 
 const isPreviewMarkingEnabled =
   process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING === "true";
 
 export default function GenerateImage() {
-  const uid = useAuthStore((s) => s.uid);
-  const searchterm = useSearchParams();
-  
-  // Profile Store
-  const fireworksAPIKey = useProfileStore((s) => s.profile.fireworks_api_key);
   const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
-  const stabilityAPIKey = useProfileStore((s) => s.profile.stability_api_key);
-  const replicateAPIKey = useProfileStore((s) => s.profile.replicate_api_key);
-  const ideogramAPIKey = useProfileStore((s) => s.profile.ideogram_api_key);
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const credits = useProfileStore((s) => s.profile.credits);
-  const minusCredits = useProfileStore((state) => state.minusCredits);
 
   // Generation Store
   const {
@@ -98,22 +74,21 @@ export default function GenerateImage() {
     setComposition,
     setMedium,
     setMood,
-    setSelectedCategory,
-    setTags,
     setSuggestedTags,
-    setGeneratedImage,
     setUploadedImage,
-    setLoading,
     setIsOptimizing,
     setShowMarkAsPreview,
     setPreview,
     reset,
   } = useGenerationStore();
 
-  const { saveHistory } = useGenerationHistory();
-
   const previewRef = useRef<HTMLDivElement>(null);
   const markAsPreviewRef = useRef<HTMLDivElement>(null);
+
+  // Hooks
+  useUrlSync();
+  const { generate } = useImageGenerator();
+  const { saveAsPreview } = usePreviewSaver();
 
   const { isRecording, startRecording, stopRecording } = useSpeechRecognition(
     (transcript) => setImagePrompt(transcript)
@@ -121,66 +96,6 @@ export default function GenerateImage() {
 
   const isPromptValid = !!imagePrompt.trim();
   const isModelValid = !!model;
-
-  // Initialize from URL params
-  useEffect(() => {
-    const freestyleSearchParam = searchterm.get("freestyle");
-    const styleSearchParam = searchterm.get("style");
-    const modelSearchParam = searchterm.get("model");
-    const colorSearchParam = searchterm.get("color");
-    const lightingSearchParam = searchterm.get("lighting");
-    const tagsSearchParam = searchterm.get("tags")?.split(",").filter(Boolean);
-    const imageReferenceSearchParam = searchterm.get("imageReference");
-    const imageCategorySearchParam = searchterm.get("imageCategory");
-    const perspectiveSearchParam = searchterm.get("perspective");
-    const compositionSearchParam = searchterm.get("composition");
-    const mediumSearchParam = searchterm.get("medium");
-    const moodSearchParam = searchterm.get("mood");
-
-    if (freestyleSearchParam) setImagePrompt(freestyleSearchParam);
-    if (styleSearchParam) setImageStyle(styleSearchParam);
-    if (modelSearchParam) setModel(modelSearchParam as model);
-    
-    if (colorSearchParam) {
-      const colorOption = colors.find((c) => c.value === colorSearchParam);
-      if (colorOption) setColorScheme(colorOption.label);
-      else {
-          const colorByLabel = colors.find(c => c.label.toLowerCase() === colorSearchParam.toLowerCase());
-          if (colorByLabel) setColorScheme(colorByLabel.label);
-      }
-    }
-    
-    if (lightingSearchParam) {
-      const lightingOption = lightings.find((l) => l.value === lightingSearchParam);
-      if (lightingOption) setLighting(lightingOption.label);
-      else {
-          const lightingByLabel = lightings.find(l => l.label.toLowerCase() === lightingSearchParam.toLowerCase());
-          if (lightingByLabel) setLighting(lightingByLabel.label);
-      }
-    }
-
-    if (tagsSearchParam) setTags(tagsSearchParam);
-    if (imageCategorySearchParam) setSelectedCategory(imageCategorySearchParam);
-    if (perspectiveSearchParam) setPerspective(perspectiveSearchParam);
-    if (compositionSearchParam) setComposition(compositionSearchParam);
-    if (mediumSearchParam) setMedium(mediumSearchParam);
-    if (moodSearchParam) setMood(moodSearchParam);
-
-    if (imageReferenceSearchParam) {
-      const loadImageFromUrl = async (url: string) => {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const file = new File([blob], "default-image.jpg", { type: blob.type });
-        setUploadedImage(file);
-      };
-      loadImageFromUrl(imageReferenceSearchParam);
-    }
-    
-    // Cleanup on unmount
-    return () => {
-        // Option: reset(); // Uncomment if we want to reset store on unmount
-    };
-  }, [searchterm, setImagePrompt, setImageStyle, setModel, setColorScheme, setLighting, setTags, setSelectedCategory, setPerspective, setComposition, setMedium, setMood, setUploadedImage]);
 
   // Click outside handler
   useEffect(() => {
@@ -232,209 +147,8 @@ export default function GenerateImage() {
     }
   };
 
-  const handleGenerateSDXL = async (e: React.FormEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    if (!isPromptValid || !isModelValid) {
-      toast.error("Please fill in all required fields.");
-      return;
-    }
-
-    if (isIOSReactNativeWebView() && checkRestrictedWords(imagePrompt)) {
-      toast.error(
-        "Your description contains restricted words and cannot be used."
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const prompt: string = generatePrompt(
-        imagePrompt,
-        imageStyle,
-        getColorFromLabel(colorScheme) || colors[0].value,
-        getLightingFromLabel(lighting) || lightings[0].value,
-        selectedCategory,
-        perspective,
-        composition,
-        medium,
-        mood,
-        tags
-      );
-
-      const formData = new FormData();
-      formData.append("message", prompt);
-      formData.append("uid", uid);
-      formData.append("openAPIKey", openAPIKey);
-      formData.append("fireworksAPIKey", fireworksAPIKey);
-      formData.append("stabilityAPIKey", stabilityAPIKey);
-      formData.append("replicateAPIKey", replicateAPIKey);
-      formData.append("ideogramAPIKey", ideogramAPIKey);
-      formData.append("useCredits", useCredits.toString());
-      formData.append("credits", credits.toString());
-      formData.append("model", model);
-      if (uploadedImage) {
-        formData.append("imageField", uploadedImage);
-      }
-      const result = await generateImage(formData);
-
-      if (!result || result.error) {
-        toast.error(
-          `Failed to generate image: ${result?.error || "Unknown error"}`
-        );
-        throw new Error("Failed to generate image.");
-      }
-
-      const downloadURL = result.imageUrl || "";
-      const imageReference = result.imageReference || "";
-
-      if (useCredits) {
-        await minusCredits(creditsToMinus(model));
-      }
-
-      setGeneratedImage(downloadURL);
-
-      if (downloadURL) {
-        await saveHistory(
-          uid,
-          {
-            freestyle: imagePrompt,
-            style: imageStyle,
-            lighting: getLightingFromLabel(lighting) || lightings[0].value,
-            colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
-            imageReference,
-            perspective: perspective,
-            composition: composition,
-            medium: medium,
-            mood: mood,
-          },
-          prompt,
-          downloadURL,
-          model,
-          tags,
-          selectedCategory
-        );
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error generating image:", error.message);
-      } else {
-        console.error("An unknown error occurred during image generation.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleClearAll = () => {
     reset();
-  };
-
-  const handleSaveAsPreview = async (
-    type:
-      | "model"
-      | "color"
-      | "lighting"
-      | "style"
-      | "perspective"
-      | "composition"
-      | "medium"
-      | "mood"
-  ) => {
-    if (!generatedImage) return;
-
-    let value = "";
-    switch (type) {
-      case "model":
-        value = model;
-        break;
-      case "color":
-        if (colorScheme === "None") {
-          toast.error("Cannot save 'None' as a preview");
-          return;
-        }
-        value = colorScheme;
-        break;
-      case "lighting":
-        if (lighting === "None") {
-          toast.error("Cannot save 'None' as a preview");
-          return;
-        }
-        value = lighting;
-        break;
-      case "style":
-        const styleObj = artStyles.find((s) => s.label === imageStyle);
-        value = styleObj
-          ? normalizeValue(styleObj.value)
-          : normalizeValue(imageStyle);
-        break;
-      case "perspective":
-        if (perspective === "None") {
-          toast.error("Cannot save 'None' as a preview");
-          return;
-        }
-        value = getPerspectiveFromLabel(perspective);
-        break;
-      case "composition":
-        if (composition === "None") {
-          toast.error("Cannot save 'None' as a preview");
-          return;
-        }
-        value = getCompositionFromLabel(composition);
-        break;
-      case "medium":
-        if (medium === "None") {
-          toast.error("Cannot save 'None' as a preview");
-          return;
-        }
-        value = getMediumFromLabel(medium);
-        break;
-      case "mood":
-        if (mood === "None") {
-          toast.error("Cannot save 'None' as a preview");
-          return;
-        }
-        value = getMoodFromLabel(mood);
-        break;
-    }
-
-    if (!value) {
-      toast.error(`Please select a ${type} first`);
-      return;
-    }
-
-    try {
-      const loadingToast = toast.loading("Saving preview...");
-
-      const response = await fetch("/api/previews", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          imageUrl: generatedImage,
-          type: `${type}s`,
-          value: value,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save preview");
-      }
-
-      toast.success(`Saved as preview for ${type}: ${value}`, {
-        id: loadingToast,
-      });
-      setShowMarkAsPreview(false);
-      setPreview(null, null);
-
-      // Force refresh of the component state to reload previews if needed
-      // (State is in store now, so this timeout trick might need adjustment 
-      // but for now we'll leave it as we just updated the store state)
-    } catch (error) {
-      toast.error("Failed to save preview image");
-      console.error(error);
-    }
   };
 
   const handleOptimizePrompt = async () => {
@@ -696,7 +410,7 @@ export default function GenerateImage() {
             }
           `}
           disabled={loading || !isPromptValid || !isModelValid}
-          onClick={handleGenerateSDXL}
+          onClick={(e) => generate(e)}
         >
           {loading ? (
             <div className="flex items-center justify-center">
@@ -736,20 +450,20 @@ export default function GenerateImage() {
                       </div>
                       <button
                         className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                        onClick={() => handleSaveAsPreview("model")}
+                        onClick={() => saveAsPreview("model")}
                       >
                         Current Model
                       </button>
                       <button
                         className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                        onClick={() => handleSaveAsPreview("style")}
+                        onClick={() => saveAsPreview("style")}
                       >
                         Current Style
                       </button>
                       {colorScheme !== "None" && (
                         <button
                           className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => handleSaveAsPreview("color")}
+                          onClick={() => saveAsPreview("color")}
                         >
                           Current Color Scheme
                         </button>
@@ -757,7 +471,7 @@ export default function GenerateImage() {
                       {lighting !== "None" && (
                         <button
                           className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => handleSaveAsPreview("lighting")}
+                          onClick={() => saveAsPreview("lighting")}
                         >
                           Current Lighting
                         </button>
@@ -765,7 +479,7 @@ export default function GenerateImage() {
                       {perspective !== "None" && (
                         <button
                           className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => handleSaveAsPreview("perspective")}
+                          onClick={() => saveAsPreview("perspective")}
                         >
                           Current Perspective
                         </button>
@@ -773,7 +487,7 @@ export default function GenerateImage() {
                       {composition !== "None" && (
                         <button
                           className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => handleSaveAsPreview("composition")}
+                          onClick={() => saveAsPreview("composition")}
                         >
                           Current Composition
                         </button>
@@ -781,7 +495,7 @@ export default function GenerateImage() {
                       {medium !== "None" && (
                         <button
                           className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => handleSaveAsPreview("medium")}
+                          onClick={() => saveAsPreview("medium")}
                         >
                           Current Medium
                         </button>
@@ -789,7 +503,7 @@ export default function GenerateImage() {
                       {mood !== "None" && (
                         <button
                           className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => handleSaveAsPreview("mood")}
+                          onClick={() => saveAsPreview("mood")}
                         >
                           Current Mood
                         </button>

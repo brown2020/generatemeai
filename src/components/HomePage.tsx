@@ -1,55 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, limit, query } from "firebase/firestore";
-import { db } from "../firebase/firebaseClient";
 import AuthComponent from "@/components/AuthComponent";
 import { motion } from "framer-motion";
 
-export default function HomePage() {
-  const [backgroundImages, setBackgroundImages] = useState<string[]>([]);
+interface HomePageProps {
+  initialImages: string[];
+}
 
-  useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const imageQuery = query(
-          collection(db, "publicImages"),
-          orderBy("timestamp", "desc"),
-          limit(30)
-        );
-
-        const imageSnapshot = await getDocs(imageQuery);
-        const filteredImages = imageSnapshot.docs.filter((doc) => {
-          const data = doc.data();
-          return !data.password || data.password === "";
-        });
-
-        const images = filteredImages.map(
-          (doc) => doc.data().downloadUrl as string
-        );
-
-        if (images.length >= 15) setBackgroundImages(images);
-      } catch (error) {
-        console.error("Error fetching images from Firestore:", error);
-      }
-    };
-
-    fetchImages();
-  }, []);
-
-  const getDisplayedImages = () => {
-    if (window.innerWidth < 400) return backgroundImages.slice(0, 5);
-    if (window.innerWidth < 768) return backgroundImages.slice(0, 10);
-    return backgroundImages.slice(0, 15);
-  };
-
-  const displayedImages = getDisplayedImages();
-
+export default function HomePage({ initialImages = [] }: HomePageProps) {
   return (
     <div className="relative flex flex-col h-full w-full justify-center items-center text-white overflow-hidden">
-      {backgroundImages.length >= 5 && (
+      {initialImages.length >= 5 && (
         <div className="absolute top-0 left-0 w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 p-2 z-0">
-          {displayedImages.map((image, index) => (
+          {initialImages.map((image, index) => (
             <motion.div
               key={index}
               className="bg-cover bg-center rounded-lg shadow-lg"
