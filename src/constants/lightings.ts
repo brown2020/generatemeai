@@ -1,4 +1,4 @@
-import { createLabelToValueMapper, withIds } from "./optionFactory";
+import { createOptionSet } from "./optionFactory";
 
 const lightingOptions = [
   { value: "none", label: "None" },
@@ -23,5 +23,9 @@ const lightingOptions = [
   { value: "Softbox", label: "Softbox" },
 ];
 
-export const lightings = withIds(lightingOptions);
-export const getLightingFromLabel = createLabelToValueMapper();
+export const {
+  options: lightings,
+  getValueFromLabel: getLightingFromLabel,
+  findByValue: findLightingByValue,
+  findByLabel: findLightingByLabel,
+} = createOptionSet(lightingOptions);

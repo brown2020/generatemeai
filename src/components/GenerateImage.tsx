@@ -15,7 +15,6 @@ import {
   Mic,
   StopCircle,
   XCircle,
-  Check,
   ImagePlus,
   Sparkles,
   Loader2,
@@ -30,11 +29,11 @@ import { SettingsSelector } from "@/components/generation/SettingsSelector";
 import { PaginatedGrid } from "@/components/common/PaginatedGrid";
 import { ModelCard } from "@/components/generation/ModelCard";
 import { StyleCard } from "@/components/generation/StyleCard";
+import { PreviewMarker } from "@/components/generation/PreviewMarker";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { model } from "@/types/model";
 import { useUrlSync } from "@/hooks/useUrlSync";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
-import { usePreviewSaver } from "@/hooks/usePreviewSaver";
 
 const isPreviewMarkingEnabled =
   process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING === "true";
@@ -61,7 +60,6 @@ export default function GenerateImage() {
     uploadedImage,
     loading,
     isOptimizing,
-    showMarkAsPreview,
     previewType,
     previewValue,
     setImagePrompt,
@@ -76,19 +74,16 @@ export default function GenerateImage() {
     setSuggestedTags,
     setUploadedImage,
     setIsOptimizing,
-    setShowMarkAsPreview,
     setPreview,
     reset,
   } = useGenerationStore();
 
   const previewRef = useRef<HTMLDivElement>(null);
-  const markAsPreviewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks
   useUrlSync();
   const { generate } = useImageGenerator();
-  const { saveAsPreview } = usePreviewSaver();
 
   const { isRecording, startRecording, stopRecording } = useSpeechRecognition(
     (transcript) => setImagePrompt(transcript)
@@ -97,7 +92,7 @@ export default function GenerateImage() {
   const isPromptValid = !!imagePrompt.trim();
   const isModelValid = !!model;
 
-  // Click outside handler
+  // Click outside handler for preview type selector
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -107,21 +102,13 @@ export default function GenerateImage() {
       ) {
         setPreview(null, null);
       }
-
-      if (
-        showMarkAsPreview &&
-        markAsPreviewRef.current &&
-        !markAsPreviewRef.current.contains(event.target as Node)
-      ) {
-        setShowMarkAsPreview(false);
-      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [previewType, showMarkAsPreview, setPreview, setShowMarkAsPreview]);
+  }, [previewType, setPreview]);
 
   // Memoized handlers
   const handleTagSuggestions = useCallback(
@@ -138,11 +125,15 @@ export default function GenerateImage() {
         credits
       );
 
-      if (suggestions.error) return;
+      // Handle error response
+      if (typeof suggestions === "object" && suggestions.error) return;
 
-      const suggestionList = suggestions.split(",");
-      if (suggestionList.length >= 1) {
-        setSuggestedTags(suggestionList);
+      // Handle successful string response
+      if (typeof suggestions === "string") {
+        const suggestionList = suggestions.split(",").map((s) => s.trim());
+        if (suggestionList.length >= 1) {
+          setSuggestedTags(suggestionList);
+        }
       }
     },
     [
@@ -214,10 +205,6 @@ export default function GenerateImage() {
       startRecording();
     }
   }, [isRecording, startRecording, stopRecording]);
-
-  const toggleMarkAsPreview = useCallback(() => {
-    setShowMarkAsPreview(!showMarkAsPreview);
-  }, [showMarkAsPreview, setShowMarkAsPreview]);
 
   // Memoized settings configuration
   const settingsConfig = useMemo(
@@ -492,86 +479,15 @@ export default function GenerateImage() {
               />
 
               {isPreviewMarkingEnabled && (
-                <>
-                  <button
-                    className="absolute top-4 right-4 bg-white/90 hover:bg-white text-blue-600 p-2 rounded-full shadow-lg transition-colors"
-                    onClick={toggleMarkAsPreview}
-                    title="Mark as Preview"
-                  >
-                    <Check size={24} />
-                  </button>
-
-                  {showMarkAsPreview && (
-                    <div
-                      ref={markAsPreviewRef}
-                      className="absolute top-16 right-4 bg-white rounded-lg shadow-xl p-2 space-y-2 z-50"
-                    >
-                      <div className="text-sm font-medium text-gray-700 px-2 py-1">
-                        Save as preview for:
-                      </div>
-                      <button
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                        onClick={() => saveAsPreview("model")}
-                      >
-                        Current Model
-                      </button>
-                      <button
-                        className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                        onClick={() => saveAsPreview("style")}
-                      >
-                        Current Style
-                      </button>
-                      {colorScheme !== "None" && (
-                        <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => saveAsPreview("color")}
-                        >
-                          Current Color Scheme
-                        </button>
-                      )}
-                      {lighting !== "None" && (
-                        <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => saveAsPreview("lighting")}
-                        >
-                          Current Lighting
-                        </button>
-                      )}
-                      {perspective !== "None" && (
-                        <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => saveAsPreview("perspective")}
-                        >
-                          Current Perspective
-                        </button>
-                      )}
-                      {composition !== "None" && (
-                        <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => saveAsPreview("composition")}
-                        >
-                          Current Composition
-                        </button>
-                      )}
-                      {medium !== "None" && (
-                        <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => saveAsPreview("medium")}
-                        >
-                          Current Medium
-                        </button>
-                      )}
-                      {mood !== "None" && (
-                        <button
-                          className="w-full px-4 py-2 text-left hover:bg-blue-50 rounded-sm transition-colors"
-                          onClick={() => saveAsPreview("mood")}
-                        >
-                          Current Mood
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </>
+                <PreviewMarker
+                  generatedImage={generatedImage}
+                  colorScheme={colorScheme}
+                  lighting={lighting}
+                  perspective={perspective}
+                  composition={composition}
+                  medium={medium}
+                  mood={mood}
+                />
               )}
             </div>
           ) : (

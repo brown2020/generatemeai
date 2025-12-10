@@ -1,6 +1,6 @@
-import { createLabelToValueMapper } from "./optionFactory";
+import { createOptionSet } from "./optionFactory";
 
-export const mediums = [
+const mediumOptions = [
   { value: "none", label: "None" },
   { value: "digital_art", label: "Digital Art" },
   { value: "oil_painting", label: "Oil Painting" },
@@ -11,4 +11,9 @@ export const mediums = [
   { value: "mixed_media", label: "Mixed Media" },
 ];
 
-export const getMediumFromLabel = createLabelToValueMapper();
+export const {
+  options: mediums,
+  getValueFromLabel: getMediumFromLabel,
+  findByValue: findMediumByValue,
+  findByLabel: findMediumByLabel,
+} = createOptionSet(mediumOptions);

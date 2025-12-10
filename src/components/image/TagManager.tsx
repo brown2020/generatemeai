@@ -5,6 +5,7 @@ import { X, Plus, Sparkle, Tag } from "lucide-react";
 import toast from "react-hot-toast";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
+import { FirestorePaths } from "@/firebase/paths";
 import { suggestTags } from "@/actions/suggestTags";
 import { ImageData } from "@/types/image";
 
@@ -49,8 +50,8 @@ export const TagManager = ({
         ? tags.concat(newTagValue)
         : [...tags, newTagValue];
       const docRef = uid
-        ? doc(db, "profiles", uid, "covers", imageId)
-        : doc(db, "publicImages", imageId);
+        ? doc(db, FirestorePaths.profileCover(uid, imageId))
+        : doc(db, FirestorePaths.publicImage(imageId));
 
       await updateDoc(docRef, { tags: updatedTags });
       setTags(updatedTags as string[]);
@@ -67,8 +68,8 @@ export const TagManager = ({
     try {
       const updatedTags = tags.filter((tag) => tag !== tagToRemove);
       const docRef = uid
-        ? doc(db, "profiles", uid, "covers", imageId)
-        : doc(db, "publicImages", imageId);
+        ? doc(db, FirestorePaths.profileCover(uid, imageId))
+        : doc(db, FirestorePaths.publicImage(imageId));
 
       await updateDoc(docRef, { tags: updatedTags });
       setTags(updatedTags);
@@ -80,7 +81,7 @@ export const TagManager = ({
 
   const handleSuggestions = async () => {
     try {
-      let suggestions = await suggestTags(
+      const result = await suggestTags(
         imageData?.freestyle || "",
         imageData?.colorScheme || "",
         imageData?.lighting || "",
@@ -91,13 +92,23 @@ export const TagManager = ({
         useCredits,
         credits
       );
-      suggestions = suggestions.split(",");
-      if (suggestions.length >= 1) {
-        if (useCredits) {
-          minusCredits(1);
+
+      // Handle error response
+      if (typeof result === "object" && result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      // Handle successful string response
+      if (typeof result === "string") {
+        const suggestions = result.split(",").map((s) => s.trim());
+        if (suggestions.length >= 1) {
+          if (useCredits) {
+            minusCredits(1);
+          }
+          await handleAddTag(false, suggestions);
+          toast.success("Tags added successfully");
         }
-        await handleAddTag(false, suggestions);
-        toast.success("Tags added successfully");
       }
     } catch (err) {
       toast.error("Error adding tags: " + err);

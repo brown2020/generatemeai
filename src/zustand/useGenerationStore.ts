@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { model } from "@/types/model";
-import { colors } from "@/constants/colors";
-import { lightings } from "@/constants/lightings";
-import { PromptDataType } from "@/types/promptdata";
 
 export interface GenerationState {
   imagePrompt: string;
@@ -20,15 +17,24 @@ export interface GenerationState {
   suggestedTags: string[];
   generatedImage: string;
   uploadedImage: File | null;
-  
+
   // UI State
   loading: boolean;
   isRecording: boolean;
   isOptimizing: boolean;
   showMarkAsPreview: boolean;
-  
+
   // Preview State
-  previewType: "model" | "color" | "lighting" | "style" | "perspective" | "composition" | "medium" | "mood" | null;
+  previewType:
+    | "model"
+    | "color"
+    | "lighting"
+    | "style"
+    | "perspective"
+    | "composition"
+    | "medium"
+    | "mood"
+    | null;
   previewValue: string | null;
 
   // Actions
@@ -50,7 +56,10 @@ export interface GenerationState {
   setIsRecording: (isRecording: boolean) => void;
   setIsOptimizing: (isOptimizing: boolean) => void;
   setShowMarkAsPreview: (show: boolean) => void;
-  setPreview: (type: GenerationState["previewType"], value: string | null) => void;
+  setPreview: (
+    type: GenerationState["previewType"],
+    value: string | null
+  ) => void;
   reset: () => void;
 }
 
@@ -100,10 +109,10 @@ export const useGenerationStore = create<GenerationState>()(
       setIsRecording: (isRecording) => set({ isRecording }),
       setIsOptimizing: (isOptimizing) => set({ isOptimizing }),
       setShowMarkAsPreview: (showMarkAsPreview) => set({ showMarkAsPreview }),
-      setPreview: (previewType, previewValue) => set({ previewType, previewValue }),
+      setPreview: (previewType, previewValue) =>
+        set({ previewType, previewValue }),
       reset: () => set(initialState),
     }),
     { name: "GenerationStore" }
   )
 );
-

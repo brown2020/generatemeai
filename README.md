@@ -12,17 +12,19 @@
   <a href="#features">Features</a> •
   <a href="#supported-ai-models">AI Models</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#documentation">Documentation</a> •
+  <a href="#architecture">Architecture</a> •
   <a href="#contributing">Contributing</a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16">
-  <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React 19">
-  <img src="https://img.shields.io/badge/TypeScript-5.6-blue?logo=typescript" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Firebase-13-orange?logo=firebase" alt="Firebase">
-  <img src="https://img.shields.io/license/MIT-green" alt="MIT License">
+  <img src="https://img.shields.io/badge/Next.js-16.0-black?logo=next.js" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/React-19.0-61DAFB?logo=react" alt="React 19">
+  <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?logo=tailwind-css" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Firebase-12.2-FFCA28?logo=firebase" alt="Firebase">
+  <img src="https://img.shields.io/badge/Zustand-5.0-brown" alt="Zustand">
+  <img src="https://img.shields.io/badge/Vercel_AI_SDK-5.0-black?logo=vercel" alt="Vercel AI SDK">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
 </p>
 
 ---
@@ -30,6 +32,17 @@
 ## Overview
 
 Generate.me AI is a full-stack application that enables users to create custom images and videos using multiple AI providers. The platform supports various artistic styles, lighting conditions, color schemes, and advanced generation parameters. Users can either provide their own API keys or purchase credits to access generation features.
+
+Built with modern React patterns, this project showcases best practices including:
+
+- **React Server Components** with Next.js 16 App Router
+- **Zustand** for efficient state management
+- **Strategy Pattern** for AI provider abstraction
+- **Factory Pattern** for option configuration
+- **Custom Hooks** for reusable logic
+- **TypeScript** strict mode throughout
+
+---
 
 ## Features
 
@@ -39,22 +52,22 @@ Generate.me AI is a full-stack application that enables users to create custom i
 - **Style Customization**: 20+ artistic styles from Renaissance to Contemporary Art
 - **Advanced Parameters**: Control lighting, color scheme, perspective, composition, medium, and mood
 - **Image-to-Image**: Use reference images to guide generation (supported models)
-- **Prompt Enhancement**: AI-powered prompt optimization for better results
-- **Voice Input**: Speak your prompts with speech recognition
+- **Prompt Enhancement**: AI-powered prompt optimization using GPT-4
+- **Voice Input**: Speak your prompts with Web Speech API integration
 
 ### 🎬 Video Generation
 
 - **Talking Avatars**: Create talking head videos with D-ID
 - **Video Animation**: Transform images into videos with Runway ML
-- **GIF Conversion**: Convert videos to GIF format
+- **GIF Conversion**: Convert videos to GIF format using FFmpeg
 - **Audio Support**: Add voiceovers to generated videos
 
 ### 👤 User Management
 
 - **Firebase Authentication**: Google Sign-In, email/password, and passwordless email links
-- **Profile Management**: Store and manage multiple API keys
+- **Profile Management**: Store and manage multiple API keys securely
 - **Credit System**: Pay-per-use credit system or bring your own API keys
-- **Image History**: Browse and manage all generated content
+- **Image History**: Browse, search, and manage all generated content
 
 ### 💳 Payment Integration
 
@@ -74,15 +87,15 @@ Generate.me AI is a full-stack application that enables users to create custom i
 
 ### Image Generation
 
-| Model                   | Provider                     | Features                       |
-| ----------------------- | ---------------------------- | ------------------------------ |
-| **DALL-E**              | OpenAI                       | Text-to-image, high quality    |
-| **Stable Diffusion XL** | Fireworks AI                 | Text-to-image, image-to-image  |
-| **SD3-Turbo**           | Stability AI                 | Fast generation, text-to-image |
-| **Playground V2**       | Fireworks AI                 | Aesthetic-focused generation   |
-| **Playground V2.5**     | Fireworks AI                 | Enhanced aesthetic generation  |
-| **Flux Schnell**        | Replicate (Blackforest Labs) | Fast, high-quality generation  |
-| **Ideogram AI**         | Ideogram                     | Text rendering, typography     |
+| Model                   | Provider                     | Features                         |
+| ----------------------- | ---------------------------- | -------------------------------- |
+| **DALL-E**              | OpenAI                       | Text-to-image, high quality      |
+| **Stable Diffusion XL** | Fireworks AI                 | Text-to-image, image-to-image    |
+| **SD3-Turbo**           | Stability AI                 | Fast generation, text-to-image   |
+| **Playground V2**       | Fireworks AI                 | Aesthetic-focused generation     |
+| **Playground V2.5**     | Fireworks AI                 | Enhanced 1024px aesthetic output |
+| **Flux Schnell**        | Replicate (Blackforest Labs) | Fast, high-quality generation    |
+| **Ideogram AI**         | Ideogram                     | Text rendering, typography       |
 
 ### Video Generation
 
@@ -103,50 +116,91 @@ Generate.me AI is a full-stack application that enables users to create custom i
 
 ## Tech Stack
 
-### Frontend
+### Core Framework
 
-- **Framework**: [Next.js 16](https://nextjs.org/) with App Router and Turbopack
-- **UI Library**: [React 19](https://react.dev/)
-- **Language**: [TypeScript 5.6](https://www.typescriptlang.org/) (strict mode)
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **Animations**: [Framer Motion 12](https://www.framer.com/motion/)
-- **Icons**: [Lucide React](https://lucide.dev/), [React Icons](https://react-icons.github.io/react-icons/)
+| Package                                       | Version | Description                                 |
+| --------------------------------------------- | ------- | ------------------------------------------- |
+| [Next.js](https://nextjs.org/)                | 16.0.3  | React framework with App Router & Turbopack |
+| [React](https://react.dev/)                   | 19.0.0  | UI library with Server Components           |
+| [TypeScript](https://www.typescriptlang.org/) | 5.6.2   | Type-safe JavaScript                        |
 
 ### State Management
 
-- **Global State**: [Zustand 5](https://zustand-demo.pmnd.rs/)
-- **Server State**: React Server Components + Server Actions
+| Package                                  | Version | Description                  |
+| ---------------------------------------- | ------- | ---------------------------- |
+| [Zustand](https://zustand-demo.pmnd.rs/) | 5.0.1   | Lightweight state management |
+
+### Styling & UI
+
+| Package                                                     | Version | Description                 |
+| ----------------------------------------------------------- | ------- | --------------------------- |
+| [Tailwind CSS](https://tailwindcss.com/)                    | 4.0.9   | Utility-first CSS framework |
+| [Framer Motion](https://www.framer.com/motion/)             | 12.4.7  | Animation library           |
+| [Lucide React](https://lucide.dev/)                         | 0.559.0 | Icon library                |
+| [React Icons](https://react-icons.github.io/react-icons/)   | 5.3.0   | Additional icons            |
+| [tailwind-merge](https://github.com/dcastil/tailwind-merge) | 3.4.0   | Merge Tailwind classes      |
+| [clsx](https://github.com/lukeed/clsx)                      | 2.1.1   | Class name utility          |
 
 ### Backend & Database
 
-- **Authentication**: [Firebase Auth](https://firebase.google.com/docs/auth)
-- **Database**: [Firebase Firestore](https://firebase.google.com/docs/firestore)
-- **Storage**: [Firebase Cloud Storage](https://firebase.google.com/docs/storage)
-- **Admin SDK**: [Firebase Admin 13](https://firebase.google.com/docs/admin/setup)
+| Package                                                                     | Version | Description                        |
+| --------------------------------------------------------------------------- | ------- | ---------------------------------- |
+| [Firebase](https://firebase.google.com/)                                    | 12.2.1  | Authentication, Firestore, Storage |
+| [Firebase Admin](https://firebase.google.com/docs/admin/setup)              | 13.0.1  | Server-side Firebase SDK           |
+| [react-firebase-hooks](https://github.com/CSFrequency/react-firebase-hooks) | 5.1.1   | React hooks for Firebase           |
 
 ### AI Integration
 
-- **AI SDK**: [Vercel AI SDK 5](https://sdk.vercel.ai/)
-- **OpenAI**: [@ai-sdk/openai](https://sdk.vercel.ai/providers/ai-sdk-providers/openai)
-- **Replicate**: [Replicate Node SDK](https://replicate.com/)
+| Package                                                                   | Version | Description                     |
+| ------------------------------------------------------------------------- | ------- | ------------------------------- |
+| [Vercel AI SDK](https://sdk.vercel.ai/)                                   | 5.0.44  | AI SDK core                     |
+| [@ai-sdk/openai](https://sdk.vercel.ai/providers/ai-sdk-providers/openai) | 2.0.30  | OpenAI provider                 |
+| [@ai-sdk/rsc](https://sdk.vercel.ai/docs/api-reference/ai-sdk-rsc)        | 1.0.44  | React Server Components support |
+| [Replicate](https://replicate.com/)                                       | 1.0.0   | Replicate API client            |
 
 ### Payments
 
-- **Payment Processing**: [Stripe](https://stripe.com/)
-- **React Integration**: [@stripe/react-stripe-js](https://stripe.com/docs/stripe-js/react)
+| Package                                                            | Version | Description             |
+| ------------------------------------------------------------------ | ------- | ----------------------- |
+| [Stripe](https://stripe.com/)                                      | 20.0.0  | Payment processing      |
+| [@stripe/react-stripe-js](https://stripe.com/docs/stripe-js/react) | 5.4.0   | React Stripe components |
+| [@stripe/stripe-js](https://stripe.com/docs/js)                    | 8.5.2   | Stripe.js               |
 
 ### Media Processing
 
-- **Image Processing**: [Sharp](https://sharp.pixelplumbing.com/)
-- **Video Processing**: [Fluent-FFmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg)
-- **DOM to Image**: [dom-to-image](https://github.com/tsayen/dom-to-image)
+| Package                                                              | Version | Description                       |
+| -------------------------------------------------------------------- | ------- | --------------------------------- |
+| [Sharp](https://sharp.pixelplumbing.com/)                            | 0.34.1  | High-performance image processing |
+| [fluent-ffmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg) | 2.1.3   | FFmpeg wrapper                    |
+| [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)         | 5.2.0   | Static FFmpeg binaries            |
+| [dom-to-image](https://github.com/tsayen/dom-to-image)               | 2.6.0   | DOM to image conversion           |
+
+### UI Components
+
+| Package                                                                        | Version | Description              |
+| ------------------------------------------------------------------------------ | ------- | ------------------------ |
+| [React Modal](https://reactcommunity.org/react-modal/)                         | 3.16.1  | Accessible modal dialogs |
+| [React Select](https://react-select.com/)                                      | 5.8.1   | Select input component   |
+| [React Hot Toast](https://react-hot-toast.com/)                                | 2.4.1   | Toast notifications      |
+| [React Spinners](https://www.davidhu.io/react-spinners/)                       | 0.17.0  | Loading spinners         |
+| [React Share](https://github.com/nygardk/react-share)                          | 5.1.0   | Social sharing buttons   |
+| [react-textarea-autosize](https://github.com/Andarist/react-textarea-autosize) | 8.5.3   | Auto-resizing textarea   |
+| [react-cookie-consent](https://github.com/Mastermindzh/react-cookie-consent)   | 9.0.0   | Cookie consent banner    |
 
 ### Utilities
 
-- **HTTP Cookies**: [cookies-next](https://github.com/andreizanik/cookies-next)
-- **Toast Notifications**: [React Hot Toast](https://react-hot-toast.com/)
-- **Modals**: [React Modal](https://reactcommunity.org/react-modal/)
-- **Social Sharing**: [React Share](https://github.com/nygardk/react-share)
+| Package                                                     | Version | Description                 |
+| ----------------------------------------------------------- | ------- | --------------------------- |
+| [cookies-next](https://github.com/andreizanik/cookies-next) | 6.1.0   | Cookie handling for Next.js |
+| [lodash](https://lodash.com/)                               | 4.17.21 | Utility functions           |
+| [formdata-node](https://github.com/octet-stream/form-data)  | 6.0.3   | FormData implementation     |
+
+### Development
+
+| Package                         | Version | Description    |
+| ------------------------------- | ------- | -------------- |
+| [ESLint](https://eslint.org/)   | 9.15.0  | Code linting   |
+| [PostCSS](https://postcss.org/) | 8.4.47  | CSS processing |
 
 ---
 
@@ -175,11 +229,11 @@ Generate.me AI is a full-stack application that enables users to create custom i
 
 3. **Configure environment variables**
 
-   Copy the example environment file and fill in your values:
-
    ```bash
    cp .env.example .env.local
    ```
+
+   Edit `.env.local` with your configuration (see [Environment Variables](#environment-variables)).
 
 4. **Set up Firebase**
 
@@ -208,7 +262,7 @@ npm start
 
 ## Environment Variables
 
-Create a `.env.local` file in the root directory with the following variables:
+Create a `.env.local` file in the root directory:
 
 ### Firebase Configuration (Required)
 
@@ -233,35 +287,18 @@ FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
 FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
 FIREBASE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
 FIREBASE_CLIENT_CERTS_URL=https://www.googleapis.com/robot/v1/metadata/x509/your_service_account
-FIREBASE_UNIVERSE_DOMAIN=googleapis.com
 ```
 
 ### AI Provider API Keys (At least one required)
 
 ```env
-# OpenAI (for DALL-E, GPT-4 prompt optimization)
 OPENAI_API_KEY=sk-...
-OPENAI_ORG_ID=org-...
-
-# Fireworks AI (for Stable Diffusion, Playground models)
 FIREWORKS_API_KEY=fw_...
-
-# Replicate (for Flux Schnell)
 REPLICATE_API_TOKEN=r8_...
-
-# Stability AI (for SD3-Turbo)
 STABILITY_API_KEY=sk-...
-
-# Ideogram AI
 IDEOGRAM_API_KEY=...
-
-# D-ID (for talking avatars)
 DID_API_KEY=...
-
-# Runway ML (for video generation)
 RUNWAY_API_KEY=...
-
-# Bria AI (for background removal)
 BRIA_API_KEY=...
 ```
 
@@ -275,7 +312,6 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_...
 ### Credit Configuration
 
 ```env
-# Credits charged per generation (customize per model)
 NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE=4
 NEXT_PUBLIC_CREDITS_PER_STABLE_DIFFUSION_XL_IMAGE=4
 NEXT_PUBLIC_CREDITS_PER_STABILITY_SD3_TURBO_IMAGE=4
@@ -302,42 +338,112 @@ NEXT_PUBLIC_ENABLE_PREVIEW_MARKING=false
 
 ```
 generatemeai/
-├── public/                    # Static assets
-│   ├── previews/             # Model/style preview images
-│   └── .well-known/          # App association files
+├── public/                          # Static assets
+│   ├── previews/                    # Model/style preview images
+│   └── .well-known/                 # App association files
 ├── src/
-│   ├── app/                  # Next.js App Router pages
-│   │   ├── about/           # About page
-│   │   ├── api/             # API routes
-│   │   ├── generate/        # Image generation page
-│   │   ├── images/          # Image gallery & detail pages
-│   │   ├── loginfinish/     # Email link auth completion
-│   │   ├── payment-*/       # Payment flow pages
-│   │   ├── privacy/         # Privacy policy
-│   │   ├── profile/         # User profile
-│   │   ├── support/         # Support page
-│   │   └── terms/           # Terms of service
-│   ├── actions/             # Server Actions
-│   │   ├── generateImage.ts # Main image generation
-│   │   ├── generateVideo.ts # Video generation
-│   │   ├── generateGif.ts   # GIF conversion
-│   │   ├── suggestTags.ts   # AI tag suggestions
-│   │   └── removeBackground.ts
-│   ├── components/          # React components
-│   │   ├── common/          # Shared UI components
-│   │   ├── generation/      # Generation-specific components
-│   │   └── image/           # Image display components
-│   ├── constants/           # App constants & options
-│   ├── firebase/            # Firebase configuration
-│   ├── hooks/               # Custom React hooks
-│   ├── strategies/          # AI provider strategy pattern
-│   ├── types/               # TypeScript type definitions
-│   ├── utils/               # Utility functions
-│   └── zustand/             # Zustand stores
-├── .env.example             # Example environment variables
-├── next.config.mjs          # Next.js configuration
-├── tailwind.config.ts       # Tailwind CSS configuration
-└── tsconfig.json            # TypeScript configuration
+│   ├── app/                         # Next.js App Router
+│   │   ├── api/                     # API routes
+│   │   ├── generate/                # Image generation page
+│   │   ├── images/                  # Gallery & detail pages
+│   │   │   └── [id]/                # Dynamic image page
+│   │   ├── profile/                 # User profile
+│   │   ├── payment-*/               # Payment flow
+│   │   └── [legal pages]/           # About, Terms, Privacy, Support
+│   │
+│   ├── actions/                     # Server Actions
+│   │   ├── generateImage.ts         # Image generation orchestration
+│   │   ├── generateVideo.ts         # Video generation
+│   │   ├── generateGif.ts           # GIF conversion
+│   │   ├── suggestTags.ts           # AI tag suggestions (AI SDK)
+│   │   ├── removeBackground.ts      # Background removal
+│   │   └── paymentActions.ts        # Payment processing
+│   │
+│   ├── components/                  # React components
+│   │   ├── auth/                    # Authentication components
+│   │   │   └── AuthModal.tsx        # Extracted auth modal
+│   │   ├── common/                  # Shared UI components
+│   │   │   └── PaginatedGrid.tsx    # Generic paginated grid
+│   │   ├── generation/              # Image generation UI
+│   │   │   ├── ModelCard.tsx        # AI model selector card
+│   │   │   ├── StyleCard.tsx        # Art style selector card
+│   │   │   ├── SettingsSelector.tsx # Option selector component
+│   │   │   ├── PreviewCard.tsx      # Preview image card
+│   │   │   └── PreviewMarker.tsx    # Mark as preview feature
+│   │   ├── image/                   # Image display components
+│   │   │   ├── ImageViewer.tsx      # Main image display
+│   │   │   ├── ImageActions.tsx     # Share, delete actions
+│   │   │   ├── ImageMetadata.tsx    # Image metadata display
+│   │   │   ├── TagManager.tsx       # Tag CRUD operations
+│   │   │   ├── SocialShare.tsx      # Social sharing buttons
+│   │   │   └── [modals]             # Password, color picker modals
+│   │   ├── image-page/              # Image page logic (hooks)
+│   │   │   ├── useImagePageData.ts  # Data fetching hook
+│   │   │   └── useImagePageActions.ts # Actions hook
+│   │   └── [page components]        # Full page components
+│   │
+│   ├── constants/                   # Configuration constants
+│   │   ├── optionFactory.ts         # Factory for option sets
+│   │   ├── colors.ts                # Color scheme options
+│   │   ├── lightings.ts             # Lighting options
+│   │   ├── perspectives.ts          # Perspective options
+│   │   ├── compositions.ts          # Composition options
+│   │   ├── mediums.ts               # Medium options
+│   │   ├── moods.ts                 # Mood options
+│   │   ├── artStyles.ts             # Art style definitions
+│   │   └── models.ts                # AI model definitions
+│   │
+│   ├── firebase/                    # Firebase configuration
+│   │   ├── firebaseClient.ts        # Client SDK initialization
+│   │   ├── firebaseAdmin.ts         # Admin SDK initialization
+│   │   └── paths.ts                 # Firestore path utilities
+│   │
+│   ├── hooks/                       # Custom React hooks
+│   │   ├── useAuth.ts               # Authentication utilities
+│   │   ├── useAuthLogic.ts          # Auth form logic
+│   │   ├── useAuthToken.ts          # Token management
+│   │   ├── useImageGenerator.ts     # Image generation logic
+│   │   ├── useGenerationHistory.ts  # History management
+│   │   ├── useNavigation.ts         # Navigation utilities
+│   │   ├── usePreviewSaver.ts       # Preview saving logic
+│   │   ├── useSpeechRecognition.ts  # Voice input
+│   │   └── useUrlSync.ts            # URL parameter sync
+│   │
+│   ├── strategies/                  # AI provider strategies
+│   │   ├── types.ts                 # Strategy interfaces
+│   │   ├── index.ts                 # Strategy registry
+│   │   ├── dalle.ts                 # OpenAI DALL-E
+│   │   ├── fireworks.ts             # Fireworks AI (SD, Playground)
+│   │   ├── replicate.ts             # Replicate (Flux)
+│   │   ├── stability.ts             # Stability AI
+│   │   └── ideogram.ts              # Ideogram AI
+│   │
+│   ├── types/                       # TypeScript definitions
+│   │   ├── errors.ts                # Custom error types
+│   │   ├── image.ts                 # Image data types
+│   │   ├── model.ts                 # Model types
+│   │   └── promptdata.ts            # Prompt data types
+│   │
+│   ├── utils/                       # Utility functions
+│   │   ├── cn.ts                    # Class name utility
+│   │   ├── credits.ts               # Credit calculations
+│   │   ├── promptUtils.ts           # Prompt building
+│   │   ├── promptOptimizer.ts       # AI prompt enhancement
+│   │   ├── platform.ts              # Platform detection
+│   │   └── imageUtils.ts            # Image utilities
+│   │
+│   └── zustand/                     # State management
+│       ├── useAuthStore.ts          # Authentication state
+│       ├── useProfileStore.ts       # User profile & credits
+│       ├── useGenerationStore.ts    # Generation parameters
+│       ├── usePaymentsStore.ts      # Payment history
+│       └── useInitializeStores.ts   # Store initialization
+│
+├── .env.example                     # Example environment variables
+├── next.config.mjs                  # Next.js configuration
+├── tailwind.config.ts               # Tailwind CSS configuration
+├── tsconfig.json                    # TypeScript configuration
+└── package.json                     # Project dependencies
 ```
 
 ---
@@ -346,42 +452,112 @@ generatemeai/
 
 ### Strategy Pattern for AI Providers
 
-The application uses a strategy pattern to abstract different AI model integrations:
+The application uses a **Strategy Pattern** to abstract different AI model integrations, making it easy to add new providers:
 
 ```typescript
 // src/strategies/types.ts
-interface GenerationStrategy {
-  (context: StrategyContext): Promise<ArrayBuffer>;
+export interface StrategyContext {
+  message: string;
+  img: File | null;
+  apiKey: string;
+  useCredits: boolean;
 }
+
+export type GenerationStrategy = (
+  context: StrategyContext
+) => Promise<ArrayBuffer | Buffer>;
 
 // src/strategies/index.ts
 export const strategies: Record<string, GenerationStrategy> = {
   "dall-e": dalleStrategy,
   "stable-diffusion-xl": fireworksStrategy,
+  "playground-v2": playgroundV2Strategy,
   "flux-schnell": replicateStrategy,
-  // ... more strategies
+  // Add new providers here
 };
 ```
 
-This allows easy addition of new AI providers without modifying core generation logic.
+### Factory Pattern for Options
 
-### State Management
+Option constants use a **Factory Pattern** for consistent behavior:
 
-Zustand stores are organized by domain:
+```typescript
+// src/constants/optionFactory.ts
+export const createOptionSet = <T extends Option>(options: T[]) => {
+  const optionsWithIds = withIds(options);
+  return {
+    options: optionsWithIds,
+    getValueFromLabel: createLabelToValueMapper(),
+    findByValue: createOptionFinder(optionsWithIds),
+    findByLabel: createOptionFinderByLabel(optionsWithIds),
+  };
+};
 
-- **`useAuthStore`**: Authentication state (uid, email, display name)
-- **`useProfileStore`**: User profile, API keys, credits
-- **`useGenerationStore`**: Generation parameters and results
-- **`usePaymentsStore`**: Payment history and transactions
+// Usage in src/constants/colors.ts
+export const {
+  options: colors,
+  getValueFromLabel: getColorFromLabel,
+  findByValue: findColorByValue,
+  findByLabel: findColorByLabel,
+} = createOptionSet(colorOptions);
+```
 
-### Server Actions
+### Custom Hooks Architecture
 
-Next.js Server Actions handle all AI API calls and Firebase Admin operations:
+Hooks are organized by domain and responsibility:
 
-- **`generateImage`**: Orchestrates image generation across providers
-- **`generateVideo`**: Creates talking avatar videos
-- **`suggestTags`**: AI-powered tag recommendations
-- **`optimizePrompt`**: Enhances user prompts with GPT-4
+| Hook                   | Purpose                          |
+| ---------------------- | -------------------------------- |
+| `useAuth`              | Authentication state utilities   |
+| `useAuthLogic`         | Auth form state and handlers     |
+| `useAuthToken`         | JWT token management and refresh |
+| `useImageGenerator`    | Orchestrates image generation    |
+| `useGenerationHistory` | Saves generation to Firestore    |
+| `useNavigation`        | Shared navigation logic          |
+| `usePreviewSaver`      | Save images as previews          |
+| `useSpeechRecognition` | Web Speech API integration       |
+| `useUrlSync`           | Sync state with URL parameters   |
+
+### Zustand Store Organization
+
+```typescript
+// Stores are organized by domain
+useAuthStore; // Authentication: uid, email, displayName
+useProfileStore; // Profile: credits, API keys, preferences
+useGenerationStore; // Generation: prompt, model, settings, result
+usePaymentsStore; // Payments: history, processing state
+```
+
+### Error Handling
+
+Custom error types provide consistent error handling:
+
+```typescript
+// src/types/errors.ts
+export class AppError extends Error {
+  constructor(message: string, code: string, statusCode: number) { ... }
+}
+
+export class InsufficientCreditsError extends AppError { ... }
+export class AuthenticationError extends AppError { ... }
+export class ValidationError extends AppError { ... }
+export class ExternalApiError extends AppError { ... }
+```
+
+### Firebase Path Utilities
+
+Centralized Firestore paths prevent typos and enable refactoring:
+
+```typescript
+// src/firebase/paths.ts
+export const FirestorePaths = {
+  userProfile: (uid: string) => `users/${uid}/profile/userData`,
+  profileCover: (uid: string, coverId: string) =>
+    `profiles/${uid}/covers/${coverId}`,
+  publicImage: (id: string) => `publicImages/${id}`,
+  // ...
+} as const;
+```
 
 ---
 
@@ -423,7 +599,7 @@ Next.js Server Actions handle all AI API calls and Firebase Admin operations:
 ## Scripts
 
 ```bash
-# Development with Turbopack
+# Development with Turbopack (fast refresh)
 npm run dev
 
 # Production build
@@ -459,18 +635,32 @@ Contributions are welcome! Please follow these steps:
 
 ### Development Guidelines
 
-- Follow the existing code style and patterns
-- Use TypeScript strict mode
+- Follow existing code patterns and architecture
+- Use TypeScript strict mode - avoid `any` types
+- Use the Factory Pattern for new option sets
+- Use the Strategy Pattern for new AI providers
+- Create custom hooks for reusable logic
 - Write meaningful commit messages
-- Update documentation as needed
-- Add tests for new features when applicable
 
 ### Code Style
 
-- **Components**: Functional components with hooks
-- **State**: Zustand for global state, React state for local
-- **Styling**: Tailwind CSS utility classes
-- **Types**: Explicit TypeScript types, avoid `any`
+| Area       | Convention                               |
+| ---------- | ---------------------------------------- |
+| Components | Functional components with hooks         |
+| State      | Zustand for global, `useState` for local |
+| Styling    | Tailwind CSS utility classes             |
+| Types      | Explicit types, use custom error types   |
+| Paths      | Use `FirestorePaths` utility             |
+| Options    | Use `createOptionSet` factory            |
+
+### Adding a New AI Provider
+
+1. Create a new strategy in `src/strategies/`
+2. Implement the `GenerationStrategy` interface
+3. Register in `src/strategies/index.ts`
+4. Add model to `src/constants/models.ts`
+5. Add credit configuration to `src/utils/credits.ts`
+6. Update environment variables
 
 ---
 
@@ -491,10 +681,10 @@ The application can be deployed to any platform supporting Next.js:
 - **Railway**
 - **Render**
 
-Ensure your deployment platform supports:
+Requirements:
 
 - Node.js 20+
-- Server-side rendering
+- Server-side rendering support
 - Environment variables
 - FFmpeg binary (for video processing)
 
@@ -508,6 +698,7 @@ Ensure your deployment platform supports:
 
 - Ensure all Firebase config values are correct
 - Check that authentication methods are enabled in Firebase Console
+- Verify the authorized domains include your deployment URL
 
 **API Rate Limits**
 
@@ -523,6 +714,11 @@ Ensure your deployment platform supports:
 
 - Verify Firebase Storage rules allow authenticated reads
 - Check that `next.config.mjs` includes all image domains
+
+**Build Errors**
+
+- Run `npm run lint` to check for TypeScript errors
+- Ensure all environment variables are set
 
 ---
 
@@ -549,6 +745,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [D-ID](https://www.d-id.com/) for talking avatar technology
 - [Runway](https://runwayml.com/) for video generation
 - [Vercel](https://vercel.com/) for the AI SDK and hosting platform
+- [Firebase](https://firebase.google.com/) for backend services
 
 ---
 
