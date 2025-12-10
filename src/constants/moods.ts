@@ -1,6 +1,6 @@
-import { createLabelToValueMapper } from "./optionFactory";
+import { createOptionSet } from "./optionFactory";
 
-export const moods = [
+const moodOptions = [
   { value: "none", label: "None" },
   { value: "peaceful", label: "Peaceful" },
   { value: "dramatic", label: "Dramatic" },
@@ -10,4 +10,9 @@ export const moods = [
   { value: "whimsical", label: "Whimsical" },
 ];
 
-export const getMoodFromLabel = createLabelToValueMapper();
+export const {
+  options: moods,
+  getValueFromLabel: getMoodFromLabel,
+  findByValue: findMoodByValue,
+  findByLabel: findMoodByLabel,
+} = createOptionSet(moodOptions);

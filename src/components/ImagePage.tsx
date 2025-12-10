@@ -2,13 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { db } from "../firebase/firebaseClient";
-import {
-  doc,
-  getDoc,
-  runTransaction,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import "../app/globals.css";
 import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
@@ -21,6 +15,8 @@ import ModalComponent from "./VideoModalComponent";
 import { removeBackground } from "@/actions/removeBackground";
 import { SiStagetimer } from "react-icons/si";
 import { ImageData } from "@/types/image";
+import { FirestorePaths } from "@/firebase/paths";
+import { useImagePageData, useImagePageActions } from "./image-page";
 
 import {
   ImageViewer,
@@ -32,8 +28,6 @@ import {
   ColorPickerModal,
   PasswordProtection,
 } from "./image";
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const getFileTypeFromUrl = (url: string): string | null => {
   if (!url) return null;
@@ -52,19 +46,41 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const uid = useAuthStore((s) => s.uid);
   const authPending = useAuthStore((s) => s.authPending);
 
-  // Image state
-  const [imageData, setImageData] = useState<ImageData | null | false>(null);
-  const [isOwner, setIsOwner] = useState(false);
-  const [isSharable, setIsSharable] = useState(false);
-  const [tags, setTags] = useState<string[]>([]);
-  const [caption, setCaption] = useState("");
-  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [refreshCounter, setRefreshCounter] = useState(0);
+  // Use custom hooks for data and actions
+  const {
+    imageData,
+    isOwner,
+    isSharable,
+    tags,
+    caption,
+    backgroundColor,
+    isPasswordProtected,
+    setIsSharable,
+    setTags,
+    setCaption,
+    setBackgroundColor,
+    refreshData,
+  } = useImagePageData({ id, uid, authPending });
+
+  const {
+    toggleSharable,
+    handleDelete,
+    handleCaptionChange,
+    changeBackground,
+    handleTryAgain,
+    cleanupDebounce,
+  } = useImagePageActions({
+    id,
+    uid,
+    imageData,
+    isSharable,
+    setIsSharable,
+    refreshData,
+  });
 
   // Modal states
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [password, setPassword] = useState("");
-  const [isPasswordProtected, setIsPasswordProtected] = useState(false);
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,146 +93,31 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
 
-  const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Fetch image data
+  // Cleanup on unmount
   useEffect(() => {
-    const fetchImageData = async () => {
-      let docRef;
-      if (uid && !authPending) {
-        docRef = doc(db, "profiles", uid, "covers", id);
-        const docSnap = await getDoc(docRef);
+    return () => cleanupDebounce();
+  }, [cleanupDebounce]);
 
-        if (docSnap.exists()) {
-          const data = docSnap.data() as ImageData;
-          setImageData({ ...data, id });
-          setIsSharable(data?.isSharable ?? false);
-          setTags(data?.tags ?? []);
-          setCaption(data?.caption ?? "");
-          setIsOwner(true);
-          setBackgroundColor(data?.backgroundColor || "#ffffff");
-        }
-      } else if (!isOwner) {
-        docRef = doc(db, "publicImages", id);
-        const docSnap = await getDoc(docRef);
+  const handleToggleSharable = useCallback(async () => {
+    await toggleSharable(password);
+    setShowPasswordModal(false);
+  }, [toggleSharable, password]);
 
-        if (docSnap.exists()) {
-          const data = docSnap.data() as ImageData;
-          setImageData({ ...data, id });
-          setIsSharable(data?.isSharable ?? false);
-          setTags(data?.tags ?? []);
-          setCaption(data?.caption ?? "");
-          setBackgroundColor(data?.backgroundColor || "#ffffff");
-          if (data?.password) {
-            setIsPasswordProtected(true);
-          }
-        } else {
-          setImageData(false);
-        }
-      }
-    };
-
-    if (id) fetchImageData();
-  }, [id, uid, authPending, refreshCounter, isOwner]);
-
-  // Cleanup debounce
-  useEffect(() => {
-    return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-    };
-  }, []);
-
-  const toggleSharable = useCallback(async () => {
-    if (!imageData || !uid) return;
-    try {
-      const newSharableState = !isSharable;
-      const coversDocRef = doc(db, "profiles", uid, "covers", id);
-      const publicImagesDocRef = doc(db, "publicImages", id);
-
-      if (newSharableState) {
-        await runTransaction(db, async (transaction) => {
-          const coversDocSnap = await transaction.get(coversDocRef);
-          if (!coversDocSnap.exists()) {
-            throw new Error("Document does not exist in covers");
-          }
-          transaction.set(publicImagesDocRef, {
-            ...coversDocSnap.data(),
-            isSharable: true,
-            password: password,
-          });
-          transaction.update(coversDocRef, { isSharable: true });
-        });
-        setShowPasswordModal(false);
-      } else {
-        await runTransaction(db, async (transaction) => {
-          const publicImagesDocSnap = await transaction.get(publicImagesDocRef);
-          if (!publicImagesDocSnap.exists()) {
-            throw new Error("Document does not exist in publicImages");
-          }
-          transaction.set(coversDocRef, {
-            ...publicImagesDocSnap.data(),
-            isSharable: false,
-            password: "",
-          });
-          transaction.delete(publicImagesDocRef);
-        });
-      }
-
-      setIsSharable(newSharableState);
-      toast.success(
-        `Image is now ${newSharableState ? "sharable" : "private"}`
-      );
-    } catch (error) {
-      toast.error("Error updating share status: " + error);
-    }
-  }, [imageData, uid, id, isSharable, password]);
-
-  const handleDelete = useCallback(async () => {
-    if (!imageData || !uid) return;
-
-    if (window.confirm("Are you sure you want to delete this image?")) {
-      try {
-        const docRef = doc(db, "profiles", uid, "covers", id);
-        await deleteDoc(docRef);
-
-        const publicImagesDocRef = doc(db, "publicImages", id);
-        await deleteDoc(publicImagesDocRef);
-
-        toast.success("Image deleted successfully");
-        delay(1000).then(() => router.push("/images"));
-      } catch (error) {
-        toast.error("Error deleting image: " + error);
-      }
-    }
-  }, [imageData, uid, id, router]);
-
-  const handleCaptionChange = useCallback(
+  const onCaptionChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setCaption(event.target.value);
-
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-
-      debounceTimeout.current = setTimeout(async () => {
-        if (!imageData) return;
-        try {
-          const docRef = uid
-            ? doc(db, "profiles", uid, "covers", id)
-            : doc(db, "publicImages", id);
-
-          await updateDoc(docRef, { caption: event.target.value || "" });
-          setRefreshCounter((c) => c + 1);
-          toast.success("Caption updated successfully");
-        } catch (error) {
-          toast.error("Error updating caption: " + error);
-        }
-      }, 1000);
+      handleCaptionChange(event, setCaption);
     },
-    [imageData, uid, id]
+    [handleCaptionChange, setCaption]
+  );
+
+  const onChangeBackground = useCallback(
+    async (color: string) => {
+      await changeBackground(color, setBackgroundColor);
+      setShowColorPicker(false);
+    },
+    [changeBackground, setBackgroundColor]
   );
 
   const handleBackgroundRemove = useCallback(async () => {
@@ -237,11 +138,11 @@ const ImagePage = ({ id }: ImagePageProps) => {
         }
 
         const docRef = uid
-          ? doc(db, "profiles", uid, "covers", id)
-          : doc(db, "publicImages", id);
+          ? doc(db, FirestorePaths.profileCover(uid, id))
+          : doc(db, FirestorePaths.publicImage(id));
 
         await updateDoc(docRef, { downloadUrl: result?.result_url });
-        setRefreshCounter((c) => c + 1);
+        refreshData();
         toast.success("Background removed successfully!");
       } else {
         throw new Error(result.error);
@@ -252,57 +153,16 @@ const ImagePage = ({ id }: ImagePageProps) => {
       console.error("Error removing background: ", error);
       toast.error(`Failed to remove background: ${errorMessage}`);
     }
-  }, [imageData, uid, id, useCredits, credits, briaApiKey, minusCredits]);
-
-  const changeBackground = useCallback(
-    async (color: string) => {
-      const docRef = uid
-        ? doc(db, "profiles", uid, "covers", id)
-        : doc(db, "publicImages", id);
-
-      await updateDoc(docRef, { backgroundColor: color });
-      setBackgroundColor(color);
-      setRefreshCounter((c) => c + 1);
-      setShowColorPicker(false);
-      toast.success("Background color changed successfully");
-    },
-    [uid, id]
-  );
-
-  const handleTryAgain = useCallback(() => {
-    if (!imageData || typeof imageData === "boolean") return;
-
-    const addQueryParam = (
-      key: string,
-      value: string | string[] | undefined
-    ) => {
-      if (value) {
-        return Array.isArray(value)
-          ? `${key}=${encodeURIComponent(value.join(","))}`
-          : `${key}=${encodeURIComponent(value)}`;
-      }
-      return null;
-    };
-
-    const queryParams = [
-      addQueryParam("freestyle", imageData.freestyle),
-      addQueryParam("style", imageData.style),
-      addQueryParam("model", imageData.model),
-      addQueryParam("color", imageData.colorScheme),
-      addQueryParam("lighting", imageData.lighting),
-      addQueryParam("tags", imageData.tags),
-      addQueryParam("imageReference", imageData.imageReference),
-      addQueryParam("imageCategory", imageData.imageCategory),
-      addQueryParam("perspective", imageData.perspective),
-      addQueryParam("composition", imageData.composition),
-      addQueryParam("medium", imageData.medium),
-      addQueryParam("mood", imageData.mood),
-    ].filter(Boolean);
-
-    if (queryParams.length > 0) {
-      router.push(`/generate?${queryParams.join("&")}`);
-    }
-  }, [imageData, router]);
+  }, [
+    imageData,
+    uid,
+    id,
+    useCredits,
+    credits,
+    briaApiKey,
+    minusCredits,
+    refreshData,
+  ]);
 
   const handleCreateGif = useCallback(async () => {
     if (!imageData || typeof imageData === "boolean") return;
@@ -368,7 +228,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
           isOwner={isOwner}
           isSharable={isSharable}
           uid={uid}
-          onToggleSharable={toggleSharable}
+          onToggleSharable={handleToggleSharable}
           onDelete={handleDelete}
           onShowPasswordModal={() => setShowPasswordModal(true)}
         />
@@ -395,7 +255,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
           <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
           <TextareaAutosize
             value={caption}
-            onChange={handleCaptionChange}
+            onChange={onCaptionChange}
             placeholder="Enter caption"
             className="p-2 border border-gray-300 rounded-md w-full"
           />
@@ -481,7 +341,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
         <PasswordModal
           password={password}
           setPassword={setPassword}
-          onConfirm={toggleSharable}
+          onConfirm={handleToggleSharable}
           onCancel={() => setShowPasswordModal(false)}
         />
       )}
@@ -489,7 +349,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
       {showColorPicker && (
         <ColorPickerModal
           initialColor={backgroundColor}
-          onConfirm={changeBackground}
+          onConfirm={onChangeBackground}
           onCancel={() => setShowColorPicker(false)}
         />
       )}

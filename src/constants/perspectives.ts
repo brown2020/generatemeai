@@ -1,6 +1,6 @@
-import { createLabelToValueMapper } from "./optionFactory";
+import { createOptionSet } from "./optionFactory";
 
-export const perspectives = [
+const perspectiveOptions = [
   { value: "none", label: "None" },
   { value: "close_up", label: "Close-up Shot" },
   { value: "wide_angle", label: "Wide Angle" },
@@ -11,4 +11,9 @@ export const perspectives = [
   { value: "dutch_angle", label: "Dutch Angle" },
 ];
 
-export const getPerspectiveFromLabel = createLabelToValueMapper();
+export const {
+  options: perspectives,
+  getValueFromLabel: getPerspectiveFromLabel,
+  findByValue: findPerspectiveByValue,
+  findByLabel: findPerspectiveByLabel,
+} = createOptionSet(perspectiveOptions);

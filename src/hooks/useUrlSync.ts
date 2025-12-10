@@ -1,105 +1,93 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
-import { colors } from "@/constants/colors";
-import { lightings } from "@/constants/lightings";
+import { colors, findColorByValue, findColorByLabel } from "@/constants/colors";
+import {
+  lightings,
+  findLightingByValue,
+  findLightingByLabel,
+} from "@/constants/lightings";
 import { model } from "@/types/model";
 
+/**
+ * Syncs URL search parameters to the generation store.
+ * Uses stable store references to avoid unnecessary re-renders.
+ */
 export const useUrlSync = () => {
-  const searchterm = useSearchParams();
-  const {
-    setImagePrompt,
-    setImageStyle,
-    setModel,
-    setColorScheme,
-    setLighting,
-    setTags,
-    setSelectedCategory,
-    setPerspective,
-    setComposition,
-    setMedium,
-    setMood,
-    setUploadedImage,
-  } = useGenerationStore();
+  const searchParams = useSearchParams();
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    const freestyleSearchParam = searchterm.get("freestyle");
-    const styleSearchParam = searchterm.get("style");
-    const modelSearchParam = searchterm.get("model");
-    const colorSearchParam = searchterm.get("color");
-    const lightingSearchParam = searchterm.get("lighting");
-    const tagsSearchParam = searchterm.get("tags")?.split(",").filter(Boolean);
-    const imageReferenceSearchParam = searchterm.get("imageReference");
-    const imageCategorySearchParam = searchterm.get("imageCategory");
-    const perspectiveSearchParam = searchterm.get("perspective");
-    const compositionSearchParam = searchterm.get("composition");
-    const mediumSearchParam = searchterm.get("medium");
-    const moodSearchParam = searchterm.get("mood");
+    // Only run once on mount to prevent re-syncing on every render
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
 
-    if (freestyleSearchParam) setImagePrompt(freestyleSearchParam);
-    if (styleSearchParam) setImageStyle(styleSearchParam);
-    if (modelSearchParam) setModel(modelSearchParam as model);
+    // Get stable action references from the store
+    const store = useGenerationStore.getState();
 
-    if (colorSearchParam) {
-      const colorOption = colors.find((c) => c.value === colorSearchParam);
-      if (colorOption) setColorScheme(colorOption.label);
-      else {
-        const colorByLabel = colors.find(
-          (c) => c.label.toLowerCase() === colorSearchParam.toLowerCase()
-        );
-        if (colorByLabel) setColorScheme(colorByLabel.label);
-      }
+    // Parse all search params
+    const params = {
+      freestyle: searchParams.get("freestyle"),
+      style: searchParams.get("style"),
+      model: searchParams.get("model"),
+      color: searchParams.get("color"),
+      lighting: searchParams.get("lighting"),
+      tags: searchParams.get("tags")?.split(",").filter(Boolean),
+      imageReference: searchParams.get("imageReference"),
+      imageCategory: searchParams.get("imageCategory"),
+      perspective: searchParams.get("perspective"),
+      composition: searchParams.get("composition"),
+      medium: searchParams.get("medium"),
+      mood: searchParams.get("mood"),
+    };
+
+    // Apply params to store
+    if (params.freestyle) store.setImagePrompt(params.freestyle);
+    if (params.style) store.setImageStyle(params.style);
+    if (params.model) store.setModel(params.model as model);
+
+    // Handle color with value/label lookup
+    if (params.color) {
+      const colorOption =
+        findColorByValue(params.color) || findColorByLabel(params.color);
+      if (colorOption) store.setColorScheme(colorOption.label);
     }
 
-    if (lightingSearchParam) {
-      const lightingOption = lightings.find(
-        (l) => l.value === lightingSearchParam
-      );
-      if (lightingOption) setLighting(lightingOption.label);
-      else {
-        const lightingByLabel = lightings.find(
-          (l) => l.label.toLowerCase() === lightingSearchParam.toLowerCase()
-        );
-        if (lightingByLabel) setLighting(lightingByLabel.label);
-      }
+    // Handle lighting with value/label lookup
+    if (params.lighting) {
+      const lightingOption =
+        findLightingByValue(params.lighting) ||
+        findLightingByLabel(params.lighting);
+      if (lightingOption) store.setLighting(lightingOption.label);
     }
 
-    if (tagsSearchParam) setTags(tagsSearchParam);
-    if (imageCategorySearchParam) setSelectedCategory(imageCategorySearchParam);
-    if (perspectiveSearchParam) setPerspective(perspectiveSearchParam);
-    if (compositionSearchParam) setComposition(compositionSearchParam);
-    if (mediumSearchParam) setMedium(mediumSearchParam);
-    if (moodSearchParam) setMood(moodSearchParam);
+    if (params.tags) store.setTags(params.tags);
+    if (params.imageCategory) store.setSelectedCategory(params.imageCategory);
+    if (params.perspective) store.setPerspective(params.perspective);
+    if (params.composition) store.setComposition(params.composition);
+    if (params.medium) store.setMedium(params.medium);
+    if (params.mood) store.setMood(params.mood);
 
-    if (imageReferenceSearchParam) {
-      const loadImageFromUrl = async (url: string) => {
-        try {
-          const response = await fetch(url);
-          const blob = await response.blob();
-          const file = new File([blob], "default-image.jpg", {
-            type: blob.type,
-          });
-          setUploadedImage(file);
-        } catch (error) {
-          console.error("Failed to load image from URL:", error);
-        }
-      };
-      loadImageFromUrl(imageReferenceSearchParam);
+    // Load image reference asynchronously
+    if (params.imageReference) {
+      loadImageFromUrl(params.imageReference, store.setUploadedImage);
     }
-  }, [
-    searchterm,
-    setImagePrompt,
-    setImageStyle,
-    setModel,
-    setColorScheme,
-    setLighting,
-    setTags,
-    setSelectedCategory,
-    setPerspective,
-    setComposition,
-    setMedium,
-    setMood,
-    setUploadedImage,
-  ]);
+  }, [searchParams]);
 };
 
+/**
+ * Loads an image from a URL and sets it as the uploaded image.
+ */
+async function loadImageFromUrl(
+  url: string,
+  setUploadedImage: (file: File | null) => void
+): Promise<void> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const file = new File([blob], "reference-image.jpg", { type: blob.type });
+    setUploadedImage(file);
+  } catch (error) {
+    console.error("Failed to load image from URL:", error);
+  }
+}

@@ -1,6 +1,6 @@
-import { createLabelToValueMapper } from "./optionFactory";
+import { createOptionSet } from "./optionFactory";
 
-export const compositions = [
+const compositionOptions = [
   { value: "none", label: "None" },
   { value: "rule_of_thirds", label: "Rule of Thirds" },
   { value: "symmetrical", label: "Symmetrical" },
@@ -10,4 +10,9 @@ export const compositions = [
   { value: "dynamic", label: "Dynamic" },
 ];
 
-export const getCompositionFromLabel = createLabelToValueMapper();
+export const {
+  options: compositions,
+  getValueFromLabel: getCompositionFromLabel,
+  findByValue: findCompositionByValue,
+  findByLabel: findCompositionByLabel,
+} = createOptionSet(compositionOptions);
