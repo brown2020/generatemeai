@@ -2,6 +2,10 @@ import { db } from "@/firebase/firebaseClient";
 import { Timestamp, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { create } from "zustand";
 
+/**
+ * Auth state interface - represents authentication-related user data.
+ * Note: Credits are managed in useProfileStore to avoid duplication.
+ */
 interface AuthState {
   uid: string;
   firebaseUid: string;
@@ -16,7 +20,6 @@ interface AuthState {
   isInvited: boolean;
   lastSignIn: Timestamp | null;
   premium: boolean;
-  credits: number;
 }
 
 interface AuthActions {
@@ -40,7 +43,6 @@ const defaultAuthState: AuthState = {
   isInvited: false,
   lastSignIn: null,
   premium: false,
-  credits: 1000,
 };
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -73,14 +75,12 @@ async function updateUserDetailsInFirestore(
       }
     });
 
-    console.log("Updating auth details in Firestore:", sanitizedDetails);
     try {
       await setDoc(
         userRef,
         { ...sanitizedDetails, lastSignIn: serverTimestamp() },
         { merge: true }
       );
-      console.log("Auth details updated successfully in Firestore.");
     } catch (error) {
       console.error("Error updating auth details in Firestore:", error);
     }

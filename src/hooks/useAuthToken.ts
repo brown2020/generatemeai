@@ -1,24 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { getIdToken } from "firebase/auth";
 import { deleteCookie, setCookie } from "cookies-next";
-import { debounce } from "lodash";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
+
+const REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
+const DEBOUNCE_DELAY = 1000;
 
 const useAuthToken = (cookieName = "authToken") => {
   const [user, loading, error] = useAuthState(auth);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
 
-  const refreshInterval = 50 * 60 * 1000; // 50 minutes
-  const lastTokenRefresh = `lastTokenRefresh_${cookieName}`;
+  const lastTokenRefreshKey = `lastTokenRefresh_${cookieName}`;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [activityTimeout, setActivityTimeout] = useState<NodeJS.Timeout | null>(
-    null
-  );
-
-  const refreshAuthToken = async () => {
+  const refreshAuthToken = useCallback(async () => {
     try {
       if (!auth.currentUser) throw new Error("No user found");
       const idTokenResult = await getIdToken(auth.currentUser, true);
@@ -27,49 +26,65 @@ const useAuthToken = (cookieName = "authToken") => {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
       });
-      if (!window.ReactNativeWebView) {
-        window.localStorage.setItem(lastTokenRefresh, Date.now().toString());
+
+      if (typeof window !== "undefined" && !window.ReactNativeWebView) {
+        window.localStorage.setItem(lastTokenRefreshKey, Date.now().toString());
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
       } else {
         console.error("Error refreshing token");
       }
       deleteCookie(cookieName);
     }
-  };
+  }, [cookieName, lastTokenRefreshKey]);
 
-  const scheduleTokenRefresh = () => {
-    if (activityTimeout) {
-      clearTimeout(activityTimeout);
+  const scheduleTokenRefresh = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-    if (document.visibilityState === "visible") {
-      const timeoutId = setTimeout(refreshAuthToken, refreshInterval);
-      setActivityTimeout(timeoutId);
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState === "visible"
+    ) {
+      timeoutRef.current = setTimeout(refreshAuthToken, REFRESH_INTERVAL);
     }
-  };
+  }, [refreshAuthToken]);
 
-  const handleStorageChange = debounce((e: StorageEvent) => {
-    if (e.key === lastTokenRefresh) {
-      scheduleTokenRefresh();
-    }
-  }, 1000);
-
+  // Handle storage changes with debouncing
   useEffect(() => {
-    if (!window.ReactNativeWebView) {
-      window.addEventListener("storage", handleStorageChange);
+    if (typeof window === "undefined" || window.ReactNativeWebView) {
+      return;
     }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key !== lastTokenRefreshKey) return;
+
+      // Debounce the refresh scheduling
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      debounceTimeoutRef.current = setTimeout(
+        scheduleTokenRefresh,
+        DEBOUNCE_DELAY
+      );
+    };
+
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      if (activityTimeout) {
-        clearTimeout(activityTimeout);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-      handleStorageChange.cancel();
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
     };
-  }, [activityTimeout, handleStorageChange]);
+  }, [lastTokenRefreshKey, scheduleTokenRefresh]);
 
+  // Sync user state with auth store
   useEffect(() => {
     if (user?.uid) {
       setAuthDetails({

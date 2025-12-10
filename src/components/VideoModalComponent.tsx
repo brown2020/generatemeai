@@ -116,7 +116,6 @@ const ModalComponent: React.FC<ModalProps> = ({
         toast.error(
           `Failed to generate video: ${result?.error || "Unknown error"}`
         );
-        console.log(result);
         throw new Error("Failed to generate video.");
       }
 

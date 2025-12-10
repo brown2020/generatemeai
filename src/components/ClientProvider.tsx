@@ -19,7 +19,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     function adjustHeight() {
       const vh = window.innerHeight * 0.01;
-      console.log(`--vh value is now: ${vh}px`);
       document.documentElement.style.setProperty("--vh", `${vh}px`);
     }
 

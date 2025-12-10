@@ -1,86 +1,23 @@
-export const colors = [
-    {
-        id: 1,
-        value: "none",
-        label: "None",
-    },
-    {
-        id: 2,
-        value: "Nature",
-        label: "Nature",
-    },
-    {
-        id: 3,
-        value: "Warm",
-        label: "Warm",
-    },
-    {
-        id: 4,
-        value: "Cool",
-        label: "Cool",
-    },
-    {
-        id: 5,
-        value: "Vibrant",
-        label: "Vibrant",
-    },
-    {
-        id: 6,
-        value: "Pastel",
-        label: "Pastel",
-    },
-    {
-        id: 7,
-        value: "Monochrome",
-        label: "Monochrome",
-    },
-    {
-        id: 8,
-        value: "Earthy",
-        label: "Earthy",
-    },
-    {
-        id: 9,
-        value: "Neon",
-        label: "Neon",
-    },
-    {
-        id: 10,
-        value: "Muted",
-        label: "Muted",
-    },
-    {
-        id: 11,
-        value: "Vintage",
-        label: "Vintage",
-    },
-    {
-        id: 12,
-        value: "Sepia",
-        label: "Sepia",
-    },
-    {
-        id: 13,
-        value: "Golden",
-        label: "Golden",
-    },
-    {
-        id: 14,
-        value: "Jewel Tones",
-        label: "Jewel Tones",
-    },
-    {
-        id: 15,
-        value: "High Contrast",
-        label: "High Contrast",
-    },
-    {
-        id: 16,
-        value: "Soft",
-        label: "Soft",
-    },
+import { createLabelToValueMapper, withIds } from "./optionFactory";
+
+const colorOptions = [
+  { value: "none", label: "None" },
+  { value: "Nature", label: "Nature" },
+  { value: "Warm", label: "Warm" },
+  { value: "Cool", label: "Cool" },
+  { value: "Vibrant", label: "Vibrant" },
+  { value: "Pastel", label: "Pastel" },
+  { value: "Monochrome", label: "Monochrome" },
+  { value: "Earthy", label: "Earthy" },
+  { value: "Neon", label: "Neon" },
+  { value: "Muted", label: "Muted" },
+  { value: "Vintage", label: "Vintage" },
+  { value: "Sepia", label: "Sepia" },
+  { value: "Golden", label: "Golden" },
+  { value: "Jewel Tones", label: "Jewel Tones" },
+  { value: "High Contrast", label: "High Contrast" },
+  { value: "Soft", label: "Soft" },
 ];
 
-export const getColorFromLabel = (label: string): string => {
-    return label === "None" ? "" : label.toLowerCase().replace(/\s+/g, '_');
-}
+export const colors = withIds(colorOptions);
+export const getColorFromLabel = createLabelToValueMapper();

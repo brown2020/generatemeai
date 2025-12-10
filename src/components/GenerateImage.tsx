@@ -1,10 +1,9 @@
 "use client";
 
 import TextareaAutosize from "react-textarea-autosize";
-import { useAuthStore } from "@/zustand/useAuthStore";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
 import useProfileStore from "@/zustand/useProfileStore";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback, useMemo, ChangeEvent } from "react";
 import { artStyles } from "@/constants/artStyles";
 import { PulseLoader } from "react-spinners";
 import toast from "react-hot-toast";
@@ -84,6 +83,7 @@ export default function GenerateImage() {
 
   const previewRef = useRef<HTMLDivElement>(null);
   const markAsPreviewRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks
   useUrlSync();
@@ -123,10 +123,29 @@ export default function GenerateImage() {
     };
   }, [previewType, showMarkAsPreview, setPreview, setShowMarkAsPreview]);
 
+  // Memoized handlers
+  const handleTagSuggestions = useCallback(
+    async (prompt: string) => {
+      const suggestions = await suggestTags(
+        prompt,
+        colorScheme,
+        lighting,
+        imageStyle,
+        selectedCategory,
+        tags,
+        openAPIKey,
+        useCredits,
+        credits
+      );
 
-  const handleTagSuggestions = async (prompt: string) => {
-    let suggestions = await suggestTags(
-      prompt,
+      if (suggestions.error) return;
+
+      const suggestionList = suggestions.split(",");
+      if (suggestionList.length >= 1) {
+        setSuggestedTags(suggestionList);
+      }
+    },
+    [
       colorScheme,
       lighting,
       imageStyle,
@@ -134,24 +153,24 @@ export default function GenerateImage() {
       tags,
       openAPIKey,
       useCredits,
-      credits
-    );
+      credits,
+      setSuggestedTags,
+    ]
+  );
 
-    if (suggestions.error) {
-      return;
-    }
+  const handlePromptChange = useCallback(
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
+      setImagePrompt(e.target.value);
+      handleTagSuggestions(e.target.value);
+    },
+    [setImagePrompt, handleTagSuggestions]
+  );
 
-    suggestions = suggestions.split(",");
-    if (suggestions.length >= 1) {
-      setSuggestedTags(suggestions);
-    }
-  };
-
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     reset();
-  };
+  }, [reset]);
 
-  const handleOptimizePrompt = async () => {
+  const handleOptimizePrompt = useCallback(async () => {
     if (!imagePrompt || isOptimizing) return;
 
     try {
@@ -165,10 +184,123 @@ export default function GenerateImage() {
     } finally {
       setIsOptimizing(false);
     }
-  };
+  }, [imagePrompt, isOptimizing, openAPIKey, setImagePrompt, setIsOptimizing]);
+
+  const handleImageUpload = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        setUploadedImage(file);
+      }
+    },
+    [setUploadedImage]
+  );
+
+  const handleRemoveImage = useCallback(() => {
+    setUploadedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [setUploadedImage]);
+
+  const handleUploadClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
+
+  const toggleMarkAsPreview = useCallback(() => {
+    setShowMarkAsPreview(!showMarkAsPreview);
+  }, [showMarkAsPreview, setShowMarkAsPreview]);
+
+  // Memoized settings configuration
+  const settingsConfig = useMemo(
+    () => [
+      {
+        label: "Color Scheme",
+        options: colors,
+        value: colorScheme,
+        onChange: setColorScheme,
+        type: "color" as const,
+      },
+      {
+        label: "Lighting",
+        options: lightings,
+        value: lighting,
+        onChange: setLighting,
+        type: "lighting" as const,
+      },
+      {
+        label: "Perspective",
+        options: perspectives,
+        value: perspective,
+        onChange: setPerspective,
+        type: "perspective" as const,
+      },
+      {
+        label: "Composition",
+        options: compositions,
+        value: composition,
+        onChange: setComposition,
+        type: "composition" as const,
+      },
+      {
+        label: "Medium",
+        options: mediums,
+        value: medium,
+        onChange: setMedium,
+        type: "medium" as const,
+      },
+      {
+        label: "Mood",
+        options: moods,
+        value: mood,
+        onChange: setMood,
+        type: "mood" as const,
+      },
+    ],
+    [
+      colorScheme,
+      lighting,
+      perspective,
+      composition,
+      medium,
+      mood,
+      setColorScheme,
+      setLighting,
+      setPerspective,
+      setComposition,
+      setMedium,
+      setMood,
+    ]
+  );
+
+  // Filter models for image generation
+  const imageModels = useMemo(
+    () => models.filter((m) => m.type === "image" || m.type === "both"),
+    []
+  );
+
+  const supportsImageUpload = model !== "dall-e" && model !== "flux-schnell";
 
   return (
     <div className="flex flex-col items-center w-full p-3 bg-white">
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        id="imageUpload"
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        className="hidden"
+      />
+
       <div className="flex flex-col w-full max-w-4xl space-y-4 relative">
         <div className="flex justify-end">
           <button
@@ -186,38 +318,27 @@ export default function GenerateImage() {
             maxRows={5}
             value={imagePrompt || ""}
             placeholder="Describe your image in detail..."
-            onChange={(e) => {
-              setImagePrompt(e.target.value);
-              handleTagSuggestions(e.target.value);
-            }}
+            onChange={handlePromptChange}
             className="block w-full px-4 py-3 pr-32 text-lg border-2 border-blue-200 
               rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 
               transition-all duration-200 ease-in-out"
           />
 
           <div className="absolute bottom-3 right-3 flex items-center gap-2">
-            {model !== "dall-e" && model !== "flux-schnell" && (
+            {supportsImageUpload && (
               <button
-                onClick={() => {
-                  const fileInput = document.getElementById("imageUpload");
-                  fileInput?.click();
-                }}
+                onClick={handleUploadClick}
                 className="group relative inline-flex items-center justify-center w-9 h-9 
                   rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 
                   transition-all duration-200 hover:shadow-md"
                 title="Upload reference image"
               >
-                <ImagePlus
-                  className="w-5 h-5 text-gray-600 group-hover:text-gray-800 
-                    transition-colors"
-                />
+                <ImagePlus className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
               </button>
             )}
 
             <button
-              onClick={
-                isRecording ? stopRecording : startRecording
-              }
+              onClick={toggleRecording}
               className={`group relative inline-flex items-center justify-center w-9 h-9 
                 rounded-lg transition-all duration-200 hover:shadow-md
                 ${
@@ -230,9 +351,7 @@ export default function GenerateImage() {
               {isRecording ? (
                 <StopCircle className="w-5 h-5 text-red-600 group-hover:text-red-700" />
               ) : (
-                <Mic
-                  className={`w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors`}
-                />
+                <Mic className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
               )}
             </button>
 
@@ -263,7 +382,7 @@ export default function GenerateImage() {
           </div>
         </div>
 
-        {model != "dall-e" && model != "flux-schnell" && uploadedImage && (
+        {supportsImageUpload && uploadedImage && (
           <div className="relative inline-block">
             <div className="relative group">
               <img
@@ -273,13 +392,7 @@ export default function GenerateImage() {
               />
               <button
                 className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 transition-colors shadow-md"
-                onClick={() => {
-                  setUploadedImage(null);
-                  const fileInput = document.getElementById(
-                    "imageUpload"
-                  ) as HTMLInputElement;
-                  if (fileInput) fileInput.value = "";
-                }}
+                onClick={handleRemoveImage}
                 title="Remove Image"
               >
                 <XCircle size={16} />
@@ -294,9 +407,7 @@ export default function GenerateImage() {
               AI Model
             </label>
             <PaginatedGrid<SelectModel>
-              items={models.filter(
-                (m) => m.type === "image" || m.type === "both"
-              )}
+              items={imageModels}
               itemsPerPage={8}
               className="grid grid-cols-2 sm:grid-cols-4 gap-4"
               renderItem={(modelOption) => (
@@ -331,14 +442,7 @@ export default function GenerateImage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { label: "Color Scheme", options: colors, value: colorScheme, onChange: setColorScheme, type: "color" as const },
-            { label: "Lighting", options: lightings, value: lighting, onChange: setLighting, type: "lighting" as const },
-            { label: "Perspective", options: perspectives, value: perspective, onChange: setPerspective, type: "perspective" as const },
-            { label: "Composition", options: compositions, value: composition, onChange: setComposition, type: "composition" as const },
-            { label: "Medium", options: mediums, value: medium, onChange: setMedium, type: "medium" as const },
-            { label: "Mood", options: moods, value: mood, onChange: setMood, type: "mood" as const },
-          ].map((setting) => (
+          {settingsConfig.map((setting) => (
             <SettingsSelector
               key={setting.type}
               label={setting.label}
@@ -367,7 +471,7 @@ export default function GenerateImage() {
             }
           `}
           disabled={loading || !isPromptValid || !isModelValid}
-          onClick={(e) => generate(e)}
+          onClick={generate}
         >
           {loading ? (
             <div className="flex items-center justify-center">
@@ -391,7 +495,7 @@ export default function GenerateImage() {
                 <>
                   <button
                     className="absolute top-4 right-4 bg-white/90 hover:bg-white text-blue-600 p-2 rounded-full shadow-lg transition-colors"
-                    onClick={() => setShowMarkAsPreview(!showMarkAsPreview)}
+                    onClick={toggleMarkAsPreview}
                     title="Mark as Preview"
                   >
                     <Check size={24} />
