@@ -1,106 +1,27 @@
-export const lightings = [
-    {
-        id: 1,
-        value: "none",
-        label: "None",
-    },
-    {
-        id: 2,
-        value: "Back",
-        label: "Back",
-    },
-    {
-        id: 3,
-        value: "Front",
-        label: "Front",
-    },
-    {
-        id: 4,
-        value: "Side",
-        label: "Side",
-    },
-    {
-        id: 5,
-        value: "Ambient",
-        label: "Ambient",
-    },
-    {
-        id: 6,
-        value: "Spotlighting",
-        label: "Spotlighting",
-    },
-    {
-        id: 7,
-        value: "Soft",
-        label: "Soft",
-    },
-    {
-        id: 8,
-        value: "Dramatic",
-        label: "Dramatic",
-    },
-    {
-        id: 9,
-        value: "Low Key",
-        label: "Low Key",
-    },
-    {
-        id: 10,
-        value: "High Key",
-        label: "High Key",
-    },
-    {
-        id: 11,
-        value: "Cinematic",
-        label: "Cinematic",
-    },
-    {
-        id: 12,
-        value: "Golden Hour",
-        label: "Golden Hour",
-    },
-    {
-        id: 13,
-        value: "Rembrandt",
-        label: "Rembrandt",
-    },
-    {
-        id: 14,
-        value: "Broad",
-        label: "Broad",
-    },
-    {
-        id: 15,
-        value: "Split",
-        label: "Split",
-    },
-    {
-        id: 16,
-        value: "Butterfly",
-        label: "Butterfly",
-    },
-    {
-        id: 17,
-        value: "Silhouette",
-        label: "Silhouette",
-    },
-    {
-        id: 18,
-        value: "Chiaroscuro",
-        label: "Chiaroscuro",
-    },
-    {
-        id: 19,
-        value: "Harsh",
-        label: "Harsh",
-    },
-    {
-        id: 20,
-        value: "Softbox",
-        label: "Softbox",
-    },
+import { createLabelToValueMapper, withIds } from "./optionFactory";
+
+const lightingOptions = [
+  { value: "none", label: "None" },
+  { value: "Back", label: "Back" },
+  { value: "Front", label: "Front" },
+  { value: "Side", label: "Side" },
+  { value: "Ambient", label: "Ambient" },
+  { value: "Spotlighting", label: "Spotlighting" },
+  { value: "Soft", label: "Soft" },
+  { value: "Dramatic", label: "Dramatic" },
+  { value: "Low Key", label: "Low Key" },
+  { value: "High Key", label: "High Key" },
+  { value: "Cinematic", label: "Cinematic" },
+  { value: "Golden Hour", label: "Golden Hour" },
+  { value: "Rembrandt", label: "Rembrandt" },
+  { value: "Broad", label: "Broad" },
+  { value: "Split", label: "Split" },
+  { value: "Butterfly", label: "Butterfly" },
+  { value: "Silhouette", label: "Silhouette" },
+  { value: "Chiaroscuro", label: "Chiaroscuro" },
+  { value: "Harsh", label: "Harsh" },
+  { value: "Softbox", label: "Softbox" },
 ];
 
-export const getLightingFromLabel = (label: string): string => {
-    return label === "None" ? "" : label.toLowerCase().replace(/\s+/g, '_');
-}
+export const lightings = withIds(lightingOptions);
+export const getLightingFromLabel = createLabelToValueMapper();

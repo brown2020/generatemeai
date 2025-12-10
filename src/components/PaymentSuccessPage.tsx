@@ -30,7 +30,6 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
 
   useEffect(() => {
     if (!payment_intent) {
-      console.log("in useEffect no payment intent", payment_intent);
       setMessage("No payment intent found");
       setLoading(false);
       return;
@@ -39,21 +38,12 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
     const handlePaymentSuccess = async () => {
       try {
         const data = await validatePaymentIntent(payment_intent);
-        console.log("Payment validation result:", data);
 
         if (data.status === "succeeded") {
-          // Check if payment is already processed
           const existingPayment = await checkIfPaymentProcessed(data.id);
           if (existingPayment) {
             setMessage("Payment has already been processed.");
-
-            // Convert Timestamp to milliseconds before setting state
-            if (existingPayment.createdAt) {
-              setCreated(existingPayment.createdAt.toMillis());
-            } else {
-              setCreated(0); // Fallback if createdAt is null
-            }
-
+            setCreated(existingPayment.createdAt?.toMillis() ?? 0);
             setId(existingPayment.id);
             setAmount(existingPayment.amount);
             setStatus(existingPayment.status);
@@ -62,13 +52,11 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
           }
 
           setMessage("Payment successful");
-          setCreated(data.created * 1000); // Assuming `data.created` is a UNIX timestamp in seconds
+          setCreated(data.created * 1000);
           setId(data.id);
           setAmount(data.amount);
           setStatus(data.status);
-          console.log("Payment successful:", data.amount);
 
-          // Add payment to store
           await addPayment({
             id: data.id,
             amount: data.amount,
@@ -79,10 +67,8 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
             currency: "$",
           });
 
-          // Add credits to profile
           const creditsToAdd = data.amount + 1;
           await addCredits(creditsToAdd);
-          console.log("Credits added to profile successfully");
         } else {
           console.error("Payment validation failed:", data.status);
           setMessage("Payment validation failed");

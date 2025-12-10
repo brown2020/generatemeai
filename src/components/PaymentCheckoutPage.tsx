@@ -66,9 +66,6 @@ export default function PaymentCheckoutPage({ amount }: Props) {
 
       if (error) {
         setErrorMessage(error.message || "Payment failed");
-        console.log("Payment failed:", error.message);
-      } else {
-        console.log("Payment successful!");
       }
     } catch (error: unknown) {
       if (error instanceof Error) {

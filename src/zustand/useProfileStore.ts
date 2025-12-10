@@ -95,13 +95,6 @@ const useProfileStore = create<ProfileState>((set, get) => ({
             authEmailVerified
           );
 
-      console.log(
-        docSnap.exists()
-          ? "Profile found:"
-          : "No profile found. Creating new profile document.",
-        newProfile
-      );
-
       await setDoc(userRef, newProfile);
       set({ profile: newProfile });
     } catch (error) {
@@ -119,7 +112,6 @@ const useProfileStore = create<ProfileState>((set, get) => ({
 
       set({ profile: updatedProfile });
       await updateDoc(userRef, updatedProfile);
-      console.log("Profile updated successfully");
     } catch (error) {
       handleProfileError("updating profile", error);
     }
@@ -137,10 +129,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
       // Delete the user profile data from Firestore
       await deleteDoc(userRef);
 
-      //Delete the user from Firebase Authentication
       await deleteUser(currentUser);
-
-      console.log("Account deleted successfully");
     } catch (error) {
       handleProfileError("deleting account", error);
     }
