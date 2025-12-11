@@ -9,6 +9,7 @@ type ModelApiKeyConfig = {
 };
 
 const MODEL_API_KEYS: Record<string, ModelApiKeyConfig> = {
+  // Image generation models
   "dall-e": { envKey: "OPENAI_API_KEY", formDataKey: "openAPIKey" },
   "stable-diffusion-xl": {
     envKey: "FIREWORKS_API_KEY",
@@ -34,8 +35,12 @@ const MODEL_API_KEYS: Record<string, ModelApiKeyConfig> = {
     envKey: "IDEOGRAM_API_KEY",
     formDataKey: "ideogramAPIKey",
   },
+  // Video generation models
   "d-id": { envKey: "DID_API_KEY", formDataKey: "didAPIKey" },
   "runway-ml": { envKey: "RUNWAYML_API_SECRET", formDataKey: "runwayApiKey" },
+  // Utility models
+  "bria.ai": { envKey: "BRIA_AI_API_KEY", formDataKey: "briaApiKey" },
+  chatgpt: { envKey: "OPENAI_API_KEY", formDataKey: "openAPIKey" },
 };
 
 /**

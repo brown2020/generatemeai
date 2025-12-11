@@ -1,4 +1,11 @@
 import { GenerationStrategy } from "./types";
+import { pollWithTimeout } from "@/utils/polling";
+
+interface ReplicatePrediction {
+  id: string;
+  status: string;
+  output?: string[];
+}
 
 export const replicateStrategy: GenerationStrategy = async ({
   message,
@@ -7,35 +14,29 @@ export const replicateStrategy: GenerationStrategy = async ({
   const { default: Replicate } = await import("replicate");
   const { default: sharp } = await import("sharp");
 
-  const replicate = new Replicate({
-    auth: apiKey,
-  });
+  const replicate = new Replicate({ auth: apiKey });
 
   const prediction = await replicate.predictions.create({
     model: "black-forest-labs/flux-schnell",
-    input: {
-      prompt: message,
-    },
+    input: { prompt: message },
   });
 
-  let attemptCount = 0;
-  let output;
+  // Poll until prediction completes
+  const result = await pollWithTimeout<ReplicatePrediction>(
+    () =>
+      replicate.predictions.get(prediction.id) as Promise<ReplicatePrediction>,
+    (output) => output.status !== "processing",
+    { maxAttempts: 24, intervalMs: 5000 }
+  );
 
-  while (attemptCount++ < 24) {
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    output = await replicate.predictions.get(prediction.id);
-    if (output.status !== "processing") break;
-  }
-
-  if (output?.status !== "succeeded") {
+  if (result.status !== "succeeded" || !result.output?.[0]) {
     throw new Error("Failed generating image via Replicate API.");
   }
 
-  // output.output[0] is the URL
-  const webpImageData = await fetch(output.output[0]).then((res) =>
+  // Convert WebP to JPEG
+  const webpImageData = await fetch(result.output[0]).then((res) =>
     res.arrayBuffer()
   );
 
   return await sharp(Buffer.from(webpImageData)).toFormat("jpeg").toBuffer();
 };
-
