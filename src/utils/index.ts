@@ -4,8 +4,11 @@
  */
 
 // API and credits (from centralized registry)
-export { resolveApiKey, resolveApiKeyFromForm } from "./apiKeyResolver";
-export { extractApiKeysFromForm } from "./apiKeyResolver";
+export {
+  resolveApiKey,
+  resolveApiKeyFromForm,
+  extractApiKeysFromForm,
+} from "./apiKeyResolver";
 export {
   validateCredits,
   validateCreditsFromForm,

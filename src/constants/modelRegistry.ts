@@ -326,22 +326,34 @@ export const supportsImageUpload = (modelName: string): boolean => {
 };
 
 // ============================================================================
-// Legacy exports for backward compatibility
+// FormData utilities for server actions
 // ============================================================================
 
 /**
- * @deprecated Use MODEL_REGISTRY directly or getModelsArray()
+ * Gets all API keys from FormData for server actions.
  */
+export const extractApiKeysFromForm = (formData: FormData) => ({
+  openAPIKey: formData.get("openAPIKey") as string | null,
+  fireworksAPIKey: formData.get("fireworksAPIKey") as string | null,
+  stabilityAPIKey: formData.get("stabilityAPIKey") as string | null,
+  replicateAPIKey: formData.get("replicateAPIKey") as string | null,
+  ideogramAPIKey: formData.get("ideogramAPIKey") as string | null,
+  didAPIKey: formData.get("didAPIKey") as string | null,
+  runwayApiKey: formData.get("runwayApiKey") as string | null,
+});
+
+// ============================================================================
+// Legacy exports for backward compatibility
+// These are used across the codebase - keep until full migration
+// ============================================================================
+
+/** Alias for ModelConfig - used in some components */
 export type SelectModel = ModelConfig;
 
-/**
- * @deprecated Use getModelsArray() instead
- */
+/** Array of user-facing models (excludes utility models) */
 export const models = getModelsArray().filter((m) => m.type !== "utility");
 
-/**
- * @deprecated Use getModelConfig() instead
- */
+/** Alias for getModelConfig - used in some components */
 export const findModelByValue = (
   searchValue: string
 ): ModelConfig | undefined => getModelConfig(searchValue);

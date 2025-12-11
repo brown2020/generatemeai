@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/utils/cn";
 
 /**
  * Navigation item data structure.
@@ -44,12 +45,14 @@ export const NavItem: React.FC<NavItemProps> = ({
   onClick,
 }) => {
   const styles = variantStyles[variant];
-  const activeClasses = isActive ? "opacity-100 bg-white/30" : "opacity-50";
   const Icon = item.icon;
 
   return (
     <div
-      className={`${styles.container} ${activeClasses}`}
+      className={cn(
+        styles.container,
+        isActive ? "opacity-100 bg-white/30" : "opacity-50"
+      )}
       onClick={onClick}
       role="button"
       tabIndex={0}
