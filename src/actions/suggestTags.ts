@@ -3,6 +3,7 @@
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { creditsToMinus } from "@/utils/credits";
+import { ActionResult, successResult, errorResult } from "@/utils/errors";
 
 interface SuggestTagsParams {
   freestyle: string;
@@ -42,6 +43,8 @@ Please list the tags in this format: separate all tags with commas, that's it, n
 /**
  * Suggests tags for an image based on its generation parameters.
  * Uses Vercel AI SDK for cleaner API integration.
+ *
+ * @returns ActionResult with suggested tags string or error
  */
 export const suggestTags = async (
   freestyle: string,
@@ -53,14 +56,14 @@ export const suggestTags = async (
   openAPIKey: string,
   useCredits: boolean,
   credits: number
-): Promise<string | { error: string }> => {
+): Promise<ActionResult<string>> => {
   try {
     // Check credits
     if (useCredits && credits < creditsToMinus("chatgpt")) {
-      return {
-        error:
-          "Not enough credits to suggest tags. Please purchase credits or use your own API Keys.",
-      };
+      return errorResult(
+        "Not enough credits to suggest tags. Please purchase credits or use your own API Keys.",
+        "INSUFFICIENT_CREDITS"
+      );
     }
 
     // Determine API key to use
@@ -89,11 +92,11 @@ export const suggestTags = async (
       temperature: 0.7,
     });
 
-    return text;
+    return successResult(text);
   } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error suggesting tags:", error);
-    return { error: errorMessage };
+    return errorResult(errorMessage);
   }
 };

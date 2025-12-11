@@ -1,7 +1,6 @@
 "use client";
 
 import { Download, Lock, Share2, Trash2 } from "lucide-react";
-import domtoimage from "dom-to-image";
 import toast from "react-hot-toast";
 import { ImageData } from "@/types/image";
 import { getFileTypeFromUrl } from "@/utils/imageUtils";
@@ -58,6 +57,9 @@ export const ImageActions = ({
       if (!container) return;
 
       try {
+        // Dynamic import for better bundle size
+        const domtoimage = (await import("dom-to-image")).default;
+
         const dataUrl = await domtoimage.toPng(container);
         const currentDate = new Date().toISOString().split("T")[0];
         const fileName = `${imageData?.freestyle}_${currentDate}.png`;

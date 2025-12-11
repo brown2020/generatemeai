@@ -1,4 +1,4 @@
-import { withIds, createOptionFinder } from "./optionFactory";
+import { createOptionSet } from "./optionFactory";
 
 const artStyleOptions = [
   { value: "Prehistoric Art", label: "Prehistoric Art" },
@@ -26,5 +26,9 @@ const artStyleOptions = [
   },
 ];
 
-export const artStyles = withIds(artStyleOptions);
-export const findArtByValue = createOptionFinder(artStyles);
+export const {
+  options: artStyles,
+  getValueFromLabel: getArtStyleFromLabel,
+  findByValue: findArtByValue,
+  findByLabel: findArtByLabel,
+} = createOptionSet(artStyleOptions);

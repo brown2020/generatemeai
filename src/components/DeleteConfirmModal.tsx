@@ -24,7 +24,7 @@ export default function DeleteConfirmModal({
   }, [deleteConfirmation, onDeleteConfirm]);
 
   if (!showDeleteModal) {
-    return true;
+    return null;
   }
 
   return (

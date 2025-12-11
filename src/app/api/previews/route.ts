@@ -1,10 +1,7 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const normalizeValue = (value: string): string => {
-  return value.replace(/\s+/g, '');
-};
+import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+import { normalizeValue } from "@/utils/imageUtils";
 
 export async function POST(request: Request) {
   if (process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING !== 'true') {

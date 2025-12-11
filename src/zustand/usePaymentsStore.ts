@@ -7,9 +7,9 @@ import {
   getDocs,
   Timestamp,
 } from "firebase/firestore";
-import { useAuthStore } from "./useAuthStore";
 import toast from "react-hot-toast";
 import { db } from "@/firebase/firebaseClient";
+import { getAuthUidOrNull } from "./helpers";
 
 export type PaymentType = {
   id: string;
@@ -37,7 +37,7 @@ export const usePaymentsStore = create<PaymentsStoreState>((set) => ({
   paymentsError: null,
 
   fetchPayments: async () => {
-    const uid = useAuthStore.getState().uid;
+    const uid = getAuthUidOrNull();
     if (!uid) {
       console.error("Invalid UID for fetchPayments");
       return;
@@ -54,7 +54,7 @@ export const usePaymentsStore = create<PaymentsStoreState>((set) => ({
   },
 
   addPayment: async (payment) => {
-    const uid = useAuthStore.getState().uid;
+    const uid = getAuthUidOrNull();
     if (!uid) {
       console.error("Invalid UID for addPayment");
       return;
@@ -83,7 +83,7 @@ export const usePaymentsStore = create<PaymentsStoreState>((set) => ({
   },
 
   checkIfPaymentProcessed: async (paymentId) => {
-    const uid = useAuthStore.getState().uid;
+    const uid = getAuthUidOrNull();
     if (!uid) return null;
     return await findProcessedPayment(uid, paymentId);
   },
@@ -181,7 +181,7 @@ function handleError(
     partial:
       | Partial<PaymentsStoreState>
       | ((state: PaymentsStoreState) => Partial<PaymentsStoreState>),
-    replace?: false // Make replace explicitly false or undefined
+    replace?: false
   ) => void,
   error: unknown,
   defaultMessage: string

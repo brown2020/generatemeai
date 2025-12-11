@@ -10,10 +10,27 @@ import {
   LinkedinIcon,
   EmailIcon,
 } from "react-share";
+import { ComponentType, ReactNode } from "react";
 
 interface SocialShareProps {
   url: string;
 }
+
+interface ShareButtonConfig {
+  Button: ComponentType<{ url: string; children: ReactNode }>;
+  Icon: ComponentType<{ size: number; round: boolean; className?: string }>;
+  label: string;
+}
+
+const SHARE_BUTTONS: ShareButtonConfig[] = [
+  { Button: FacebookShareButton, Icon: FacebookIcon, label: "Facebook" },
+  { Button: TwitterShareButton, Icon: TwitterIcon, label: "Twitter" },
+  { Button: LinkedinShareButton, Icon: LinkedinIcon, label: "LinkedIn" },
+  { Button: EmailShareButton, Icon: EmailIcon, label: "Email" },
+];
+
+const ICON_SIZE = 40;
+const ICON_CLASS = "hover:opacity-80 transition-opacity";
 
 /**
  * Social media sharing buttons.
@@ -21,34 +38,11 @@ interface SocialShareProps {
 export const SocialShare = ({ url }: SocialShareProps) => {
   return (
     <div className="flex gap-3 justify-center py-4">
-      <FacebookShareButton url={url}>
-        <FacebookIcon
-          size={40}
-          round
-          className="hover:opacity-80 transition-opacity"
-        />
-      </FacebookShareButton>
-      <TwitterShareButton url={url}>
-        <TwitterIcon
-          size={40}
-          round
-          className="hover:opacity-80 transition-opacity"
-        />
-      </TwitterShareButton>
-      <LinkedinShareButton url={url}>
-        <LinkedinIcon
-          size={40}
-          round
-          className="hover:opacity-80 transition-opacity"
-        />
-      </LinkedinShareButton>
-      <EmailShareButton url={url}>
-        <EmailIcon
-          size={40}
-          round
-          className="hover:opacity-80 transition-opacity"
-        />
-      </EmailShareButton>
+      {SHARE_BUTTONS.map(({ Button, Icon, label }) => (
+        <Button key={label} url={url}>
+          <Icon size={ICON_SIZE} round className={ICON_CLASS} />
+        </Button>
+      ))}
     </div>
   );
 };

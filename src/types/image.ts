@@ -1,45 +1,26 @@
 import { Timestamp } from "firebase/firestore";
-import { model } from "./model";
-
-/**
- * Base generation parameters shared across image types.
- */
-export interface ImageGenerationParams {
-  freestyle?: string;
-  style?: string;
-  model?: model;
-  colorScheme?: string;
-  lighting?: string;
-  perspective?: string;
-  composition?: string;
-  medium?: string;
-  mood?: string;
-  imageCategory?: string;
-  prompt?: string;
-}
+import { GenerationParams } from "./generation";
 
 /**
  * Represents the complete data structure for a generated image.
- * Used in ImagePage, ImageSelector, and related components.
+ * Extends base GenerationParams with display and sharing properties.
  */
-export interface ImageData extends ImageGenerationParams {
+export interface ImageData extends Partial<GenerationParams> {
   id: string;
   downloadUrl: string;
   videoDownloadUrl?: string;
 
-  // Media-specific
-  imageReference?: string;
+  // Display/sharing
+  caption?: string;
+  backgroundColor?: string;
+  isSharable?: boolean;
+  password?: string;
+
+  // Video-specific
   videoModel?: string;
   audio?: string;
   scriptPrompt?: string;
   animation?: string;
-
-  // Display/sharing
-  caption?: string;
-  tags?: string[];
-  backgroundColor?: string;
-  isSharable?: boolean;
-  password?: string;
 
   // Metadata
   timestamp?: Timestamp;

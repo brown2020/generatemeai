@@ -1,0 +1,1 @@
+export { PageWithFooter } from "./PageWithFooter";
