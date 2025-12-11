@@ -13,19 +13,33 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
 import { isIOSReactNativeWebView } from "@/utils/platform";
 import { isFirebaseError } from "@/utils/errors";
+import { STORAGE_KEYS } from "@/constants/storage";
+
+/**
+ * Safely stores auth info in localStorage.
+ */
+const storeAuthInfo = (email: string, name?: string) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(STORAGE_KEYS.EMAIL, email);
+  window.localStorage.setItem(STORAGE_KEYS.NAME, name || email.split("@")[0]);
+};
 
 export const useAuthLogic = () => {
   const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
   const clearAuthDetails = useAuthStore((s) => s.clearAuthDetails);
 
+  // Form state
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [name, setName] = useState<string>("");
   const [acceptTerms, setAcceptTerms] = useState<boolean>(true);
+
+  // UI state
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [isEmailLinkLogin, setIsEmailLinkLogin] = useState(false);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(true);
 
+  // Refs
   const formRef = useRef<HTMLFormElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -104,10 +118,7 @@ export const useAuthLogic = () => {
   const handlePasswordLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("generateEmail", email);
-        window.localStorage.setItem("generateName", email.split("@")[0]);
-      }
+      storeAuthInfo(email);
     } catch (error: unknown) {
       handleAuthError(error);
     } finally {
@@ -119,10 +130,7 @@ export const useAuthLogic = () => {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("generateEmail", email);
-        window.localStorage.setItem("generateName", email.split("@")[0]);
-      }
+      storeAuthInfo(email);
     } catch (error: unknown) {
       if (error instanceof Error) {
         if ((error as { code?: string }).code === "auth/email-already-in-use") {
@@ -147,8 +155,7 @@ export const useAuthLogic = () => {
 
     try {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem("generateEmail", email);
-      window.localStorage.setItem("generateName", name);
+      storeAuthInfo(email, name);
       setAuthDetails({ authPending: true });
     } catch (error) {
       console.error("Error sending sign-in link:", error);
@@ -172,6 +179,7 @@ export const useAuthLogic = () => {
   };
 
   return {
+    // Form state
     email,
     setEmail,
     password,
@@ -180,14 +188,17 @@ export const useAuthLogic = () => {
     setName,
     acceptTerms,
     setAcceptTerms,
+    // UI state
     isVisible,
     showModal,
     hideModal,
     isEmailLinkLogin,
     setIsEmailLinkLogin,
     showGoogleSignIn,
+    // Refs
     formRef,
     modalRef,
+    // Handlers
     signInWithGoogle,
     handleSignOut,
     handlePasswordLogin,

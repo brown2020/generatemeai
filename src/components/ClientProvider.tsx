@@ -9,15 +9,7 @@ import useAuthToken from "@/hooks/useAuthToken";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import ErrorBoundary from "./ErrorBoundary";
 import { usePathname, useRouter } from "next/navigation";
-
-// Routes that don't require authentication
-const PUBLIC_ROUTES = ["/", "/about", "/terms", "/privacy", "/support"];
-const PUBLIC_ROUTE_PREFIXES = ["/images/"];
-
-const isPublicRoute = (pathname: string): boolean => {
-  if (PUBLIC_ROUTES.includes(pathname)) return true;
-  return PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname.includes(prefix));
-};
+import { isPublicRoute } from "@/constants/routes";
 
 export function ClientProvider({ children }: { children: React.ReactNode }) {
   const { loading, uid } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);

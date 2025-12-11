@@ -1,4 +1,5 @@
 import { CircleUserIcon, CogIcon, ImagesIcon } from "lucide-react";
+import { NavItemData } from "@/components/navigation/NavItem";
 
 export const MENU_ITEMS: MenuItem[] = [
   {
@@ -8,7 +9,6 @@ export const MENU_ITEMS: MenuItem[] = [
     header: false,
     footer: true,
   },
-
   {
     label: "Terms",
     href: "/terms",
@@ -32,13 +32,10 @@ export const MENU_ITEMS: MenuItem[] = [
   },
 ];
 
-type navItemType = {
-  label: string;
-  icon: React.ElementType;
-  path: string;
-};
-
-export const navItems: navItemType[] = [
+/**
+ * Navigation items for Header and BottomBar.
+ */
+export const navItems: NavItemData[] = [
   {
     label: "Generate",
     icon: CogIcon,
@@ -49,7 +46,6 @@ export const navItems: navItemType[] = [
     icon: ImagesIcon,
     path: "/images",
   },
-
   {
     label: "Profile",
     icon: CircleUserIcon,

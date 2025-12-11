@@ -1,3 +1,6 @@
+/**
+ * Menu item for footer/static navigation.
+ */
 type MenuItem = {
   label: string;
   href: string;

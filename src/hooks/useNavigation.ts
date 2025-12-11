@@ -24,7 +24,11 @@ export const useNavigation = () => {
 
   /**
    * Navigates to a path with a small delay.
-   * The delay ensures smooth transitions in React Native WebView contexts.
+   *
+   * Note: The 100ms delay is intentional for React Native WebView compatibility.
+   * Without this delay, navigation can be interrupted by WebView's gesture handling,
+   * causing inconsistent behavior on iOS. This ensures the tap event completes
+   * before navigation begins.
    */
   const navigate = useCallback(
     (path: string) => {
@@ -35,6 +39,7 @@ export const useNavigation = () => {
 
   /**
    * Handles logo/home click with React Native WebView support.
+   * Posts a "refresh" message to the WebView if running in that context.
    */
   const navigateHome = useCallback(() => {
     if (typeof window !== "undefined" && window.ReactNativeWebView) {
@@ -43,24 +48,10 @@ export const useNavigation = () => {
     navigate("/");
   }, [navigate]);
 
-  /**
-   * Gets the active class names for a navigation item.
-   */
-  const getNavItemClassName = useCallback(
-    (path: string, baseClasses: string) => {
-      const activeClasses = isActive(path)
-        ? "opacity-100 bg-white/30"
-        : "opacity-50";
-      return `${baseClasses} ${activeClasses}`;
-    },
-    [isActive]
-  );
-
   return {
     pathname,
     isActive,
     navigate,
     navigateHome,
-    getNavItemClassName,
   };
 };
