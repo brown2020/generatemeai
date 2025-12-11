@@ -8,18 +8,22 @@ import CookieConsent from "react-cookie-consent";
 import useAuthToken from "@/hooks/useAuthToken";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import ErrorBoundary from "./ErrorBoundary";
-import { usePathname, useRouter } from "next/navigation";
-import { isPublicRoute } from "@/constants/routes";
 
+/**
+ * Client-side provider that handles:
+ * - Auth token management and store initialization
+ * - WebView detection and viewport handling
+ * - Cookie consent and toast notifications
+ *
+ * Note: Route protection is handled by proxy.ts at the edge.
+ */
 export function ClientProvider({ children }: { children: React.ReactNode }) {
-  const { loading, uid } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);
-  const router = useRouter();
-  const pathname = usePathname();
+  const { loading } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);
   const [isWebView, setIsWebView] = useState(false);
 
   useInitializeStores();
 
-  // Consolidated window-related effects (WebView detection + viewport handling)
+  // WebView detection + viewport handling
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -49,14 +53,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Auth redirect effect
-  useEffect(() => {
-    if (!loading && !uid && !isPublicRoute(pathname)) {
-      router.push("/");
-    }
-  }, [loading, pathname, router, uid]);
-
-  if (loading)
+  if (loading) {
     return (
       <ErrorBoundary>
         <div className="flex flex-col items-center justify-center h-full bg-[#333b51]">
@@ -64,6 +61,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         </div>
       </ErrorBoundary>
     );
+  }
 
   return (
     <ErrorBoundary>

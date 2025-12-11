@@ -1,6 +1,6 @@
 "use server";
 
-import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
+import { adminDb } from "@/firebase/firebaseAdmin";
 import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 import { Timestamp } from "firebase-admin/firestore";
@@ -10,6 +10,7 @@ import {
   errorResult,
   getErrorMessage,
 } from "@/utils/errors";
+import { saveGif } from "@/utils/storage";
 
 // Configure ffmpeg path based on platform
 const getFfmpegPath = (): string => {
@@ -110,16 +111,8 @@ export async function processVideoToGIF(
     const collRef = adminDb.collection(`profiles/${uid}/covers`);
     const cloneRef = collRef.doc();
 
-    // Upload GIF to storage
-    const newFilePath = `video-generation/${Date.now()}.gif`;
-    const gifFileRef = adminBucket.file(newFilePath);
-
-    await gifFileRef.save(videoBuffer, { contentType: "image/gif" });
-
-    const [gifUrl] = await gifFileRef.getSignedUrl({
-      action: "read",
-      expires: "03-17-2125",
-    });
+    // Upload GIF to storage using shared utility
+    const gifUrl = await saveGif(videoBuffer);
 
     // Save new document with GIF URL
     await cloneRef.set({
