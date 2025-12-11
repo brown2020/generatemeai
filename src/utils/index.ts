@@ -11,7 +11,7 @@ export {
   validateCreditsFromForm,
   assertSufficientCredits,
 } from "./creditValidator";
-export { creditsToMinus } from "./credits";
+export { creditsToMinus } from "@/constants/modelRegistry";
 
 // Async utilities
 export { pollWithTimeout, pollWithTimeoutSafe, delay } from "./polling";
@@ -19,13 +19,26 @@ export type { PollingOptions, PollingResult } from "./polling";
 
 // Error handling
 export {
+  // Error classes
   AppError,
+  InsufficientCreditsError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ValidationError,
+  ExternalApiError,
+  RateLimitError,
+  // Error constants
   ErrorCodes,
+  // Error utilities
   getErrorMessage,
+  getErrorCode,
+  isAppError,
+  isFirebaseError,
+  // Server action helpers
   handleServerActionError,
   successResult,
   errorResult,
-  isFirebaseError,
 } from "./errors";
 export type { ErrorCode, ActionResult } from "./errors";
 

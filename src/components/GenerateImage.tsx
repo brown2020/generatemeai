@@ -21,8 +21,7 @@ import { suggestTags } from "@/actions/suggestTags";
 import { optimizePrompt } from "@/utils/promptOptimizer";
 
 import { PaginatedGrid } from "@/components/common/PaginatedGrid";
-import { ModelCard } from "@/components/generation/ModelCard";
-import { StyleCard } from "@/components/generation/StyleCard";
+import { ModelCard, StyleCard } from "@/components/generation/SelectableCard";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { useUrlSync } from "@/hooks/useUrlSync";
@@ -275,7 +274,7 @@ function GenerateImage() {
               renderItem={(modelOption) => (
                 <ModelCard
                   key={modelOption.value}
-                  model={modelOption}
+                  item={modelOption}
                   isSelected={formState.model === modelOption.value}
                   onClick={() => handleModelSelect(modelOption.value)}
                 />
@@ -294,7 +293,7 @@ function GenerateImage() {
               renderItem={(style) => (
                 <StyleCard
                   key={style.value}
-                  style={style}
+                  item={style}
                   isSelected={formState.imageStyle === style.value}
                   onClick={() => handleStyleSelect(style.value)}
                 />

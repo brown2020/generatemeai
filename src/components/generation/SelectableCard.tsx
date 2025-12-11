@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useMemo } from "react";
+import { normalizeValue } from "@/utils/imageUtils";
 
 interface SelectableCardProps {
   /** Display label */
@@ -28,10 +29,6 @@ export const SelectableCard = memo(function SelectableCard({
   badge,
   showPreview = true,
 }: SelectableCardProps) {
-  const handleClick = useCallback(() => {
-    onClick();
-  }, [onClick]);
-
   return (
     <div
       className={`relative flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition-all
@@ -40,7 +37,7 @@ export const SelectableCard = memo(function SelectableCard({
             ? "border-blue-600 bg-blue-50"
             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
         }`}
-      onClick={handleClick}
+      onClick={onClick}
     >
       {showPreview && previewUrl && (
         <div className="w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
@@ -83,5 +80,71 @@ export const SelectableCard = memo(function SelectableCard({
         </div>
       )}
     </div>
+  );
+});
+
+// ============================================================================
+// Specialized Card Components (thin wrappers for type safety)
+// ============================================================================
+
+type PreviewType = "models" | "styles";
+
+interface ItemCardProps {
+  item: { value: string; label: string };
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+/**
+ * Creates a preview URL based on item type and value.
+ */
+const getPreviewUrl = (type: PreviewType, value: string): string => {
+  const normalizedValue = type === "styles" ? normalizeValue(value) : value;
+  return `/previews/${type}/${normalizedValue}/1.jpg`;
+};
+
+/**
+ * Model selection card.
+ */
+export const ModelCard = memo(function ModelCard({
+  item,
+  isSelected,
+  onClick,
+}: ItemCardProps) {
+  const previewUrl = useMemo(
+    () => getPreviewUrl("models", item.value),
+    [item.value]
+  );
+
+  return (
+    <SelectableCard
+      label={item.label}
+      previewUrl={previewUrl}
+      isSelected={isSelected}
+      onClick={onClick}
+    />
+  );
+});
+
+/**
+ * Style selection card.
+ */
+export const StyleCard = memo(function StyleCard({
+  item,
+  isSelected,
+  onClick,
+}: ItemCardProps) {
+  const previewUrl = useMemo(
+    () => getPreviewUrl("styles", item.value),
+    [item.value]
+  );
+
+  return (
+    <SelectableCard
+      label={item.label}
+      previewUrl={previewUrl}
+      isSelected={isSelected}
+      onClick={onClick}
+    />
   );
 });

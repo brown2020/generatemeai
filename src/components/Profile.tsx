@@ -2,14 +2,13 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import { Copy, Check, LogOut } from "lucide-react";
-import { useState } from "react";
 
 import PaymentsPage from "./PaymentsPage";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useAuthLogic } from "@/hooks/useAuthLogic";
+import { useClipboard } from "@/hooks";
 import { API_KEY_CONFIGS, getApiKeyValue } from "@/constants/apiKeys";
 import { ApiKeyInput } from "./profile/ApiKeyInput";
 
@@ -18,7 +17,7 @@ export default function Profile() {
   const updateProfile = useProfileStore((state) => state.updateProfile);
   const deleteAccount = useProfileStore((state) => state.deleteAccount);
   const { uid, authEmail } = useAuthStore((state) => state);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { copy, isCopied } = useClipboard();
   const { handleSignOut } = useAuthLogic();
   const router = useRouter();
 
@@ -26,13 +25,6 @@ export default function Profile() {
     await handleSignOut();
     router.push("/");
   }, [handleSignOut, router]);
-
-  const handleCopyToClipboard = useCallback((text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    toast.success("Copied to clipboard");
-    setTimeout(() => setCopiedKey(null), 2000);
-  }, []);
 
   const handleDeleteAccount = useCallback(() => {
     if (
@@ -85,10 +77,10 @@ export default function Profile() {
                     {uid || "Not available"}
                   </div>
                   <button
-                    onClick={() => handleCopyToClipboard(uid || "", "uid")}
+                    onClick={() => copy(uid || "", "uid")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    {copiedKey === "uid" ? (
+                    {isCopied("uid") ? (
                       <Check className="w-4 h-4 text-green-500" />
                     ) : (
                       <Copy className="w-4 h-4 text-gray-400 hover:text-gray-600" />

@@ -1,6 +1,5 @@
 "use server";
 
-import { adminBucket } from "@/firebase/firebaseAdmin";
 import { strategies } from "@/strategies";
 import { resolveApiKeyFromForm } from "@/utils/apiKeyResolver";
 import { assertSufficientCredits } from "@/utils/creditValidator";
@@ -10,6 +9,11 @@ import {
   errorResult,
   getErrorMessage,
 } from "@/utils/errors";
+import {
+  saveToStorage,
+  createGeneratedImagePath,
+  createReferenceImagePath,
+} from "@/utils/storage";
 
 /**
  * Image generation result data.
@@ -17,56 +21,6 @@ import {
 interface ImageGenerationData {
   imageUrl: string;
   imageReference?: string;
-}
-
-/**
- * Saves a generated image to Firebase Storage.
- */
-async function saveGeneratedImage(
-  imageData: ArrayBuffer | Buffer,
-  uid: string,
-  prompt: string
-): Promise<string> {
-  const finalImage = Buffer.isBuffer(imageData)
-    ? imageData
-    : Buffer.from(new Uint8Array(imageData));
-  const fileName = `generated/${uid}/${Date.now()}.jpg`;
-  const file = adminBucket.file(fileName);
-
-  await file.save(finalImage, {
-    contentType: "image/jpeg",
-  });
-
-  await file.setMetadata({
-    metadata: { prompt },
-  });
-
-  const [signedUrl] = await file.getSignedUrl({
-    action: "read",
-    expires: "03-17-2125",
-  });
-
-  return signedUrl;
-}
-
-/**
- * Saves a reference image to Firebase Storage.
- */
-async function saveReferenceImage(img: File, uid: string): Promise<string> {
-  const imageBuffer = Buffer.from(await img.arrayBuffer());
-  const referenceFileName = `image-references/${uid}/${Date.now()}.jpg`;
-  const referenceFile = adminBucket.file(referenceFileName);
-
-  await referenceFile.save(imageBuffer, {
-    contentType: "image/jpeg",
-  });
-
-  const [signedUrl] = await referenceFile.getSignedUrl({
-    action: "read",
-    expires: "03-17-2125",
-  });
-
-  return signedUrl;
 }
 
 /**
@@ -129,12 +83,19 @@ export async function generateImage(
     }
 
     // Save generated image to Firebase
-    const imageUrl = await saveGeneratedImage(imageData, uid, message);
+    const imageUrl = await saveToStorage({
+      data: imageData,
+      path: createGeneratedImagePath(uid),
+      metadata: { prompt: message },
+    });
 
     // Handle uploaded reference image
     let imageReference: string | undefined;
     if (img) {
-      imageReference = await saveReferenceImage(img, uid);
+      imageReference = await saveToStorage({
+        data: img,
+        path: createReferenceImagePath(uid),
+      });
     }
 
     return successResult({ imageUrl, imageReference });

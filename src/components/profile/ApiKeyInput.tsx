@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
-import toast from "react-hot-toast";
+import { useClipboard } from "@/hooks";
 
 interface ApiKeyInputProps {
   label: string;
@@ -21,14 +21,11 @@ export const ApiKeyInput = ({
   placeholder,
 }: ApiKeyInputProps) => {
   const [showKey, setShowKey] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copy, isCopied } = useClipboard();
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    toast.success("Copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
-  }, [value]);
+    copy(value, label);
+  }, [copy, value, label]);
 
   const toggleVisibility = useCallback(() => {
     setShowKey((prev) => !prev);
@@ -56,7 +53,7 @@ export const ApiKeyInput = ({
             className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Copy to clipboard"
           >
-            {copied ? (
+            {isCopied(label) ? (
               <Check className="w-4 h-4 text-green-500" />
             ) : (
               <Copy className="w-4 h-4" />
