@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import TextareaAutosize from "react-textarea-autosize";
 import useProfileStore from "@/zustand/useProfileStore";
 import { creditsToMinus } from "@/utils/credits";
+import { getFileTypeFromUrl } from "@/utils/imageUtils";
 import VideoModalComponent from "./VideoModalComponent";
 import { removeBackground } from "@/actions/removeBackground";
 import { SiStagetimer } from "react-icons/si";
@@ -28,14 +29,6 @@ import {
   ColorPickerModal,
   PasswordProtection,
 } from "./image";
-
-const getFileTypeFromUrl = (url: string): string | null => {
-  if (!url) return null;
-  const fileName = url.split("/").pop();
-  const cleanFileName = fileName?.split("?")[0];
-  const fileParts = cleanFileName?.split(".");
-  return fileParts && fileParts.length > 1 ? fileParts.pop() || null : null;
-};
 
 interface ImagePageProps {
   id: string;

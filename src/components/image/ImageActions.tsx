@@ -4,6 +4,7 @@ import { Download, Lock, Share2, Trash2 } from "lucide-react";
 import domtoimage from "dom-to-image";
 import toast from "react-hot-toast";
 import { ImageData } from "@/types/image";
+import { getFileTypeFromUrl } from "@/utils/imageUtils";
 
 interface ImageActionsProps {
   imageData: ImageData;
@@ -27,14 +28,6 @@ export const ImageActions = ({
   onDelete,
   onShowPasswordModal,
 }: ImageActionsProps) => {
-  const getFileTypeFromUrl = (url: string): string | null | undefined => {
-    if (!url) return null;
-    const fileName = url.split("/").pop();
-    const cleanFileName = fileName?.split("?")[0];
-    const fileParts = cleanFileName?.split(".");
-    return fileParts && fileParts.length > 1 ? fileParts.pop() : null;
-  };
-
   const handleDownload = async () => {
     if (imageData?.videoDownloadUrl) {
       const videoUrl = imageData.videoDownloadUrl;

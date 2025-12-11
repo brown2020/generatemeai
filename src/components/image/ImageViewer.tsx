@@ -1,6 +1,7 @@
 "use client";
 
 import { ImageData } from "@/types/image";
+import { isGifUrl, hasVideoContent } from "@/utils/imageUtils";
 
 interface ImageViewerProps {
   imageData: ImageData;
@@ -14,16 +15,9 @@ export const ImageViewer = ({
   imageData,
   backgroundColor,
 }: ImageViewerProps) => {
-  const getFileTypeFromUrl = (url: string): string | null | undefined => {
-    if (!url) return null;
-    const fileName = url.split("/").pop();
-    const cleanFileName = fileName?.split("?")[0];
-    const fileParts = cleanFileName?.split(".");
-    return fileParts && fileParts.length > 1 ? fileParts.pop() : null;
-  };
-
-  const isGif = getFileTypeFromUrl(imageData?.videoDownloadUrl || "") === "gif";
-  const hasVideo = imageData?.videoDownloadUrl && !isGif;
+  const videoUrl = imageData?.videoDownloadUrl || "";
+  const isGif = isGifUrl(videoUrl);
+  const hasVideo = hasVideoContent(videoUrl);
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
