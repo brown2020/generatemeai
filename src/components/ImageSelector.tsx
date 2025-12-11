@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "../firebase/firebaseClient";
+import { db } from "@/firebase/firebaseClient";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { ImageListItem } from "@/types/image";
