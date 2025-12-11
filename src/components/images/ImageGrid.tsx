@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Video, Image as ImageIcon } from "lucide-react";
 import { ImageListItem } from "@/types/image";
 
@@ -40,8 +41,9 @@ interface ImageCardProps {
 
 /**
  * Individual image card component.
+ * Memoized to prevent unnecessary re-renders.
  */
-const ImageCard = ({ image, onClick }: ImageCardProps) => {
+const ImageCard = memo(function ImageCard({ image, onClick }: ImageCardProps) {
   const hasVideo = !!image.videoDownloadUrl;
 
   return (
@@ -56,6 +58,7 @@ const ImageCard = ({ image, onClick }: ImageCardProps) => {
           alt={image.caption || "Generated image"}
           className="w-full h-full object-cover"
           style={{ background: image?.backgroundColor }}
+          loading="lazy"
         />
 
         <div className="absolute top-3 right-3 bg-black/50 rounded-full p-2">
@@ -101,4 +104,4 @@ const ImageCard = ({ image, onClick }: ImageCardProps) => {
       </div>
     </div>
   );
-};
+});

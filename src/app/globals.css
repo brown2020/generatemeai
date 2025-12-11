@@ -99,36 +99,44 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* Base button utility */
 @utility btn {
   @apply flex items-center justify-center px-3 py-2 hover:opacity-50 rounded-md gap-1 disabled:opacity-50;
 }
 
+/* Shared base for full-width pill buttons */
+@utility btn-base {
+  @apply cursor-pointer flex outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 font-semibold rounded-full disabled:cursor-not-allowed;
+}
+
+/* Full-width button variants */
 @utility btn-primary {
-  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-[#2563EB] text-white font-semibold hover:bg-[#2563EB]/30 rounded-full disabled:bg-[#2563EB]/30 disabled:hover:bg-[#2563EB]/30 disabled:cursor-not-allowed;
+  @apply btn-base w-full bg-[#2563EB] text-white hover:bg-[#2563EB]/30 disabled:bg-[#2563EB]/30 disabled:hover:bg-[#2563EB]/30;
 }
 
 @utility btn-blue {
-  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-blue-500 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply btn-base w-full bg-blue-500 text-white hover:opacity-70 disabled:opacity-50;
 }
 
 @utility btn-danger {
-  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-red-500 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
-}
-
-@utility btn-white {
-  @apply cursor-pointer flex outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-white text-black font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply btn-base w-full bg-red-500 text-white hover:opacity-70 disabled:opacity-50;
 }
 
 @utility btn-muted {
-  @apply cursor-pointer flex w-full outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 bg-gray-400 text-white font-semibold hover:opacity-70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply btn-base w-full bg-gray-400 text-white hover:opacity-70 disabled:opacity-50;
+}
+
+/* Inline button variants */
+@utility btn-white {
+  @apply btn-base bg-white text-black hover:opacity-70 disabled:opacity-50;
 }
 
 @utility btn-primary2 {
-  @apply cursor-pointer flex outline-hidden items-center gap-2 mt-2 px-6 py-2 bg-black/20 text-black font-semibold hover:bg-black/30 rounded-full disabled:bg-white/10 disabled:hover:bg-white/10 disabled:cursor-not-allowed;
+  @apply btn-base bg-black/20 text-black hover:bg-black/30 disabled:bg-white/10 disabled:hover:bg-white/10;
 }
 
 @utility btn-secondary {
-  @apply cursor-pointer flex outline-hidden items-center gap-2 mt-2 px-6 py-2 bg-white/10 text-black/50 font-semibold hover:bg-white/30 ml-auto rounded-full;
+  @apply btn-base bg-white/10 text-black/50 hover:bg-white/30 ml-auto;
 }
 
 @utility input-primary {

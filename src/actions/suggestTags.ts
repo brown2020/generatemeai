@@ -2,7 +2,7 @@
 
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { creditsToMinus } from "@/utils/credits";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import { ActionResult, successResult, errorResult } from "@/utils/errors";
 
 interface SuggestTagsParams {

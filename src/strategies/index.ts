@@ -8,11 +8,15 @@ import { stabilityStrategy } from "./stability";
 import { replicateStrategy } from "./replicate";
 import { ideogramStrategy } from "./ideogram";
 import type { GenerationStrategy } from "./types";
-import { type Model, isValidModel } from "@/constants/modelRegistry";
+import {
+  type Model,
+  isValidModel,
+  getModelConfig,
+} from "@/constants/modelRegistry";
 
 /**
- * Strategy key to implementation mapping.
- * These keys match the strategyKey in MODEL_REGISTRY.
+ * Strategy implementations keyed by strategyKey from MODEL_REGISTRY.
+ * Single source of truth for all generation strategies.
  */
 const strategyImplementations: Record<string, GenerationStrategy> = {
   dalle: dalleStrategy,
@@ -25,40 +29,41 @@ const strategyImplementations: Record<string, GenerationStrategy> = {
 };
 
 /**
- * Model-to-strategy mapping.
- * Maps model names directly to their generation strategies.
+ * Get strategy by model name - derives from MODEL_REGISTRY.strategyKey.
+ * Returns undefined for unsupported models or models without strategies.
  */
-const strategyMap: Partial<Record<Model, GenerationStrategy>> = {
-  "dall-e": dalleStrategy,
-  "stable-diffusion-xl": fireworksStrategy,
-  "stability-sd3-turbo": stabilityStrategy,
-  "playground-v2": playgroundV2Strategy,
-  "playground-v2-5": playgroundV25Strategy,
-  "flux-schnell": replicateStrategy,
-  "ideogram-ai": ideogramStrategy,
+export const getStrategy = (
+  modelName: Model
+): GenerationStrategy | undefined => {
+  const config = getModelConfig(modelName);
+  return config?.strategyKey
+    ? strategyImplementations[config.strategyKey]
+    : undefined;
 };
 
 /**
- * Strategy registry - allows string key access for dynamic lookups
- * while maintaining type safety through the underlying map.
+ * Strategy registry for dynamic string-based lookups (server actions).
+ * Uses a proxy to derive strategies from MODEL_REGISTRY on access.
  */
-export const strategies: Record<string, GenerationStrategy> = strategyMap;
-
-/**
- * Type-safe strategy getter.
- * Returns undefined for unsupported models.
- */
-export const getStrategy = (modelName: Model): GenerationStrategy | undefined =>
-  strategyMap[modelName];
+export const strategies: Record<string, GenerationStrategy | undefined> =
+  new Proxy({} as Record<string, GenerationStrategy | undefined>, {
+    get(_, modelName: string) {
+      if (!isValidModel(modelName)) return undefined;
+      return getStrategy(modelName);
+    },
+  });
 
 /**
  * Checks if a model has a registered strategy.
  */
-export const hasStrategy = (modelName: string): modelName is Model =>
-  isValidModel(modelName) && modelName in strategyMap;
+export const hasStrategy = (modelName: string): modelName is Model => {
+  if (!isValidModel(modelName)) return false;
+  const config = getModelConfig(modelName);
+  return !!config?.strategyKey && config.strategyKey in strategyImplementations;
+};
 
 /**
- * Get strategy by strategy key (used by MODEL_REGISTRY).
+ * Get strategy by strategy key directly (for internal use).
  */
 export const getStrategyByKey = (
   key: string

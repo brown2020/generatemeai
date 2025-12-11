@@ -24,3 +24,4 @@ export { usePreviewSaver } from "./usePreviewSaver";
 export { useNavigation } from "./useNavigation";
 export { useUrlSync } from "./useUrlSync";
 export { useDebouncedCallback, useDebouncedValue } from "./useDebounce";
+export { useClipboard } from "./useClipboard";

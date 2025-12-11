@@ -1,12 +1,16 @@
 /**
  * Optimized Zustand selectors using useShallow for better performance.
  * Import these instead of selecting multiple individual state pieces.
+ *
+ * Note: Auth selectors are in @/hooks/useAuth for centralized auth access.
  */
 
 import { useShallow } from "zustand/react/shallow";
-import { useAuthStore } from "./useAuthStore";
 import useProfileStore, { ProfileType } from "./useProfileStore";
 import { useGenerationStore, GenerationStore } from "./useGenerationStore";
+
+// Re-export auth selectors from canonical location
+export { useAuthState, useAuthUser, useAuthStatus } from "@/hooks/useAuth";
 
 // ============================================================================
 // Selector Factory
@@ -27,40 +31,6 @@ function createProfileSelector<K extends keyof ProfileType>(keys: K[]) {
       })
     );
 }
-
-// ============================================================================
-// Auth store selectors
-// ============================================================================
-
-export const useAuthState = () =>
-  useAuthStore(
-    useShallow((s) => ({
-      uid: s.uid,
-      authEmail: s.authEmail,
-      authDisplayName: s.authDisplayName,
-      authPhotoUrl: s.authPhotoUrl,
-      authReady: s.authReady,
-      authPending: s.authPending,
-    }))
-  );
-
-export const useAuthUser = () =>
-  useAuthStore(
-    useShallow((s) => ({
-      uid: s.uid,
-      authDisplayName: s.authDisplayName,
-      authPhotoUrl: s.authPhotoUrl,
-    }))
-  );
-
-export const useAuthStatus = () =>
-  useAuthStore(
-    useShallow((s) => ({
-      isAuthenticated: !!s.uid,
-      isReady: s.authReady,
-      isPending: s.authPending,
-    }))
-  );
 
 // ============================================================================
 // Profile store selectors

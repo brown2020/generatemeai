@@ -1,13 +1,57 @@
 /**
  * Centralized authentication hooks for consistent auth state access.
- * Selectors are defined in zustand/selectors.ts - this re-exports them
- * along with non-hook utilities.
+ * Single source of truth for all auth-related selectors and utilities.
  */
 
+import { useShallow } from "zustand/react/shallow";
 import { useAuthStore } from "@/zustand/useAuthStore";
 
-// Re-export selectors from central location
-export { useAuthState, useAuthUser, useAuthStatus } from "@/zustand/selectors";
+// ============================================================================
+// Auth Selectors (using useShallow for performance)
+// ============================================================================
+
+/**
+ * Full auth state including user info and status flags.
+ */
+export const useAuthState = () =>
+  useAuthStore(
+    useShallow((s) => ({
+      uid: s.uid,
+      authEmail: s.authEmail,
+      authDisplayName: s.authDisplayName,
+      authPhotoUrl: s.authPhotoUrl,
+      authReady: s.authReady,
+      authPending: s.authPending,
+    }))
+  );
+
+/**
+ * Basic user info for display purposes.
+ */
+export const useAuthUser = () =>
+  useAuthStore(
+    useShallow((s) => ({
+      uid: s.uid,
+      authDisplayName: s.authDisplayName,
+      authPhotoUrl: s.authPhotoUrl,
+    }))
+  );
+
+/**
+ * Auth status flags for conditional rendering.
+ */
+export const useAuthStatus = () =>
+  useAuthStore(
+    useShallow((s) => ({
+      isAuthenticated: !!s.uid,
+      isReady: s.authReady,
+      isPending: s.authPending,
+    }))
+  );
+
+// ============================================================================
+// Convenience Hooks
+// ============================================================================
 
 /**
  * Hook to get current authenticated user ID.
@@ -33,6 +77,10 @@ export const useRequireAuth = () => {
     isPending: authPending,
   };
 };
+
+// ============================================================================
+// Non-hook Utilities (for use outside React components)
+// ============================================================================
 
 /**
  * Non-hook helper to get UID from store state.

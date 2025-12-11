@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
+import { FirestorePaths } from "@/firebase/paths";
 import { deleteUser, getAuth } from "firebase/auth";
 import { getAuthState, getAuthUidOrNull } from "./helpers";
 
@@ -87,11 +88,15 @@ const createProfileFromAuth = (
 };
 
 /**
+ * Gets the Firestore document reference for a user's profile.
+ */
+const getProfileRef = (uid: string) => doc(db, FirestorePaths.userProfile(uid));
+
+/**
  * Updates credits in Firestore.
  */
 async function updateCredits(uid: string, credits: number): Promise<void> {
-  const userRef = doc(db, `users/${uid}/profile/userData`);
-  await updateDoc(userRef, { credits });
+  await updateDoc(getProfileRef(uid), { credits });
 }
 
 /**
@@ -111,7 +116,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid) return;
 
     try {
-      const userRef = doc(db, `users/${uid}/profile/userData`);
+      const userRef = getProfileRef(uid);
       const docSnap = await getDoc(userRef);
 
       const newProfile = createProfileFromAuth(
@@ -130,7 +135,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid) return;
 
     try {
-      const userRef = doc(db, `users/${uid}/profile/userData`);
+      const userRef = getProfileRef(uid);
       const updatedProfile = { ...get().profile, ...newProfile };
 
       set({ profile: updatedProfile });
@@ -148,7 +153,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid || !currentUser) return;
 
     try {
-      const userRef = doc(db, `users/${uid}/profile/userData`);
+      const userRef = getProfileRef(uid);
       await deleteDoc(userRef);
       await deleteUser(currentUser);
     } catch (error) {
