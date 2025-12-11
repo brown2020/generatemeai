@@ -1,53 +1,46 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { db } from '../firebase/firebaseClient';
-import { collection, query, getDocs, orderBy } from 'firebase/firestore';
-import { useAuthStore } from '@/zustand/useAuthStore';
-import { Video, Image as ImageIcon, Search, Filter, Tag } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { db } from "../firebase/firebaseClient";
+import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { useAuthStore } from "@/zustand/useAuthStore";
+import { Video, Image as ImageIcon, Search, Filter, Tag } from "lucide-react";
+import { ImageListItem } from "@/types/image";
 
 const ITEMS_PER_PAGE = 30;
 
-interface ImageData {
-  downloadUrl: string | undefined;
-  caption: string;
-  id: string;
-  timestamp: string;
-  freestyle?: string;
-  tags?: string[];
-  backgroundColor?: string;
-  videoDownloadUrl?: string;
-}
+type FilterType = "all" | "image" | "video";
 
 const ImageListPage = () => {
-  const [images, setImages] = useState<ImageData[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  const [images, setImages] = useState<ImageListItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterType, setFilterType] = useState<'all' | 'image' | 'video'>('all');
+  const [filterType, setFilterType] = useState<FilterType>("all");
   const uid = useAuthStore((s) => s.uid);
   const authPending = useAuthStore((s) => s.authPending);
 
   useEffect(() => {
     const fetchImages = async () => {
       if (uid && !authPending) {
-        const q = query(collection(db, 'profiles', uid, 'covers'), orderBy('timestamp', 'desc'));
+        const q = query(
+          collection(db, "profiles", uid, "covers"),
+          orderBy("timestamp", "desc")
+        );
         const querySnapshot = await getDocs(q);
-        const fetchedImages: ImageData[] = [];
-        const tagsSet: Set<string> = new Set();
+        const fetchedImages: ImageListItem[] = [];
+        const tagsSet = new Set<string>();
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          const image: ImageData = { id: doc.id, ...data } as ImageData;
-          fetchedImages.push(image);
+          fetchedImages.push({ id: doc.id, ...data } as ImageListItem);
 
           if (Array.isArray(data.tags)) {
             data.tags.forEach((tag: string) => {
-              tag = tag.trim().toLowerCase();
-              if (!tagsSet.has(tag)) {
-                tagsSet.add(tag);
-              }
+              tagsSet.add(tag.trim().toLowerCase());
             });
           }
         });
@@ -60,40 +53,44 @@ const ImageListPage = () => {
     fetchImages();
   }, [uid, authPending]);
 
-  const handleSearch = () => {
-    const formattedSelectedTags = selectedTags.map((tag) => tag.trim().toLowerCase());
+  // Memoized filtered images to prevent recalculation on every render
+  const filteredImages = useMemo(() => {
+    const formattedSelectedTags = selectedTags.map((tag) =>
+      tag.trim().toLowerCase()
+    );
+    const query = searchQuery.toLowerCase();
 
-    const filteredImages = images.filter((image) => {
-      const freestyleMatch = image.freestyle?.toLowerCase().includes(searchQuery.toLowerCase());
-
+    return images.filter((image) => {
+      const freestyleMatch = image.freestyle?.toLowerCase().includes(query);
       const tagsMatch = image.tags?.some((tag) =>
-        tag.trim().toLowerCase().includes(searchQuery.toLowerCase())
+        tag.trim().toLowerCase().includes(query)
       );
-
       const tagsFilterMatch =
         formattedSelectedTags.length === 0 ||
         formattedSelectedTags.every((tag) =>
           image.tags?.map((t) => t.trim().toLowerCase()).includes(tag)
         );
-
       const typeMatch =
-        filterType === 'all' ||
-        (filterType === 'image' && !image.videoDownloadUrl) ||
-        (filterType === 'video' && image.videoDownloadUrl);
+        filterType === "all" ||
+        (filterType === "image" && !image.videoDownloadUrl) ||
+        (filterType === "video" && !!image.videoDownloadUrl);
 
       return (freestyleMatch || tagsMatch) && tagsFilterMatch && typeMatch;
     });
+  }, [images, searchQuery, selectedTags, filterType]);
 
-    return filteredImages;
-  };
-
-  const toggleTag = (tag: string) => {
+  const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
-  };
+  }, []);
 
-  const filteredImages = handleSearch();
+  const navigateToImage = useCallback(
+    (id: string) => {
+      router.push(`/images/${id}`);
+    },
+    [router]
+  );
   const totalPages = Math.ceil(filteredImages.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -118,31 +115,37 @@ const ImageListPage = () => {
 
             <div className="flex gap-2">
               <button
-                onClick={() => setFilterType('all')}
+                onClick={() => setFilterType("all")}
                 className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium text-sm transition-colors
-                  ${filterType === 'all' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  ${
+                    filterType === "all"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
               >
                 <Filter className="w-4 h-4" />
                 All
               </button>
               <button
-                onClick={() => setFilterType('image')}
+                onClick={() => setFilterType("image")}
                 className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium text-sm transition-colors
-                  ${filterType === 'image' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  ${
+                    filterType === "image"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
               >
                 <ImageIcon className="w-4 h-4" />
                 Images
               </button>
               <button
-                onClick={() => setFilterType('video')}
+                onClick={() => setFilterType("video")}
                 className={`px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium text-sm transition-colors
-                  ${filterType === 'video' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  ${
+                    filterType === "video"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
               >
                 <Video className="w-4 h-4" />
                 Videos
@@ -161,9 +164,11 @@ const ImageListPage = () => {
                   key={index}
                   onClick={() => toggleTag(tag)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                    ${selectedTags.includes(tag)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    ${
+                      selectedTags.includes(tag)
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                   {tag}
                 </button>
@@ -178,7 +183,7 @@ const ImageListPage = () => {
               key={image.id}
               className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden 
                 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => (window.location.href = `/images/${image.id}`)}
+              onClick={() => navigateToImage(image.id)}
             >
               <div className="aspect-square relative">
                 <img
@@ -187,7 +192,7 @@ const ImageListPage = () => {
                   className="w-full h-full object-cover"
                   style={{ background: image?.backgroundColor }}
                 />
-                
+
                 <div className="absolute top-3 right-3 bg-black/50 rounded-full p-2">
                   {image.videoDownloadUrl ? (
                     <Video className="w-5 h-5 text-white" />
@@ -197,8 +202,10 @@ const ImageListPage = () => {
                 </div>
 
                 {image.caption && (
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 
-                    transition-opacity flex items-center justify-center p-4">
+                  <div
+                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 
+                    transition-opacity flex items-center justify-center p-4"
+                  >
                     <p className="text-white text-sm text-center line-clamp-4">
                       {image.caption}
                     </p>
@@ -210,10 +217,12 @@ const ImageListPage = () => {
                 <p className="text-sm text-gray-900 font-medium line-clamp-2">
                   {image.freestyle || "No prompt available"}
                 </p>
-                
+
                 {image.tags && image.tags.length > 0 && (
-                  <div className="mt-2 flex gap-1.5 flex-wrap max-h-20 overflow-y-auto 
-                    scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                  <div
+                    className="mt-2 flex gap-1.5 flex-wrap max-h-20 overflow-y-auto 
+                    scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                  >
                     {image.tags.map((tag: string, index: number) => (
                       <span
                         key={index}
@@ -235,24 +244,30 @@ const ImageListPage = () => {
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                ${currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
             >
               Previous
             </button>
-            
+
             <span className="text-sm text-gray-600">
               Page {currentPage} of {totalPages}
             </span>
-            
+
             <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                ${currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                ${
+                  currentPage === totalPages
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
             >
               Next
             </button>
