@@ -123,7 +123,8 @@ const ImagePage = ({ id }: ImagePageProps) => {
         briaApiKey
       );
 
-      if (!result?.error) {
+      // Handle ActionResult response
+      if (result.success) {
         if (useCredits) {
           minusCredits(creditsToMinus("bria.ai"));
         }
@@ -132,7 +133,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
           ? doc(db, FirestorePaths.profileCover(uid, id))
           : doc(db, FirestorePaths.publicImage(id));
 
-        await updateDoc(docRef, { downloadUrl: result?.result_url });
+        await updateDoc(docRef, { downloadUrl: result.data.result_url });
         refreshData();
         toast.success("Background removed successfully!");
       } else {

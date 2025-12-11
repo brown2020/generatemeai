@@ -1,24 +1,33 @@
 "use server";
 
 import { assertSufficientCredits, resolveApiKey } from "@/utils";
-import { getErrorMessage } from "@/utils/errors";
+import {
+  ActionResult,
+  successResult,
+  errorResult,
+  getErrorMessage,
+} from "@/utils/errors";
 
 const BRIA_API_URL = "https://engine.prod.bria-api.com/v1/background/remove";
 
-interface RemoveBackgroundResult {
-  result_url?: string;
-  error?: string;
+/**
+ * Background removal result data.
+ */
+interface BackgroundRemovalData {
+  result_url: string;
 }
 
 /**
  * Removes the background from an image using Bria AI.
+ *
+ * @returns ActionResult with result URL or error
  */
 export const removeBackground = async (
   useCredits: boolean,
   credits: number,
   imageUrl: string,
   briaApiKey: string
-): Promise<RemoveBackgroundResult> => {
+): Promise<ActionResult<BackgroundRemovalData>> => {
   try {
     // Validate credits
     assertSufficientCredits(useCredits, credits, "bria.ai");
@@ -26,7 +35,7 @@ export const removeBackground = async (
     // Resolve API key
     const apiKey = resolveApiKey("bria.ai", useCredits, briaApiKey);
     if (!apiKey) {
-      return { error: "Bria API key is required." };
+      return errorResult("Bria API key is required.", "INVALID_API_KEY");
     }
 
     // Fetch image and create form data
@@ -43,17 +52,17 @@ export const removeBackground = async (
 
     const result = await response.json();
 
-    if (response.ok) {
-      return result;
+    if (response.ok && result.result_url) {
+      return successResult({ result_url: result.result_url });
     }
 
     if (result === "Invalid customer token key") {
-      return { error: "Bria API key is invalid." };
+      return errorResult("Bria API key is invalid.", "INVALID_API_KEY");
     }
 
-    throw new Error("Removing background failed.");
+    return errorResult("Removing background failed.", "GENERATION_FAILED");
   } catch (error: unknown) {
     console.error("Error removing background:", error);
-    return { error: getErrorMessage(error) };
+    return errorResult(getErrorMessage(error), "GENERATION_FAILED");
   }
 };

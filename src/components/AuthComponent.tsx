@@ -35,6 +35,30 @@ export default function AuthComponent() {
     handlePasswordReset,
   } = useAuthLogic();
 
+  // Group props for cleaner AuthModal API
+  const authState = { uid, authEmail, authDisplayName, authPending };
+
+  const formState = {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    name,
+    setName,
+    acceptTerms,
+    setAcceptTerms,
+    isEmailLinkLogin,
+    setIsEmailLinkLogin,
+  };
+
+  const handlers = {
+    signInWithGoogle,
+    handleSignOut,
+    handlePasswordSignup,
+    handleSubmit,
+    handlePasswordReset,
+  };
+
   return (
     <>
       {/* Auth trigger buttons */}
@@ -55,28 +79,12 @@ export default function AuthComponent() {
       <AuthModal
         isVisible={isVisible}
         onClose={hideModal}
-        uid={uid}
-        authEmail={authEmail}
-        authDisplayName={authDisplayName}
-        authPending={authPending}
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        name={name}
-        setName={setName}
-        acceptTerms={acceptTerms}
-        setAcceptTerms={setAcceptTerms}
-        isEmailLinkLogin={isEmailLinkLogin}
-        setIsEmailLinkLogin={setIsEmailLinkLogin}
+        authState={authState}
+        formState={formState}
+        handlers={handlers}
         showGoogleSignIn={showGoogleSignIn}
         formRef={formRef}
         modalRef={modalRef}
-        signInWithGoogle={signInWithGoogle}
-        handleSignOut={handleSignOut}
-        handlePasswordSignup={handlePasswordSignup}
-        handleSubmit={handleSubmit}
-        handlePasswordReset={handlePasswordReset}
       />
     </>
   );

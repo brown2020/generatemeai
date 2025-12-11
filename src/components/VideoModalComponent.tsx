@@ -6,6 +6,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import Select, { SingleValue } from "react-select";
 import Modal from "react-modal";
 import toast from "react-hot-toast";
+import { X } from "lucide-react";
 
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { db } from "@/firebase/firebaseClient";
@@ -144,14 +145,13 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
 
       const result = await generateVideo(formData);
 
-      if (!result || result.error || !result.videoUrl) {
-        toast.error(
-          `Failed to generate video: ${result?.error || "Unknown error"}`
-        );
+      // Handle ActionResult response
+      if (!result.success) {
+        toast.error(`Failed to generate video: ${result.error}`);
         throw new Error("Failed to generate video.");
       }
 
-      const videoDownloadURL = result.videoUrl || "";
+      const videoDownloadURL = result.data.videoUrl;
 
       if (useCredits && videoDownloadURL) {
         await minusCredits(creditsToMinus(videoModel));
@@ -198,20 +198,7 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
             className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-2.5"
             onClick={onRequestClose}
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
+            <X className="w-5 h-5" />
             <span className="sr-only">Close modal</span>
           </button>
         </div>

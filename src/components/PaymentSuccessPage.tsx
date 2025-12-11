@@ -37,7 +37,17 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
 
     const handlePaymentSuccess = async () => {
       try {
-        const data = await validatePaymentIntent(payment_intent);
+        const result = await validatePaymentIntent(payment_intent);
+
+        // Handle ActionResult response
+        if (!result.success) {
+          console.error("Payment validation failed:", result.error);
+          setMessage(result.error);
+          setLoading(false);
+          return;
+        }
+
+        const data = result.data;
 
         if (data.status === "succeeded") {
           const existingPayment = await checkIfPaymentProcessed(data.id);

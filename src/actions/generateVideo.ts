@@ -1,11 +1,15 @@
 "use server";
 
 import { adminBucket } from "@/firebase/firebaseAdmin";
-import { model } from "@/types/model";
 import { resolveApiKey } from "@/utils/apiKeyResolver";
 import { assertSufficientCredits } from "@/utils/creditValidator";
 import { pollWithTimeout } from "@/utils/polling";
-import { getErrorMessage } from "@/utils/errors";
+import {
+  ActionResult,
+  successResult,
+  errorResult,
+  getErrorMessage,
+} from "@/utils/errors";
 
 /**
  * Response types for video generation APIs.
@@ -26,11 +30,11 @@ interface RunwayResponse {
 }
 
 /**
- * Result type for video generation.
+ * Video generation result data.
  */
-type GenerateVideoResult =
-  | { videoUrl: string; error?: never }
-  | { error: string; videoUrl?: never };
+interface VideoGenerationData {
+  videoUrl: string;
+}
 
 /**
  * Generates a video using D-ID API.
@@ -191,11 +195,11 @@ async function saveVideoToStorage(videoUrl: string): Promise<string> {
  * Generates a video using the specified AI model.
  *
  * @param data - FormData containing generation parameters
- * @returns Generated video URL or error
+ * @returns ActionResult with video URL or error
  */
 export async function generateVideo(
   data: FormData
-): Promise<GenerateVideoResult> {
+): Promise<ActionResult<VideoGenerationData>> {
   try {
     // Extract parameters
     const useCredits = data.get("useCredits") === "true";
@@ -208,14 +212,16 @@ export async function generateVideo(
 
     // Validate required parameters
     if (!videoModel || !imageUrl) {
-      throw new Error(
-        "Required parameters (videoModel, imageUrl) are missing."
+      return errorResult(
+        "Required parameters (videoModel, imageUrl) are missing.",
+        "INVALID_INPUT"
       );
     }
 
     if (!animationType && (!scriptPrompt || !audio)) {
-      throw new Error(
-        "Script prompt with audio or animation type is required."
+      return errorResult(
+        "Script prompt with audio or animation type is required.",
+        "INVALID_INPUT"
       );
     }
 
@@ -230,7 +236,10 @@ export async function generateVideo(
     const apiKey = resolveApiKey(videoModel, useCredits, userApiKey);
 
     if (!apiKey) {
-      throw new Error(`API key not configured for model: ${videoModel}`);
+      return errorResult(
+        `API key not configured for model: ${videoModel}`,
+        "INVALID_API_KEY"
+      );
     }
 
     // Generate video based on model
@@ -247,16 +256,19 @@ export async function generateVideo(
     } else if (videoModel === "runway-ml") {
       videoUrl = await generateRunwayVideo(imageUrl, apiKey);
     } else {
-      throw new Error(`Unsupported video model: ${videoModel}`);
+      return errorResult(
+        `Unsupported video model: ${videoModel}`,
+        "INVALID_INPUT"
+      );
     }
 
     // Save to Firebase Storage
     const savedVideoUrl = await saveVideoToStorage(videoUrl);
 
-    return { videoUrl: savedVideoUrl };
+    return successResult({ videoUrl: savedVideoUrl });
   } catch (error) {
     const errorMessage = getErrorMessage(error);
     console.error("Error generating video:", errorMessage);
-    return { error: errorMessage };
+    return errorResult(errorMessage, "GENERATION_FAILED");
   }
 }
