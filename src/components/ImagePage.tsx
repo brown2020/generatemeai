@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { db } from "../firebase/firebaseClient";
+import { db } from "@/firebase/firebaseClient";
 import { doc, updateDoc } from "firebase/firestore";
 import "../app/globals.css";
 import { processVideoToGIF } from "@/actions/generateGif";
