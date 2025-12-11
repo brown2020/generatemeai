@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { useAuthStore } from "./useAuthStore";
 import { db } from "@/firebase/firebaseClient";
 import { deleteUser, getAuth } from "firebase/auth";
+import { getAuthState, getAuthUidOrNull } from "./helpers";
 
 export interface ProfileType {
   email: string;
@@ -74,9 +74,11 @@ const useProfileStore = create<ProfileState>((set, get) => ({
   profile: defaultProfile,
 
   fetchProfile: async () => {
-    const { uid, authEmail, authDisplayName, authPhotoUrl, authEmailVerified } =
-      useAuthStore.getState();
+    const uid = getAuthUidOrNull();
     if (!uid) return;
+
+    const { authEmail, authDisplayName, authPhotoUrl, authEmailVerified } =
+      getAuthState();
 
     try {
       const userRef = doc(db, `users/${uid}/profile/userData`);
@@ -103,7 +105,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   updateProfile: async (newProfile: Partial<ProfileType>) => {
-    const uid = useAuthStore.getState().uid;
+    const uid = getAuthUidOrNull();
     if (!uid) return;
 
     try {
@@ -118,17 +120,15 @@ const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   deleteAccount: async () => {
-    const auth = getAuth(); // Get Firebase auth instance
+    const auth = getAuth();
     const currentUser = auth.currentUser;
+    const uid = getAuthUidOrNull();
 
-    const uid = useAuthStore.getState().uid;
     if (!uid || !currentUser) return;
 
     try {
       const userRef = doc(db, `users/${uid}/profile/userData`);
-      // Delete the user profile data from Firestore
       await deleteDoc(userRef);
-
       await deleteUser(currentUser);
     } catch (error) {
       handleProfileError("deleting account", error);
@@ -136,7 +136,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   minusCredits: async (amount: number) => {
-    const uid = useAuthStore.getState().uid;
+    const uid = getAuthUidOrNull();
     if (!uid) return false;
 
     const profile = get().profile;
@@ -154,7 +154,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   addCredits: async (amount: number) => {
-    const uid = useAuthStore.getState().uid;
+    const uid = getAuthUidOrNull();
     if (!uid) return;
 
     const profile = get().profile;

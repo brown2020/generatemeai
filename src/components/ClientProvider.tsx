@@ -27,16 +27,13 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
 
   useInitializeStores();
 
-  // Check for WebView environment (safe for hydration)
-  useEffect(() => {
-    setIsWebView(typeof window !== "undefined" && !!window.ReactNativeWebView);
-  }, []);
-
-  // Consolidated window-related effects
+  // Consolidated window-related effects (WebView detection + viewport handling)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // Check for WebView environment
     const isRNWebView = !!window.ReactNativeWebView;
+    setIsWebView(isRNWebView);
 
     // Height adjustment for mobile viewports
     const adjustHeight = () => {

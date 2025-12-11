@@ -1,8 +1,13 @@
 /**
  * Centralized authentication hooks for consistent auth state access.
+ * Selectors are defined in zustand/selectors.ts - this re-exports them
+ * along with non-hook utilities.
  */
 
 import { useAuthStore } from "@/zustand/useAuthStore";
+
+// Re-export selectors from central location
+export { useAuthState, useAuthUser, useAuthStatus } from "@/zustand/selectors";
 
 /**
  * Hook to get current authenticated user ID.
@@ -26,26 +31,6 @@ export const useRequireAuth = () => {
     isAuthenticated: !!uid,
     isReady: authReady,
     isPending: authPending,
-  };
-};
-
-/**
- * Hook to get full user profile information.
- */
-export const useAuthUser = () => {
-  const uid = useAuthStore((state) => state.uid);
-  const email = useAuthStore((state) => state.authEmail);
-  const displayName = useAuthStore((state) => state.authDisplayName);
-  const photoUrl = useAuthStore((state) => state.authPhotoUrl);
-  const emailVerified = useAuthStore((state) => state.authEmailVerified);
-
-  return {
-    uid: uid || null,
-    email,
-    displayName,
-    photoUrl,
-    emailVerified,
-    isAuthenticated: !!uid,
   };
 };
 

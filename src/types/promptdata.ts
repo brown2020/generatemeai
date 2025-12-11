@@ -1,28 +1,13 @@
 import { Timestamp } from "firebase/firestore";
+import { GenerationParams, createDefaultGenerationParams } from "./generation";
 
 /**
  * Data structure for prompt/generation history.
- * Contains all fields needed to recreate a generation.
+ * Extends base GenerationParams with metadata.
  */
-export interface PromptDataType {
-  // Required fields for history
-  freestyle: string;
-  style: string;
-  model: string;
-  colorScheme: string;
-  lighting: string;
-  perspective: string;
-  composition: string;
-  medium: string;
-  mood: string;
-  tags: string[];
-
-  // Optional fields
-  downloadUrl?: string;
-  prompt?: string;
-  imageCategory?: string;
-  imageReference?: string;
+export interface PromptDataType extends GenerationParams {
   id?: string;
+  downloadUrl?: string;
   timestamp?: Timestamp;
 }
 
@@ -37,15 +22,6 @@ export type PartialPromptData = Partial<PromptDataType>;
 export const createDefaultPromptData = (
   overrides: Partial<PromptDataType> = {}
 ): PromptDataType => ({
-  freestyle: "",
-  style: "",
-  model: "",
-  colorScheme: "None",
-  lighting: "None",
-  perspective: "None",
-  composition: "None",
-  medium: "None",
-  mood: "None",
-  tags: [],
+  ...createDefaultGenerationParams(),
   ...overrides,
 });

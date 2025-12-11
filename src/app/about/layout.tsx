@@ -1,4 +1,4 @@
-import Footer from "@/components/Footer";
+import { PageWithFooter } from "@/components/layouts";
 
 export const metadata = {
   title: "About Generate.me | AI-Powered Art & Image Creation Platform",
@@ -14,10 +14,5 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1">{children}</div>
-      <Footer />
-    </div>
-  );
+  return <PageWithFooter withPadding={false}>{children}</PageWithFooter>;
 }

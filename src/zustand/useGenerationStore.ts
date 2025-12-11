@@ -37,7 +37,16 @@ export interface GenerationState {
     | null;
   previewValue: string | null;
 
-  // Actions
+  // Generic field updater (for less common fields)
+  updateField: <K extends keyof GenerationState>(
+    field: K,
+    value: GenerationState[K]
+  ) => void;
+
+  // Batch update for multiple fields
+  updateFields: (fields: Partial<GenerationState>) => void;
+
+  // Frequently used setters (kept for convenience)
   setImagePrompt: (prompt: string) => void;
   setImageStyle: (style: string) => void;
   setModel: (model: model) => void;
@@ -91,6 +100,14 @@ export const useGenerationStore = create<GenerationState>()(
     (set) => ({
       ...initialState,
 
+      // Generic field updater
+      updateField: (field, value) =>
+        set({ [field]: value } as Partial<GenerationState>),
+
+      // Batch update
+      updateFields: (fields) => set(fields),
+
+      // Individual setters (kept for convenience and backward compatibility)
       setImagePrompt: (imagePrompt) => set({ imagePrompt }),
       setImageStyle: (imageStyle) => set({ imageStyle }),
       setModel: (model) => set({ model }),

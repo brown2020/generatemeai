@@ -93,22 +93,20 @@ export const TagManager = ({
         credits
       );
 
-      // Handle error response
-      if (typeof result === "object" && result.error) {
+      // Handle ActionResult response
+      if (!result.success) {
         toast.error(result.error);
         return;
       }
 
-      // Handle successful string response
-      if (typeof result === "string") {
-        const suggestions = result.split(",").map((s) => s.trim());
-        if (suggestions.length >= 1) {
-          if (useCredits) {
-            minusCredits(1);
-          }
-          await handleAddTag(false, suggestions);
-          toast.success("Tags added successfully");
+      // Handle successful response
+      const suggestions = result.data.split(",").map((s) => s.trim());
+      if (suggestions.length >= 1) {
+        if (useCredits) {
+          minusCredits(1);
         }
+        await handleAddTag(false, suggestions);
+        toast.success("Tags added successfully");
       }
     } catch (err) {
       toast.error("Error adding tags: " + err);
