@@ -2,15 +2,9 @@ import { Timestamp } from "firebase/firestore";
 import { model } from "./model";
 
 /**
- * Represents the complete data structure for a generated image.
- * Used in ImagePage, ImageSelector, and related components.
+ * Base generation parameters shared across image types.
  */
-export interface ImageData {
-  id: string;
-  downloadUrl: string;
-  videoDownloadUrl?: string;
-
-  // Generation parameters
+export interface ImageGenerationParams {
   freestyle?: string;
   style?: string;
   model?: model;
@@ -22,6 +16,16 @@ export interface ImageData {
   mood?: string;
   imageCategory?: string;
   prompt?: string;
+}
+
+/**
+ * Represents the complete data structure for a generated image.
+ * Used in ImagePage, ImageSelector, and related components.
+ */
+export interface ImageData extends ImageGenerationParams {
+  id: string;
+  downloadUrl: string;
+  videoDownloadUrl?: string;
 
   // Media-specific
   imageReference?: string;

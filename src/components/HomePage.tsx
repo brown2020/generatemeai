@@ -2,7 +2,7 @@
 
 import AuthComponent from "@/components/AuthComponent";
 import { motion } from "framer-motion";
-import { useAuthStore } from "@/zustand/useAuthStore";
+import { useAuthState } from "@/zustand/selectors";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -11,9 +11,7 @@ interface HomePageProps {
 }
 
 export default function HomePage({ initialImages = [] }: HomePageProps) {
-  const uid = useAuthStore((s) => s.uid);
-  const authDisplayName = useAuthStore((s) => s.authDisplayName);
-  const authReady = useAuthStore((s) => s.authReady);
+  const { uid, authDisplayName, authReady } = useAuthState();
 
   return (
     <div className="relative flex flex-col h-full w-full justify-center items-center text-white overflow-hidden bg-gray-950">
@@ -54,17 +52,21 @@ export default function HomePage({ initialImages = [] }: HomePageProps) {
         <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
           Generate.me
         </h1>
-        
+
         {authReady && uid ? (
           <div className="flex flex-col gap-6 items-center">
             <h2 className="text-xl md:text-3xl font-medium text-gray-200">
-              Welcome back, <span className="text-white font-bold">{authDisplayName || "Creator"}</span>!
+              Welcome back,{" "}
+              <span className="text-white font-bold">
+                {authDisplayName || "Creator"}
+              </span>
+              !
             </h2>
             <p className="text-gray-300 max-w-lg text-lg">
               Ready to transform your ideas into stunning visuals?
             </p>
-            <Link 
-              href="/generate" 
+            <Link
+              href="/generate"
               className="btn-primary text-lg px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
             >
               Start Generating <ArrowRight className="w-5 h-5" />
