@@ -1,23 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { db } from "@/firebase/firebaseClient";
 import { doc, updateDoc } from "firebase/firestore";
-import "../app/globals.css";
 import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import TextareaAutosize from "react-textarea-autosize";
 import useProfileStore from "@/zustand/useProfileStore";
-import { creditsToMinus } from "@/utils/credits";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import { getFileTypeFromUrl } from "@/utils/imageUtils";
-import VideoModalComponent from "./VideoModalComponent";
 import { removeBackground } from "@/actions/removeBackground";
-import { SiStagetimer } from "react-icons/si";
 import { ImageData } from "@/types/image";
 import { FirestorePaths } from "@/firebase/paths";
-import { useImagePageData, useImagePageActions } from "./image-page";
+import {
+  useImagePageData,
+  useImagePageActions,
+  ImagePageModals,
+  ImagePageOwnerActions,
+} from "./image-page";
 
 import {
   ImageViewer,
@@ -25,8 +26,6 @@ import {
   ImageActions,
   TagManager,
   SocialShare,
-  PasswordModal,
-  ColorPickerModal,
   PasswordProtection,
 } from "./image";
 
@@ -38,6 +37,10 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const router = useRouter();
   const uid = useAuthStore((s) => s.uid);
   const authPending = useAuthStore((s) => s.authPending);
+
+  // Profile state
+  const profile = useProfileStore((s) => s.profile);
+  const minusCredits = useProfileStore((s) => s.minusCredits);
 
   // Use custom hooks for data and actions
   const {
@@ -61,7 +64,6 @@ const ImagePage = ({ id }: ImagePageProps) => {
     handleCaptionChange,
     changeBackground,
     handleTryAgain,
-    cleanupDebounce,
   } = useImagePageActions({
     id,
     uid,
@@ -76,21 +78,10 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const [password, setPassword] = useState("");
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Profile state
-  const useCredits = useProfileStore((s) => s.profile.useCredits);
-  const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
-  const briaApiKey = useProfileStore((s) => s.profile.bria_api_key);
-  const credits = useProfileStore((s) => s.profile.credits);
-  const minusCredits = useProfileStore((state) => state.minusCredits);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => cleanupDebounce();
-  }, [cleanupDebounce]);
-
+  // Handlers
   const handleToggleSharable = useCallback(async () => {
     await toggleSharable(password);
     setShowPasswordModal(false);
@@ -113,19 +104,17 @@ const ImagePage = ({ id }: ImagePageProps) => {
 
   const handleBackgroundRemove = useCallback(async () => {
     if (!imageData || typeof imageData === "boolean") return;
-    const imageUrl = imageData.downloadUrl;
 
     try {
       const result = await removeBackground(
-        useCredits,
-        credits,
-        imageUrl,
-        briaApiKey
+        profile.useCredits,
+        profile.credits,
+        imageData.downloadUrl,
+        profile.bria_api_key
       );
 
-      // Handle ActionResult response
       if (result.success) {
-        if (useCredits) {
+        if (profile.useCredits) {
           minusCredits(creditsToMinus("bria.ai"));
         }
 
@@ -142,39 +131,33 @@ const ImagePage = ({ id }: ImagePageProps) => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
-      console.error("Error removing background: ", error);
+      console.error("Error removing background:", error);
       toast.error(`Failed to remove background: ${errorMessage}`);
     }
-  }, [
-    imageData,
-    uid,
-    id,
-    useCredits,
-    credits,
-    briaApiKey,
-    minusCredits,
-    refreshData,
-  ]);
+  }, [imageData, uid, id, profile, minusCredits, refreshData]);
 
   const handleCreateGif = useCallback(async () => {
     if (!imageData || typeof imageData === "boolean") return;
     try {
       setLoading(true);
-      const response = await processVideoToGIF(
+      const result = await processVideoToGIF(
         imageData.videoDownloadUrl!,
         id,
         uid
       );
-      setLoading(false);
-      toast.success("GIF Created Successfully!");
-      router.push(`${response}`);
-    } catch (error: unknown) {
-      setLoading(false);
-      if (error instanceof Error) {
-        toast.error(error.message);
+
+      if (result.success) {
+        toast.success("GIF Created Successfully!");
+        router.push(`/images/${result.data.newId}`);
       } else {
-        toast.error("An unexpected error occurred.");
+        toast.error(result.error);
       }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   }, [imageData, id, uid, router]);
 
@@ -200,7 +183,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
     typeof window !== "undefined"
       ? `${window.location.origin}/images/${id}`
       : "";
-  const hasVideo = imageData?.videoDownloadUrl;
+  const hasVideo = !!imageData?.videoDownloadUrl;
   const isGif = getFileTypeFromUrl(imageData?.videoDownloadUrl || "") === "gif";
 
   return (
@@ -235,127 +218,46 @@ const ImagePage = ({ id }: ImagePageProps) => {
           setTags={setTags}
           uid={uid}
           imageId={id}
-          openAPIKey={openAPIKey}
-          useCredits={useCredits}
-          credits={credits}
+          openAPIKey={profile.openai_api_key}
+          useCredits={profile.useCredits}
+          credits={profile.credits}
           minusCredits={minusCredits}
         />
       )}
 
-      {imageData && uid && isOwner && !hasVideo && (
-        <div className="mt-4 w-full p-3 py-0">
-          <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
-          <TextareaAutosize
-            value={caption}
-            onChange={onCaptionChange}
-            placeholder="Enter caption"
-            className="p-2 border border-gray-300 rounded-md w-full"
-          />
-        </div>
-      )}
-
-      {imageData &&
-        uid &&
-        isOwner &&
-        imageData.downloadUrl?.includes("cloudfront.net") &&
-        !hasVideo && (
-          <button
-            className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-            onClick={() => setShowColorPicker(true)}
-          >
-            Change Background Color
-          </button>
-        )}
-
-      {imageData &&
-        uid &&
-        isOwner &&
-        imageData.downloadUrl?.includes("googleapis.com") &&
-        !hasVideo && (
-          <button
-            className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-            onClick={handleBackgroundRemove}
-          >
-            Remove Background
-          </button>
-        )}
-
-      {imageData && !isOwner && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={() => router.push("/generate")}
-        >
-          Next: Generate Your Image
-        </button>
-      )}
-
-      {hasVideo && !isGif && (
-        <div className="p-2">
-          <button
-            onClick={handleCreateGif}
-            className="btn-primary2 flex h-12 items-center justify-center w-full"
-            disabled={loading}
-          >
-            {loading ? (
-              <span className="flex flex-row items-center space-x-2">
-                <span className="rotating-icon">
-                  <SiStagetimer />
-                </span>
-                <span>Converting...</span>
-              </span>
-            ) : (
-              <span>Create GIF</span>
-            )}
-          </button>
-        </div>
-      )}
-
-      {!hasVideo && uid && isOwner && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={handleTryAgain}
-        >
-          Try again
-        </button>
-      )}
-
-      {hasVideo && uid && isOwner && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={() => setIsModalOpen(true)}
-        >
-          Try again
-        </button>
-      )}
-
-      {/* Modals */}
-      {showPasswordModal && (
-        <PasswordModal
-          password={password}
-          setPassword={setPassword}
-          onConfirm={handleToggleSharable}
-          onCancel={() => setShowPasswordModal(false)}
-        />
-      )}
-
-      {showColorPicker && (
-        <ColorPickerModal
-          initialColor={backgroundColor}
-          onConfirm={onChangeBackground}
-          onCancel={() => setShowColorPicker(false)}
-        />
-      )}
-
-      {isModalOpen && imageData && (
-        <VideoModalComponent
+      {imageData && uid && (
+        <ImagePageOwnerActions
           imageData={imageData as ImageData}
-          isOpen={isModalOpen}
-          onRequestClose={() => setIsModalOpen(false)}
-          downloadUrl={imageData.downloadUrl}
-          ariaHideApp={false}
-          initialData={hasVideo ? (imageData as ImageData) : false}
+          isOwner={isOwner}
+          uid={uid}
+          hasVideo={hasVideo}
+          isGif={isGif}
+          loading={loading}
+          caption={caption}
+          onCaptionChange={onCaptionChange}
+          onShowColorPicker={() => setShowColorPicker(true)}
+          onBackgroundRemove={handleBackgroundRemove}
+          onTryAgain={handleTryAgain}
+          onShowVideoModal={() => setIsVideoModalOpen(true)}
+          onCreateGif={handleCreateGif}
         />
       )}
+
+      <ImagePageModals
+        showPasswordModal={showPasswordModal}
+        password={password}
+        setPassword={setPassword}
+        onPasswordConfirm={handleToggleSharable}
+        onPasswordCancel={() => setShowPasswordModal(false)}
+        showColorPicker={showColorPicker}
+        backgroundColor={backgroundColor}
+        onColorConfirm={onChangeBackground}
+        onColorCancel={() => setShowColorPicker(false)}
+        isVideoModalOpen={isVideoModalOpen}
+        onVideoModalClose={() => setIsVideoModalOpen(false)}
+        imageData={imageData}
+        hasVideo={hasVideo}
+      />
     </div>
   );
 };

@@ -45,44 +45,50 @@ const defaultAuthState: AuthState = {
   premium: false,
 };
 
+/**
+ * Updates user details in Firestore (fire-and-forget).
+ * Logs errors but doesn't throw to avoid breaking the UI.
+ */
+async function syncAuthToFirestore(
+  details: Partial<AuthState>,
+  uid: string
+): Promise<void> {
+  if (!uid) return;
+
+  try {
+    const userRef = doc(db, `users/${uid}`);
+
+    // Only include serializable data (exclude functions)
+    const serializableDetails: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(details)) {
+      if (typeof value !== "function") {
+        serializableDetails[key] = value;
+      }
+    }
+
+    await setDoc(
+      userRef,
+      { ...serializableDetails, lastSignIn: serverTimestamp() },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("Error syncing auth to Firestore:", error);
+  }
+}
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
   ...defaultAuthState,
 
-  setAuthDetails: async (details: Partial<AuthState>) => {
-    const { ...oldState } = get();
-    const newState = { ...oldState, ...details };
-    set(newState);
-    await updateUserDetailsInFirestore(newState, get().uid);
+  setAuthDetails: (details: Partial<AuthState>) => {
+    // Update local state synchronously
+    set(details);
+
+    // Sync to Firestore asynchronously (fire-and-forget)
+    const uid = details.uid ?? get().uid;
+    if (uid) {
+      syncAuthToFirestore(details, uid);
+    }
   },
 
   clearAuthDetails: () => set({ ...defaultAuthState }),
 }));
-
-async function updateUserDetailsInFirestore(
-  details: Partial<AuthState>,
-  uid: string
-) {
-  if (uid) {
-    const userRef = doc(db, `users/${uid}`);
-
-    // Sanitize the details object to exclude any functions
-    const sanitizedDetails = { ...details };
-
-    // Remove any unexpected functions or properties
-    Object.keys(sanitizedDetails).forEach((key) => {
-      if (typeof sanitizedDetails[key as keyof AuthState] === "function") {
-        delete sanitizedDetails[key as keyof AuthState];
-      }
-    });
-
-    try {
-      await setDoc(
-        userRef,
-        { ...sanitizedDetails, lastSignIn: serverTimestamp() },
-        { merge: true }
-      );
-    } catch (error) {
-      console.error("Error updating auth details in Firestore:", error);
-    }
-  }
-}

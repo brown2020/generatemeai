@@ -7,17 +7,28 @@ import {
 import { stabilityStrategy } from "./stability";
 import { replicateStrategy } from "./replicate";
 import { ideogramStrategy } from "./ideogram";
-import { GenerationStrategy } from "./types";
-import { model } from "@/types/model";
+import type { GenerationStrategy } from "./types";
+import { type Model, isValidModel } from "@/constants/modelRegistry";
+
+/**
+ * Strategy key to implementation mapping.
+ * These keys match the strategyKey in MODEL_REGISTRY.
+ */
+const strategyImplementations: Record<string, GenerationStrategy> = {
+  dalle: dalleStrategy,
+  fireworks: fireworksStrategy,
+  stability: stabilityStrategy,
+  playgroundV2: playgroundV2Strategy,
+  playgroundV25: playgroundV25Strategy,
+  replicate: replicateStrategy,
+  ideogram: ideogramStrategy,
+};
 
 /**
  * Model-to-strategy mapping.
- * Uses Partial<Record<model, GenerationStrategy>> to allow type-safe
- * lookups while supporting a subset of all possible models.
+ * Maps model names directly to their generation strategies.
  */
-type StrategyMap = Partial<Record<model, GenerationStrategy>>;
-
-const strategyMap: StrategyMap = {
+const strategyMap: Partial<Record<Model, GenerationStrategy>> = {
   "dall-e": dalleStrategy,
   "stable-diffusion-xl": fireworksStrategy,
   "stability-sd3-turbo": stabilityStrategy,
@@ -37,11 +48,20 @@ export const strategies: Record<string, GenerationStrategy> = strategyMap;
  * Type-safe strategy getter.
  * Returns undefined for unsupported models.
  */
-export const getStrategy = (modelName: model): GenerationStrategy | undefined =>
+export const getStrategy = (modelName: Model): GenerationStrategy | undefined =>
   strategyMap[modelName];
 
 /**
  * Checks if a model has a registered strategy.
  */
-export const hasStrategy = (modelName: string): modelName is model =>
-  modelName in strategyMap;
+export const hasStrategy = (modelName: string): modelName is Model =>
+  isValidModel(modelName) && modelName in strategyMap;
+
+/**
+ * Get strategy by strategy key (used by MODEL_REGISTRY).
+ */
+export const getStrategyByKey = (
+  key: string
+): GenerationStrategy | undefined => {
+  return strategyImplementations[key];
+};

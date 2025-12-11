@@ -5,12 +5,33 @@
 
 import { useShallow } from "zustand/react/shallow";
 import { useAuthStore } from "./useAuthStore";
-import useProfileStore from "./useProfileStore";
-import { useGenerationStore } from "./useGenerationStore";
+import useProfileStore, { ProfileType } from "./useProfileStore";
+import { useGenerationStore, GenerationStore } from "./useGenerationStore";
+
+// ============================================================================
+// Selector Factory
+// ============================================================================
 
 /**
- * Auth store selectors
+ * Creates a typed selector for profile fields.
  */
+function createProfileSelector<K extends keyof ProfileType>(keys: K[]) {
+  return () =>
+    useProfileStore(
+      useShallow((s) => {
+        const result = {} as Pick<ProfileType, K>;
+        for (const key of keys) {
+          result[key] = s.profile[key];
+        }
+        return result;
+      })
+    );
+}
+
+// ============================================================================
+// Auth store selectors
+// ============================================================================
+
 export const useAuthState = () =>
   useAuthStore(
     useShallow((s) => ({
@@ -41,36 +62,36 @@ export const useAuthStatus = () =>
     }))
   );
 
-/**
- * Profile store selectors
- */
-export const useProfileCredits = () =>
-  useProfileStore(
-    useShallow((s) => ({
-      credits: s.profile.credits,
-      useCredits: s.profile.useCredits,
-      minusCredits: s.minusCredits,
-      addCredits: s.addCredits,
-    }))
-  );
+// ============================================================================
+// Profile store selectors
+// ============================================================================
 
-export const useProfileApiKeys = () =>
-  useProfileStore(
-    useShallow((s) => ({
-      openai_api_key: s.profile.openai_api_key,
-      fireworks_api_key: s.profile.fireworks_api_key,
-      stability_api_key: s.profile.stability_api_key,
-      replicate_api_key: s.profile.replicate_api_key,
-      ideogram_api_key: s.profile.ideogram_api_key,
-      bria_api_key: s.profile.bria_api_key,
-      did_api_key: s.profile.did_api_key,
-      runway_ml_api_key: s.profile.runway_ml_api_key,
-    }))
-  );
+export const useProfileCredits = createProfileSelector([
+  "credits",
+  "useCredits",
+]);
 
-/**
- * Generation store selectors
- */
+export const useProfileApiKeys = createProfileSelector([
+  "openai_api_key",
+  "fireworks_api_key",
+  "stability_api_key",
+  "replicate_api_key",
+  "ideogram_api_key",
+  "bria_api_key",
+  "did_api_key",
+  "runway_ml_api_key",
+]);
+
+export const useProfileInfo = createProfileSelector([
+  "email",
+  "displayName",
+  "photoUrl",
+]);
+
+// ============================================================================
+// Generation store selectors
+// ============================================================================
+
 export const useGenerationParams = () =>
   useGenerationStore(
     useShallow((s) => ({
@@ -89,15 +110,9 @@ export const useGenerationParams = () =>
 export const useGenerationActions = () =>
   useGenerationStore(
     useShallow((s) => ({
-      setImagePrompt: s.setImagePrompt,
-      setImageStyle: s.setImageStyle,
-      setModel: s.setModel,
-      setColorScheme: s.setColorScheme,
-      setLighting: s.setLighting,
-      setPerspective: s.setPerspective,
-      setComposition: s.setComposition,
-      setMedium: s.setMedium,
-      setMood: s.setMood,
+      updateField: s.updateField,
+      updateFields: s.updateFields,
+      setPreview: s.setPreview,
       reset: s.reset,
     }))
   );
@@ -120,8 +135,57 @@ export const useGenerationTags = () =>
       tags: s.tags,
       suggestedTags: s.suggestedTags,
       selectedCategory: s.selectedCategory,
-      setTags: s.setTags,
-      setSuggestedTags: s.setSuggestedTags,
-      setSelectedCategory: s.setSelectedCategory,
+    }))
+  );
+
+// ============================================================================
+// Combined selectors for common use cases
+// ============================================================================
+
+/**
+ * Selector for the GenerationSettings component.
+ */
+export const useGenerationSettingsState = () =>
+  useGenerationStore(
+    useShallow((s: GenerationStore) => ({
+      colorScheme: s.colorScheme,
+      lighting: s.lighting,
+      perspective: s.perspective,
+      composition: s.composition,
+      medium: s.medium,
+      mood: s.mood,
+      previewType: s.previewType,
+      previewValue: s.previewValue,
+      updateField: s.updateField,
+      setPreview: s.setPreview,
+    }))
+  );
+
+/**
+ * Selector for the PromptInput component.
+ */
+export const usePromptInputState = () =>
+  useGenerationStore(
+    useShallow((s) => ({
+      imagePrompt: s.imagePrompt,
+      uploadedImage: s.uploadedImage,
+      isRecording: s.isRecording,
+      isOptimizing: s.isOptimizing,
+    }))
+  );
+
+/**
+ * Selector for the image preview component.
+ */
+export const useImagePreviewState = () =>
+  useGenerationStore(
+    useShallow((s) => ({
+      generatedImage: s.generatedImage,
+      colorScheme: s.colorScheme,
+      lighting: s.lighting,
+      perspective: s.perspective,
+      composition: s.composition,
+      medium: s.medium,
+      mood: s.mood,
     }))
   );

@@ -14,9 +14,13 @@ import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { PromptDataType } from "@/types/promptdata";
 import { ImageData } from "@/types/image";
 import useProfileStore from "@/zustand/useProfileStore";
-import { findModelByValue, models, SelectModel } from "@/constants/models";
-import { model } from "@/types/model";
-import { creditsToMinus } from "@/utils/credits";
+import {
+  getModelConfig,
+  getVideoModels,
+  creditsToMinus,
+  type Model,
+  type ModelConfig,
+} from "@/constants/modelRegistry";
 import { animations } from "@/constants/animations";
 import { generateVideo } from "@/actions/generateVideo";
 import { audios } from "@/constants/audios";
@@ -31,6 +35,9 @@ interface VideoModalProps {
   ariaHideApp: boolean;
   initialData?: ImageData | false;
 }
+
+// Get video models for the select dropdown
+const videoModels = getVideoModels();
 
 const VideoModalComponent: React.FC<VideoModalProps> = ({
   imageData,
@@ -72,14 +79,17 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
   const [scriptPrompt, setScriptPrompt] = useState(
     getInitialValue("scriptPrompt", "")
   );
-  const [videoModel, setVideoModel] = useState<model>(
-    getInitialValue("videoModel", "d-id") as model
+  const [videoModel, setVideoModel] = useState<Model>(
+    getInitialValue("videoModel", "d-id") as Model
   );
   const [audio, setAudio] = useState(getInitialValue("audio", "Matthew"));
   const [animation, setAnimation] = useState(
     getInitialValue("animation", "nostalgia")
   );
   const [loading, setLoading] = useState(false);
+
+  // Get current model config
+  const currentModelConfig = getModelConfig(videoModel);
 
   const saveHistory = useCallback(
     async (
@@ -93,6 +103,8 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
       const docRef = doc(coll);
 
       const { id: _id, ...restOfImageData } = imageData;
+
+      const modelConfig = getModelConfig(videoModelValue);
 
       const finalPromptData: PromptDataType = {
         freestyle: restOfImageData.freestyle || "",
@@ -114,8 +126,7 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
           audio: audioValue || "",
           videoModel: videoModelValue || "",
           scriptPrompt: scriptPromptValue,
-          animation: findModelByValue(videoModelValue as model)
-            ?.hasAnimationType
+          animation: modelConfig?.capabilities.hasAnimationType
             ? animationValue || ""
             : "",
         } as Partial<PromptDataType>),
@@ -180,6 +191,14 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
       setLoading(false);
     }
   };
+
+  // Filter models for the current mode
+  const filteredModels = videoModels.filter((m) => {
+    if (mode === "video") {
+      return m.capabilities.hasScriptPromptVideoGen;
+    }
+    return m.capabilities.hasSilentAnimation;
+  });
 
   return (
     <Modal
@@ -247,23 +266,21 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
               <label className="block mb-2 text-sm font-medium text-gray-900">
                 Models
               </label>
-              <Select
+              <Select<ModelConfig>
                 isClearable={true}
                 isSearchable={true}
                 name="videoModel"
-                onChange={(v: SingleValue<SelectModel>) =>
-                  setVideoModel(v ? v.value : "d-id")
+                onChange={(v: SingleValue<ModelConfig>) =>
+                  setVideoModel(v ? (v.value as Model) : "d-id")
                 }
-                defaultValue={findModelByValue(videoModel)}
-                value={findModelByValue(videoModel || "d-id")}
-                options={models.filter(
-                  (m) =>
-                    (m.type === "video" || m.type === "both") &&
-                    (mode !== "video" || m.hasScriptPromptVideoGen !== false)
-                )}
+                defaultValue={currentModelConfig}
+                value={currentModelConfig}
+                options={filteredModels}
+                getOptionLabel={(option) => option.label}
+                getOptionValue={(option) => option.value}
               />
             </div>
-            {mode === "video" && findModelByValue(videoModel)?.hasAudio && (
+            {mode === "video" && currentModelConfig?.capabilities.hasAudio && (
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-900">
                   Audio
@@ -285,7 +302,7 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
               </div>
             )}
             {mode === "animation" &&
-              findModelByValue(videoModel)?.hasAnimationType == true && (
+              currentModelConfig?.capabilities.hasAnimationType && (
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
                     Animation

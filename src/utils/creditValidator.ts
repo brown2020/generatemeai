@@ -1,5 +1,4 @@
-import { model } from "@/types/model";
-import { creditsToMinus } from "./credits";
+import { creditsToMinus } from "@/constants/modelRegistry";
 
 /**
  * Result of credit validation.
@@ -23,7 +22,7 @@ export const validateCredits = (
 ): CreditValidationResult => {
   if (!useCredits) return { valid: true };
 
-  const required = creditsToMinus(modelName as model);
+  const required = creditsToMinus(modelName);
   if (credits < required) {
     return {
       valid: false,

@@ -1,12 +1,22 @@
 "use client";
 
-import { useGenerationStore } from "@/zustand/useGenerationStore";
-import useProfileStore from "@/zustand/useProfileStore";
-import { useEffect, useRef, useCallback, useMemo, ChangeEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  ChangeEvent,
+  memo,
+} from "react";
+import { useShallow } from "zustand/react/shallow";
 import { artStyles } from "@/constants/artStyles";
 import { PulseLoader } from "react-spinners";
 import toast from "react-hot-toast";
-import { models, SelectModel } from "@/constants/models";
+import {
+  getImageModels,
+  supportsImageUpload,
+  type Model,
+} from "@/constants/modelRegistry";
 import { suggestTags } from "@/actions/suggestTags";
 import { optimizePrompt } from "@/utils/promptOptimizer";
 
@@ -15,9 +25,10 @@ import { ModelCard } from "@/components/generation/ModelCard";
 import { StyleCard } from "@/components/generation/StyleCard";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useDebouncedCallback } from "@/hooks/useDebounce";
-import { model } from "@/types/model";
 import { useUrlSync } from "@/hooks/useUrlSync";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
+import { useGenerationStore } from "@/zustand/useGenerationStore";
+import useProfileStore from "@/zustand/useProfileStore";
 
 import {
   PromptInput,
@@ -28,40 +39,68 @@ import {
 const isPreviewMarkingEnabled =
   process.env.NEXT_PUBLIC_ENABLE_PREVIEW_MARKING === "true";
 
-export default function GenerateImage() {
-  const openAPIKey = useProfileStore((s) => s.profile.openai_api_key);
-  const useCredits = useProfileStore((s) => s.profile.useCredits);
-  const credits = useProfileStore((s) => s.profile.credits);
+// Memoized image models list (static, never changes)
+const imageModels = getImageModels();
 
-  // Get the entire generation store for passing to sub-components
-  const store = useGenerationStore();
+/**
+ * Main image generation component.
+ * Optimized with selective store subscriptions and memoization.
+ */
+function GenerateImage() {
+  // Profile selectors - minimal subscriptions
+  const profileData = useProfileStore(
+    useShallow((s) => ({
+      openAPIKey: s.profile.openai_api_key,
+      useCredits: s.profile.useCredits,
+      credits: s.profile.credits,
+    }))
+  );
 
-  const {
-    imagePrompt,
-    imageStyle,
-    model,
-    colorScheme,
-    lighting,
-    perspective,
-    composition,
-    medium,
-    mood,
-    selectedCategory,
-    tags,
-    generatedImage,
-    uploadedImage,
-    loading,
-    isOptimizing,
-    previewType,
-    setImagePrompt,
-    setImageStyle,
-    setModel,
-    setSuggestedTags,
-    setUploadedImage,
-    setIsOptimizing,
-    setPreview,
-    reset,
-  } = store;
+  // Generation store - UI state
+  const uiState = useGenerationStore(
+    useShallow((s) => ({
+      loading: s.loading,
+      isRecording: s.isRecording,
+      isOptimizing: s.isOptimizing,
+      previewType: s.previewType,
+    }))
+  );
+
+  // Generation store - form state
+  const formState = useGenerationStore(
+    useShallow((s) => ({
+      imagePrompt: s.imagePrompt,
+      imageStyle: s.imageStyle,
+      model: s.model,
+      colorScheme: s.colorScheme,
+      lighting: s.lighting,
+      selectedCategory: s.selectedCategory,
+      tags: s.tags,
+      uploadedImage: s.uploadedImage,
+    }))
+  );
+
+  // Generation store - output state
+  const outputState = useGenerationStore(
+    useShallow((s) => ({
+      generatedImage: s.generatedImage,
+      colorScheme: s.colorScheme,
+      lighting: s.lighting,
+      perspective: s.perspective,
+      composition: s.composition,
+      medium: s.medium,
+      mood: s.mood,
+    }))
+  );
+
+  // Get store actions (stable references)
+  const storeActions = useGenerationStore(
+    useShallow((s) => ({
+      updateField: s.updateField,
+      setPreview: s.setPreview,
+      reset: s.reset,
+    }))
+  );
 
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -70,21 +109,22 @@ export default function GenerateImage() {
   const { generate } = useImageGenerator();
 
   const { isRecording, startRecording, stopRecording } = useSpeechRecognition(
-    (transcript) => setImagePrompt(transcript)
+    (transcript) => storeActions.updateField("imagePrompt", transcript)
   );
 
-  const isPromptValid = !!imagePrompt.trim();
-  const isModelValid = !!model;
+  const isPromptValid = !!formState.imagePrompt.trim();
+  const isModelValid = !!formState.model;
+  const modelSupportsUpload = supportsImageUpload(formState.model);
 
   // Click outside handler for preview type selector
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        previewType &&
+        uiState.previewType &&
         previewRef.current &&
         !previewRef.current.contains(event.target as Node)
       ) {
-        setPreview(null, null);
+        storeActions.setPreview(null, null);
       }
     };
 
@@ -92,47 +132,35 @@ export default function GenerateImage() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [previewType, setPreview]);
+  }, [uiState.previewType, storeActions]);
 
-  // Memoized handlers
+  // Tag suggestion handler
   const handleTagSuggestions = useCallback(
     async (prompt: string) => {
       if (!prompt.trim()) return;
 
       const result = await suggestTags(
         prompt,
-        colorScheme,
-        lighting,
-        imageStyle,
-        selectedCategory,
-        tags,
-        openAPIKey,
-        useCredits,
-        credits
+        formState.colorScheme,
+        formState.lighting,
+        formState.imageStyle,
+        formState.selectedCategory,
+        formState.tags,
+        profileData.openAPIKey,
+        profileData.useCredits,
+        profileData.credits
       );
 
-      // Handle ActionResult response
       if (!result.success) return;
 
       const suggestionList = result.data.split(",").map((s) => s.trim());
       if (suggestionList.length >= 1) {
-        setSuggestedTags(suggestionList);
+        storeActions.updateField("suggestedTags", suggestionList);
       }
     },
-    [
-      colorScheme,
-      lighting,
-      imageStyle,
-      selectedCategory,
-      tags,
-      openAPIKey,
-      useCredits,
-      credits,
-      setSuggestedTags,
-    ]
+    [formState, profileData, storeActions]
   );
 
-  // Debounce tag suggestions to avoid excessive API calls
   const debouncedTagSuggestions = useDebouncedCallback(
     handleTagSuggestions,
     500
@@ -140,45 +168,53 @@ export default function GenerateImage() {
 
   const handlePromptChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
-      setImagePrompt(e.target.value);
+      storeActions.updateField("imagePrompt", e.target.value);
       debouncedTagSuggestions(e.target.value);
     },
-    [setImagePrompt, debouncedTagSuggestions]
+    [storeActions, debouncedTagSuggestions]
   );
 
   const handleClearAll = useCallback(() => {
-    reset();
-  }, [reset]);
+    storeActions.reset();
+  }, [storeActions]);
 
   const handleOptimizePrompt = useCallback(async () => {
-    if (!imagePrompt || isOptimizing) return;
+    if (!formState.imagePrompt || uiState.isOptimizing) return;
 
     try {
-      setIsOptimizing(true);
-      const optimizedPrompt = await optimizePrompt(imagePrompt, openAPIKey);
-      setImagePrompt(optimizedPrompt);
+      storeActions.updateField("isOptimizing", true);
+      const optimizedPrompt = await optimizePrompt(
+        formState.imagePrompt,
+        profileData.openAPIKey
+      );
+      storeActions.updateField("imagePrompt", optimizedPrompt);
       toast.success("Prompt optimized!");
     } catch (error) {
       toast.error("Failed to optimize prompt. Please try again.");
       console.error("Optimization error:", error);
     } finally {
-      setIsOptimizing(false);
+      storeActions.updateField("isOptimizing", false);
     }
-  }, [imagePrompt, isOptimizing, openAPIKey, setImagePrompt, setIsOptimizing]);
+  }, [
+    formState.imagePrompt,
+    uiState.isOptimizing,
+    profileData.openAPIKey,
+    storeActions,
+  ]);
 
   const handleImageUpload = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
-        setUploadedImage(file);
+        storeActions.updateField("uploadedImage", file);
       }
     },
-    [setUploadedImage]
+    [storeActions]
   );
 
   const handleRemoveImage = useCallback(() => {
-    setUploadedImage(null);
-  }, [setUploadedImage]);
+    storeActions.updateField("uploadedImage", null);
+  }, [storeActions]);
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {
@@ -188,13 +224,19 @@ export default function GenerateImage() {
     }
   }, [isRecording, startRecording, stopRecording]);
 
-  // Filter models for image generation
-  const imageModels = useMemo(
-    () => models.filter((m) => m.type === "image" || m.type === "both"),
-    []
+  const handleModelSelect = useCallback(
+    (modelValue: string) => {
+      storeActions.updateField("model", modelValue as Model);
+    },
+    [storeActions]
   );
 
-  const supportsImageUpload = model !== "dall-e" && model !== "flux-schnell";
+  const handleStyleSelect = useCallback(
+    (styleValue: string) => {
+      storeActions.updateField("imageStyle", styleValue);
+    },
+    [storeActions]
+  );
 
   return (
     <div className="flex flex-col items-center w-full p-3 bg-white">
@@ -209,16 +251,16 @@ export default function GenerateImage() {
         </div>
 
         <PromptInput
-          value={imagePrompt}
+          value={formState.imagePrompt}
           onChange={handlePromptChange}
           onOptimize={handleOptimizePrompt}
           onUpload={handleImageUpload}
           onRemoveImage={handleRemoveImage}
           onToggleRecording={toggleRecording}
           isRecording={isRecording}
-          isOptimizing={isOptimizing}
-          supportsImageUpload={supportsImageUpload}
-          uploadedImage={uploadedImage}
+          isOptimizing={uiState.isOptimizing}
+          supportsImageUpload={modelSupportsUpload}
+          uploadedImage={formState.uploadedImage}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -226,7 +268,7 @@ export default function GenerateImage() {
             <label className="text-sm font-medium text-gray-700">
               AI Model
             </label>
-            <PaginatedGrid<SelectModel>
+            <PaginatedGrid
               items={imageModels}
               itemsPerPage={8}
               className="grid grid-cols-2 sm:grid-cols-4 gap-4"
@@ -234,8 +276,8 @@ export default function GenerateImage() {
                 <ModelCard
                   key={modelOption.value}
                   model={modelOption}
-                  isSelected={model === modelOption.value}
-                  onClick={() => setModel(modelOption.value as model)}
+                  isSelected={formState.model === modelOption.value}
+                  onClick={() => handleModelSelect(modelOption.value)}
                 />
               )}
             />
@@ -253,20 +295,20 @@ export default function GenerateImage() {
                 <StyleCard
                   key={style.value}
                   style={style}
-                  isSelected={imageStyle === style.value}
-                  onClick={() => setImageStyle(style.value)}
+                  isSelected={formState.imageStyle === style.value}
+                  onClick={() => handleStyleSelect(style.value)}
                 />
               )}
             />
           </div>
         </div>
 
-        <GenerationSettings store={store} />
+        <GenerationSettingsWrapper />
 
         <button
           className={`py-2 px-4 rounded-lg font-medium text-white transition-all
             ${
-              loading
+              uiState.loading
                 ? "bg-blue-400 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700 active:transform active:scale-[0.98]"
             }
@@ -276,10 +318,10 @@ export default function GenerateImage() {
                 : ""
             }
           `}
-          disabled={loading || !isPromptValid || !isModelValid}
+          disabled={uiState.loading || !isPromptValid || !isModelValid}
           onClick={generate}
         >
-          {loading ? (
+          {uiState.loading ? (
             <div className="flex items-center justify-center">
               <PulseLoader color="#fff" size={12} />
             </div>
@@ -290,17 +332,41 @@ export default function GenerateImage() {
 
         <div className="w-full">
           <GeneratedImagePreview
-            imageUrl={generatedImage}
+            imageUrl={outputState.generatedImage}
             showPreviewMarker={isPreviewMarkingEnabled}
-            colorScheme={colorScheme}
-            lighting={lighting}
-            perspective={perspective}
-            composition={composition}
-            medium={medium}
-            mood={mood}
+            colorScheme={outputState.colorScheme}
+            lighting={outputState.lighting}
+            perspective={outputState.perspective}
+            composition={outputState.composition}
+            medium={outputState.medium}
+            mood={outputState.mood}
           />
         </div>
       </div>
     </div>
   );
 }
+
+/**
+ * Wrapper component for GenerationSettings to isolate its subscriptions.
+ */
+const GenerationSettingsWrapper = memo(function GenerationSettingsWrapper() {
+  const settingsState = useGenerationStore(
+    useShallow((s) => ({
+      colorScheme: s.colorScheme,
+      lighting: s.lighting,
+      perspective: s.perspective,
+      composition: s.composition,
+      medium: s.medium,
+      mood: s.mood,
+      previewType: s.previewType,
+      previewValue: s.previewValue,
+      updateField: s.updateField,
+      setPreview: s.setPreview,
+    }))
+  );
+
+  return <GenerationSettings store={settingsState} />;
+});
+
+export default GenerateImage;

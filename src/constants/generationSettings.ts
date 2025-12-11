@@ -15,7 +15,6 @@ export interface GenerationSettingConfig {
   options: { value: string; label: string; id: number }[];
   type: NonNullable<GenerationState["previewType"]>;
   storeKey: keyof GenerationState;
-  setterKey: keyof GenerationState;
 }
 
 /**
@@ -28,48 +27,35 @@ export const GENERATION_SETTINGS: GenerationSettingConfig[] = [
     options: colors,
     type: "color",
     storeKey: "colorScheme",
-    setterKey: "setColorScheme",
   },
   {
     label: "Lighting",
     options: lightings,
     type: "lighting",
     storeKey: "lighting",
-    setterKey: "setLighting",
   },
   {
     label: "Perspective",
     options: perspectives,
     type: "perspective",
     storeKey: "perspective",
-    setterKey: "setPerspective",
   },
   {
     label: "Composition",
     options: compositions,
     type: "composition",
     storeKey: "composition",
-    setterKey: "setComposition",
   },
   {
     label: "Medium",
     options: mediums,
     type: "medium",
     storeKey: "medium",
-    setterKey: "setMedium",
   },
   {
     label: "Mood",
     options: moods,
     type: "mood",
     storeKey: "mood",
-    setterKey: "setMood",
   },
 ] as const;
-
-/**
- * Get setter function name from store key.
- */
-export const getSetterName = (storeKey: string): string => {
-  return `set${storeKey.charAt(0).toUpperCase()}${storeKey.slice(1)}`;
-};

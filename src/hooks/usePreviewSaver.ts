@@ -1,5 +1,8 @@
 import { useCallback } from "react";
-import { useGenerationStore } from "@/zustand/useGenerationStore";
+import {
+  useGenerationStore,
+  GenerationState,
+} from "@/zustand/useGenerationStore";
 import { artStyles } from "@/constants/artStyles";
 import { normalizeValue } from "@/utils/imageUtils";
 import { getPerspectiveFromLabel } from "@/constants/perspectives";
@@ -19,7 +22,7 @@ type PreviewType =
   | "mood";
 
 interface ValueResolverConfig {
-  storeKey: keyof ReturnType<typeof useGenerationStore.getState>;
+  storeKey: keyof GenerationState;
   transform?: (value: string) => string;
   blockNone?: boolean;
 }
@@ -63,9 +66,7 @@ const VALUE_RESOLVER_CONFIG: Record<PreviewType, ValueResolverConfig> = {
 
 export const usePreviewSaver = () => {
   const generatedImage = useGenerationStore((s) => s.generatedImage);
-  const setShowMarkAsPreview = useGenerationStore(
-    (s) => s.setShowMarkAsPreview
-  );
+  const updateField = useGenerationStore((s) => s.updateField);
   const setPreview = useGenerationStore((s) => s.setPreview);
 
   const saveAsPreview = useCallback(
@@ -111,14 +112,14 @@ export const usePreviewSaver = () => {
         toast.success(`Saved as preview for ${type}: ${value}`, {
           id: loadingToast,
         });
-        setShowMarkAsPreview(false);
+        updateField("showMarkAsPreview", false);
         setPreview(null, null);
       } catch (error) {
         toast.error("Failed to save preview image");
         console.error(error);
       }
     },
-    [generatedImage, setShowMarkAsPreview, setPreview]
+    [generatedImage, updateField, setPreview]
   );
 
   return { saveAsPreview };

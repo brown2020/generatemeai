@@ -1,10 +1,11 @@
+import { useShallow } from "zustand/react/shallow";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useGenerationHistory } from "@/hooks/useGenerationHistory";
 import { generatePrompt } from "@/utils/promptUtils";
 import { generateImage } from "@/actions/generateImage";
-import { creditsToMinus } from "@/utils/credits";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import { createImageGenerationFormData } from "@/utils/formDataBuilder";
 import { colors, getColorFromLabel } from "@/constants/colors";
 import { lightings, getLightingFromLabel } from "@/constants/lightings";
@@ -19,30 +20,31 @@ export const useImageGenerator = () => {
 
   // Profile Store - get profile object for form builder
   const profile = useProfileStore((s) => s.profile);
-  const minusCredits = useProfileStore((state) => state.minusCredits);
+  const minusCredits = useProfileStore((s) => s.minusCredits);
 
-  // Generation Store
-  const {
-    imagePrompt,
-    imageStyle,
-    model,
-    colorScheme,
-    lighting,
-    perspective,
-    composition,
-    medium,
-    mood,
-    selectedCategory,
-    tags,
-    uploadedImage,
-    setLoading,
-    setGeneratedImage,
-  } = useGenerationStore();
+  // Generation Store - use shallow selector for performance
+  const generationState = useGenerationStore(
+    useShallow((s) => ({
+      imagePrompt: s.imagePrompt,
+      imageStyle: s.imageStyle,
+      model: s.model,
+      colorScheme: s.colorScheme,
+      lighting: s.lighting,
+      perspective: s.perspective,
+      composition: s.composition,
+      medium: s.medium,
+      mood: s.mood,
+      selectedCategory: s.selectedCategory,
+      tags: s.tags,
+      uploadedImage: s.uploadedImage,
+      updateField: s.updateField,
+    }))
+  );
 
   const { saveHistory } = useGenerationHistory();
 
-  const isPromptValid = !!imagePrompt.trim();
-  const isModelValid = !!model;
+  const isPromptValid = !!generationState.imagePrompt.trim();
+  const isModelValid = !!generationState.model;
 
   const generate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -52,7 +54,10 @@ export const useImageGenerator = () => {
       return;
     }
 
-    if (isIOSReactNativeWebView() && checkRestrictedWords(imagePrompt)) {
+    if (
+      isIOSReactNativeWebView() &&
+      checkRestrictedWords(generationState.imagePrompt)
+    ) {
       toast.error(
         "Your description contains restricted words and cannot be used."
       );
@@ -60,28 +65,28 @@ export const useImageGenerator = () => {
     }
 
     try {
-      setLoading(true);
+      generationState.updateField("loading", true);
 
       const prompt: string = generatePrompt(
-        imagePrompt,
-        imageStyle,
-        getColorFromLabel(colorScheme) || colors[0].value,
-        getLightingFromLabel(lighting) || lightings[0].value,
-        selectedCategory,
-        perspective,
-        composition,
-        medium,
-        mood,
-        tags
+        generationState.imagePrompt,
+        generationState.imageStyle,
+        getColorFromLabel(generationState.colorScheme) || colors[0].value,
+        getLightingFromLabel(generationState.lighting) || lightings[0].value,
+        generationState.selectedCategory,
+        generationState.perspective,
+        generationState.composition,
+        generationState.medium,
+        generationState.mood,
+        generationState.tags
       );
 
       // Use form builder utility
       const formData = createImageGenerationFormData({
         message: prompt,
         uid,
-        model,
+        model: generationState.model,
         profile,
-        uploadedImage,
+        uploadedImage: generationState.uploadedImage,
       });
 
       const result = await generateImage(formData);
@@ -95,30 +100,33 @@ export const useImageGenerator = () => {
       const { imageUrl: downloadURL, imageReference = "" } = result.data;
 
       if (profile.useCredits) {
-        await minusCredits(creditsToMinus(model));
+        await minusCredits(creditsToMinus(generationState.model));
       }
 
-      setGeneratedImage(downloadURL);
+      generationState.updateField("generatedImage", downloadURL);
 
       if (downloadURL) {
         await saveHistory(
           uid,
           {
-            freestyle: imagePrompt,
-            style: imageStyle,
-            lighting: getLightingFromLabel(lighting) || lightings[0].value,
-            colorScheme: getColorFromLabel(colorScheme) || colors[0].value,
+            freestyle: generationState.imagePrompt,
+            style: generationState.imageStyle,
+            lighting:
+              getLightingFromLabel(generationState.lighting) ||
+              lightings[0].value,
+            colorScheme:
+              getColorFromLabel(generationState.colorScheme) || colors[0].value,
             imageReference,
-            perspective,
-            composition,
-            medium,
-            mood,
+            perspective: generationState.perspective,
+            composition: generationState.composition,
+            medium: generationState.medium,
+            mood: generationState.mood,
           },
           prompt,
           downloadURL,
-          model,
-          tags,
-          selectedCategory
+          generationState.model,
+          generationState.tags,
+          generationState.selectedCategory
         );
       }
     } catch (error: unknown) {
@@ -128,7 +136,7 @@ export const useImageGenerator = () => {
         console.error("An unknown error occurred during image generation.");
       }
     } finally {
-      setLoading(false);
+      generationState.updateField("loading", false);
     }
   };
 
