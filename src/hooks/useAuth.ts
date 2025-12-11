@@ -3,8 +3,12 @@
  * Single source of truth for all auth-related selectors and utilities.
  */
 
+import { useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { signOut } from "firebase/auth";
+import toast from "react-hot-toast";
 import { useAuthStore } from "@/zustand/useAuthStore";
+import { auth } from "@/firebase/firebaseClient";
 
 // ============================================================================
 // Auth Selectors (using useShallow for performance)
@@ -78,23 +82,33 @@ export const useRequireAuth = () => {
   };
 };
 
+/**
+ * Lightweight hook for sign out functionality only.
+ * Use this instead of useAuthLogic when you only need sign out.
+ */
+export const useSignOut = () => {
+  const clearAuthDetails = useAuthStore((s) => s.clearAuthDetails);
+
+  return useCallback(async () => {
+    try {
+      await signOut(auth);
+      clearAuthDetails();
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("An error occurred while signing out.");
+    }
+  }, [clearAuthDetails]);
+};
+
 // ============================================================================
 // Non-hook Utilities (for use outside React components)
+// Re-exported from zustand/helpers.ts for single source of truth
 // ============================================================================
 
-/**
- * Non-hook helper to get UID from store state.
- * Use this in non-component contexts (like store actions).
- */
-export const getAuthenticatedUid = (): string | null => {
-  const uid = useAuthStore.getState().uid;
-  return uid || null;
-};
-
-/**
- * Non-hook helper to check if user is authenticated.
- * Use this in non-component contexts.
- */
-export const isAuthenticated = (): boolean => {
-  return !!useAuthStore.getState().uid;
-};
+export {
+  getAuthenticatedUid,
+  isAuthenticated,
+  getAuthUidOrNull,
+  getAuthState,
+  requireAuthUid,
+} from "@/zustand/helpers";

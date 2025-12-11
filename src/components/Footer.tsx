@@ -1,14 +1,13 @@
 "use client";
 
 import { MENU_ITEMS } from "@/constants/menuItems";
-import { useAuthStore } from "@/zustand/useAuthStore";
-import { useAuthLogic } from "@/hooks/useAuthLogic";
+import { useAuthUid, useSignOut } from "@/hooks";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 
 export default function Footer() {
-  const uid = useAuthStore((s) => s.uid);
-  const { handleSignOut } = useAuthLogic();
+  const uid = useAuthUid();
+  const handleSignOut = useSignOut();
 
   // Simplified filter: show footer items that are visible to everyone,
   // guests, or authenticated users based on their state

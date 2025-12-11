@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db } from "@/firebase/firebaseClient";
 import { doc, getDoc } from "firebase/firestore";
 import { FirestorePaths } from "@/firebase/paths";
@@ -32,6 +32,31 @@ interface UseImagePageDataReturn extends ImagePageDataState {
 }
 
 /**
+ * Helper to apply image data to state setters.
+ */
+const applyImageData = (
+  data: ImageData,
+  id: string,
+  setters: {
+    setImageData: (data: ImageData) => void;
+    setIsSharable: (v: boolean) => void;
+    setTags: (v: string[]) => void;
+    setCaption: (v: string) => void;
+    setBackgroundColor: (v: string) => void;
+    setIsPasswordProtected?: (v: boolean) => void;
+  }
+) => {
+  setters.setImageData({ ...data, id });
+  setters.setIsSharable(data?.isSharable ?? false);
+  setters.setTags(data?.tags ?? []);
+  setters.setCaption(data?.caption ?? "");
+  setters.setBackgroundColor(data?.backgroundColor || "#ffffff");
+  if (setters.setIsPasswordProtected && data?.password) {
+    setters.setIsPasswordProtected(true);
+  }
+};
+
+/**
  * Hook to manage image page data fetching and state.
  */
 export const useImagePageData = ({
@@ -49,54 +74,65 @@ export const useImagePageData = ({
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchImageData = async () => {
       try {
-        // Try to fetch as owner first
+        // Try to fetch as owner first (if authenticated)
         if (uid && !authPending) {
           const ownerDocRef = doc(db, FirestorePaths.profileCover(uid, id));
           const ownerDocSnap = await getDoc(ownerDocRef);
 
-          if (ownerDocSnap.exists()) {
+          if (isMounted && ownerDocSnap.exists()) {
             const data = ownerDocSnap.data() as ImageData;
-            setImageData({ ...data, id });
-            setIsSharable(data?.isSharable ?? false);
-            setTags(data?.tags ?? []);
-            setCaption(data?.caption ?? "");
+            applyImageData(data, id, {
+              setImageData,
+              setIsSharable,
+              setTags,
+              setCaption,
+              setBackgroundColor,
+            });
             setIsOwner(true);
-            setBackgroundColor(data?.backgroundColor || "#ffffff");
             return;
           }
         }
 
-        // Fetch as public image if not owner
-        if (!isOwner) {
-          const publicDocRef = doc(db, FirestorePaths.publicImage(id));
-          const publicDocSnap = await getDoc(publicDocRef);
+        // Fetch as public image (either not owner or not authenticated)
+        const publicDocRef = doc(db, FirestorePaths.publicImage(id));
+        const publicDocSnap = await getDoc(publicDocRef);
 
-          if (publicDocSnap.exists()) {
-            const data = publicDocSnap.data() as ImageData;
-            setImageData({ ...data, id });
-            setIsSharable(data?.isSharable ?? false);
-            setTags(data?.tags ?? []);
-            setCaption(data?.caption ?? "");
-            setBackgroundColor(data?.backgroundColor || "#ffffff");
-            if (data?.password) {
-              setIsPasswordProtected(true);
-            }
-          } else {
-            setImageData(false);
-          }
+        if (!isMounted) return;
+
+        if (publicDocSnap.exists()) {
+          const data = publicDocSnap.data() as ImageData;
+          applyImageData(data, id, {
+            setImageData,
+            setIsSharable,
+            setTags,
+            setCaption,
+            setBackgroundColor,
+            setIsPasswordProtected,
+          });
+          setIsOwner(false);
+        } else {
+          setImageData(false);
         }
       } catch (error) {
         console.error("Error fetching image data:", error);
-        setImageData(false);
+        if (isMounted) {
+          setImageData(false);
+        }
       }
     };
 
     if (id) fetchImageData();
-  }, [id, uid, authPending, refreshCounter, isOwner]);
 
-  const refreshData = () => setRefreshCounter((c) => c + 1);
+    return () => {
+      isMounted = false;
+    };
+  }, [id, uid, authPending, refreshCounter]);
+
+  const refreshData = useCallback(() => setRefreshCounter((c) => c + 1), []);
 
   return {
     imageData,

@@ -7,18 +7,12 @@ import { isProtectedRoute } from "@/constants/routes";
  *
  * This runs before the page renders, preventing flash of protected content.
  * Route definitions are in @/constants/routes.ts for single source of truth.
+ *
+ * Note: Static files and assets are filtered by the config.matcher below,
+ * so this function only receives route requests that need protection checks.
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Skip static files and API routes
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next();
-  }
 
   // Check if route requires authentication
   if (isProtectedRoute(pathname)) {
@@ -46,8 +40,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder files
+     * - api routes (handled separately)
+     * - public folder files (images, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

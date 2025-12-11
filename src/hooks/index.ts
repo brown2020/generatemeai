@@ -8,8 +8,15 @@ export {
   useAuthUid,
   useRequireAuth,
   useAuthUser,
+  useAuthState,
+  useAuthStatus,
+  useSignOut,
+  // Non-hook utilities (re-exported from zustand/helpers)
   getAuthenticatedUid,
   isAuthenticated,
+  getAuthUidOrNull,
+  getAuthState,
+  requireAuthUid,
 } from "./useAuth";
 export { useAuthLogic } from "./useAuthLogic";
 export { default as useAuthToken } from "./useAuthToken";

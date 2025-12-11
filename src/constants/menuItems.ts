@@ -1,5 +1,6 @@
 import { CircleUserIcon, CogIcon, ImagesIcon } from "lucide-react";
 import { NavItemData } from "@/components/navigation/NavItem";
+import { MenuItem } from "@/types/menu";
 
 export const MENU_ITEMS: MenuItem[] = [
   {
