@@ -2,10 +2,13 @@
 
 import { MENU_ITEMS } from "@/constants/menuItems";
 import { useAuthStore } from "@/zustand/useAuthStore";
+import { useAuthLogic } from "@/hooks/useAuthLogic";
 import Link from "next/link";
+import { LogOut } from "lucide-react";
 
 export default function Footer() {
   const uid = useAuthStore((s) => s.uid);
+  const { handleSignOut } = useAuthLogic();
 
   // Simplified filter: show footer items that are visible to everyone,
   // guests, or authenticated users based on their state
@@ -21,11 +24,20 @@ export default function Footer() {
         <Link
           key={item.label}
           href={item.href}
-          className="text-black/50 hover:text-black/100"
+          className="text-black/50 hover:text-black"
         >
           <div>{item.label}</div>
         </Link>
       ))}
+      {uid && (
+        <button
+          onClick={handleSignOut}
+          className="text-black/50 hover:text-black/100 flex items-center gap-1"
+        >
+          <LogOut className="w-3 h-3" />
+          <span>Sign Out</span>
+        </button>
+      )}
     </div>
   );
 }

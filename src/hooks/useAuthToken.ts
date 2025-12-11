@@ -85,7 +85,7 @@ const useAuthToken = (cookieName = "authToken") => {
     };
   }, [lastTokenRefreshKey, scheduleTokenRefresh]);
 
-  // Sync user state with auth store
+  // Sync user state with auth store and set cookie immediately
   useEffect(() => {
     if (user?.uid) {
       setAuthDetails({
@@ -97,11 +97,26 @@ const useAuthToken = (cookieName = "authToken") => {
         authReady: true,
         authPending: false,
       });
+
+      // Set auth cookie immediately for proxy.ts route protection
+      getIdToken(user).then((token) => {
+        setCookie(cookieName, token, {
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+        scheduleTokenRefresh();
+      });
     } else {
       clearAuthDetails();
       deleteCookie(cookieName);
     }
-  }, [clearAuthDetails, cookieName, setAuthDetails, user]);
+  }, [
+    clearAuthDetails,
+    cookieName,
+    setAuthDetails,
+    user,
+    scheduleTokenRefresh,
+  ]);
 
   return { uid: user?.uid, loading, error };
 };

@@ -1,6 +1,5 @@
 "use server";
 
-import { adminBucket } from "@/firebase/firebaseAdmin";
 import { resolveApiKey } from "@/utils/apiKeyResolver";
 import { assertSufficientCredits } from "@/utils/creditValidator";
 import { pollWithTimeout } from "@/utils/polling";
@@ -10,6 +9,7 @@ import {
   errorResult,
   getErrorMessage,
 } from "@/utils/errors";
+import { saveVideoFromUrl } from "@/utils/storage";
 
 /**
  * Response types for video generation APIs.
@@ -170,28 +170,6 @@ async function generateRunwayVideo(
 }
 
 /**
- * Saves a video to Firebase Storage.
- */
-async function saveVideoToStorage(videoUrl: string): Promise<string> {
-  const videoResponse = await fetch(videoUrl);
-  const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-
-  const fileName = `video-generation/${Date.now()}.mp4`;
-  const file = adminBucket.file(fileName);
-
-  await file.save(videoBuffer, {
-    contentType: "video/mp4",
-  });
-
-  const [signedUrl] = await file.getSignedUrl({
-    action: "read",
-    expires: "03-17-2125",
-  });
-
-  return signedUrl;
-}
-
-/**
  * Generates a video using the specified AI model.
  *
  * @param data - FormData containing generation parameters
@@ -263,7 +241,7 @@ export async function generateVideo(
     }
 
     // Save to Firebase Storage
-    const savedVideoUrl = await saveVideoToStorage(videoUrl);
+    const savedVideoUrl = await saveVideoFromUrl(videoUrl);
 
     return successResult({ videoUrl: savedVideoUrl });
   } catch (error) {

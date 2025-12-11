@@ -92,3 +92,40 @@ export const createGeneratedImagePath = (uid: string): string =>
  */
 export const createReferenceImagePath = (uid: string): string =>
   `image-references/${uid}/${Date.now()}.jpg`;
+
+/**
+ * Creates a storage path for generated videos.
+ */
+export const createVideoPath = (): string =>
+  `video-generation/${Date.now()}.mp4`;
+
+/**
+ * Creates a storage path for generated GIFs.
+ */
+export const createGifPath = (): string => `video-generation/${Date.now()}.gif`;
+
+/**
+ * Saves a video from URL to Firebase Storage.
+ * Fetches the video, converts to buffer, and saves.
+ */
+export async function saveVideoFromUrl(videoUrl: string): Promise<string> {
+  const response = await fetch(videoUrl);
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  return saveToStorage({
+    data: buffer,
+    path: createVideoPath(),
+    contentType: "video/mp4",
+  });
+}
+
+/**
+ * Saves a GIF buffer to Firebase Storage.
+ */
+export async function saveGif(gifBuffer: Buffer): Promise<string> {
+  return saveToStorage({
+    data: gifBuffer,
+    path: createGifPath(),
+    contentType: "image/gif",
+  });
+}
