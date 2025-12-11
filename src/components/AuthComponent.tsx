@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthStore } from "@/zustand/useAuthStore";
+import { useAuthState } from "@/zustand/selectors";
 import { useAuthLogic } from "@/hooks/useAuthLogic";
 import { AuthModal } from "./auth";
 
@@ -9,10 +9,7 @@ import { AuthModal } from "./auth";
  * Uses the extracted AuthModal for the modal UI.
  */
 export default function AuthComponent() {
-  const uid = useAuthStore((s) => s.uid);
-  const authEmail = useAuthStore((s) => s.authEmail);
-  const authDisplayName = useAuthStore((s) => s.authDisplayName);
-  const authPending = useAuthStore((s) => s.authPending);
+  const { uid, authEmail, authDisplayName, authPending } = useAuthState();
 
   const {
     email,
