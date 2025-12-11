@@ -23,8 +23,14 @@ export default function PaymentCheckoutPage({ amount }: Props) {
   useEffect(() => {
     async function initializePayment() {
       try {
-        const secret = await createPaymentIntent(convertToSubcurrency(amount));
-        if (secret) setClientSecret(secret);
+        const result = await createPaymentIntent(convertToSubcurrency(amount));
+
+        // Handle ActionResult response
+        if (result.success) {
+          setClientSecret(result.data.clientSecret);
+        } else {
+          setErrorMessage(result.error);
+        }
       } catch (error: unknown) {
         if (error instanceof Error) {
           setErrorMessage(

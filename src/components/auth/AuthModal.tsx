@@ -1,20 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { MailIcon, XIcon, LockIcon } from "lucide-react";
+import { MailIcon, X, LockIcon } from "lucide-react";
 import { PulseLoader } from "react-spinners";
 import Image from "next/image";
 import googleLogo from "@/app/assets/google.svg";
 
-interface AuthModalProps {
-  isVisible: boolean;
-  onClose: () => void;
-  // Auth state
+/**
+ * Auth state props - current authentication status.
+ */
+interface AuthStateProps {
   uid: string;
   authEmail: string;
   authDisplayName: string;
   authPending: boolean;
-  // Form state
+}
+
+/**
+ * Form state props - form field values and setters.
+ */
+interface FormStateProps {
   email: string;
   setEmail: (email: string) => void;
   password: string;
@@ -25,11 +30,12 @@ interface AuthModalProps {
   setAcceptTerms: (accept: boolean) => void;
   isEmailLinkLogin: boolean;
   setIsEmailLinkLogin: (value: boolean) => void;
-  showGoogleSignIn: boolean;
-  // Refs
-  formRef: React.RefObject<HTMLFormElement | null>;
-  modalRef: React.RefObject<HTMLDivElement | null>;
-  // Handlers
+}
+
+/**
+ * Auth handlers - authentication action callbacks.
+ */
+interface AuthHandlers {
   signInWithGoogle: () => void;
   handleSignOut: () => void;
   handlePasswordSignup: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -37,33 +43,30 @@ interface AuthModalProps {
   handlePasswordReset: () => void;
 }
 
+interface AuthModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  authState: AuthStateProps;
+  formState: FormStateProps;
+  handlers: AuthHandlers;
+  showGoogleSignIn: boolean;
+  formRef: React.RefObject<HTMLFormElement | null>;
+  modalRef: React.RefObject<HTMLDivElement | null>;
+}
+
 export function AuthModal({
   isVisible,
   onClose,
-  uid,
-  authEmail,
-  authDisplayName,
-  authPending,
-  email,
-  setEmail,
-  password,
-  setPassword,
-  name,
-  setName,
-  acceptTerms,
-  setAcceptTerms,
-  isEmailLinkLogin,
-  setIsEmailLinkLogin,
+  authState,
+  formState,
+  handlers,
   showGoogleSignIn,
   formRef,
   modalRef,
-  signInWithGoogle,
-  handleSignOut,
-  handlePasswordSignup,
-  handleSubmit,
-  handlePasswordReset,
 }: AuthModalProps) {
   if (!isVisible) return null;
+
+  const { uid, authEmail, authDisplayName, authPending } = authState;
 
   return (
     <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
@@ -75,35 +78,26 @@ export function AuthModal({
           onClick={onClose}
           className="absolute top-0 right-0 p-2 hover:bg-gray-400 bg-gray-200 rounded-full m-2"
         >
-          <XIcon size={24} className="text-gray-800" />
+          <X size={24} className="text-gray-800" />
         </button>
 
         {uid ? (
           <SignedInContent
             authDisplayName={authDisplayName}
             authEmail={authEmail}
-            handleSignOut={handleSignOut}
+            handleSignOut={handlers.handleSignOut}
           />
         ) : authPending ? (
-          <PendingContent email={email} handleSignOut={handleSignOut} />
+          <PendingContent
+            email={formState.email}
+            handleSignOut={handlers.handleSignOut}
+          />
         ) : (
           <SignInForm
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            name={name}
-            setName={setName}
-            acceptTerms={acceptTerms}
-            setAcceptTerms={setAcceptTerms}
-            isEmailLinkLogin={isEmailLinkLogin}
-            setIsEmailLinkLogin={setIsEmailLinkLogin}
+            formState={formState}
+            handlers={handlers}
             showGoogleSignIn={showGoogleSignIn}
             formRef={formRef}
-            signInWithGoogle={signInWithGoogle}
-            handlePasswordSignup={handlePasswordSignup}
-            handleSubmit={handleSubmit}
-            handlePasswordReset={handlePasswordReset}
           />
         )}
       </div>
@@ -164,43 +158,34 @@ function PendingContent({
 }
 
 function SignInForm({
-  email,
-  setEmail,
-  password,
-  setPassword,
-  name,
-  setName,
-  acceptTerms,
-  setAcceptTerms,
-  isEmailLinkLogin,
-  setIsEmailLinkLogin,
+  formState,
+  handlers,
   showGoogleSignIn,
   formRef,
-  signInWithGoogle,
-  handlePasswordSignup,
-  handleSubmit,
-  handlePasswordReset,
 }: {
-  email: string;
-  setEmail: (email: string) => void;
-  password: string;
-  setPassword: (password: string) => void;
-  name: string;
-  setName: (name: string) => void;
-  acceptTerms: boolean;
-  setAcceptTerms: (accept: boolean) => void;
-  isEmailLinkLogin: boolean;
-  setIsEmailLinkLogin: (value: boolean) => void;
+  formState: FormStateProps;
+  handlers: AuthHandlers;
   showGoogleSignIn: boolean;
   formRef: React.RefObject<HTMLFormElement | null>;
-  signInWithGoogle: () => void;
-  handlePasswordSignup: (e: React.FormEvent<HTMLFormElement>) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  handlePasswordReset: () => void;
 }) {
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    name,
+    setName,
+    acceptTerms,
+    setAcceptTerms,
+    isEmailLinkLogin,
+    setIsEmailLinkLogin,
+  } = formState;
+
   return (
     <form
-      onSubmit={isEmailLinkLogin ? handleSubmit : handlePasswordSignup}
+      onSubmit={
+        isEmailLinkLogin ? handlers.handleSubmit : handlers.handlePasswordSignup
+      }
       ref={formRef}
       className="flex flex-col gap-2"
     >
@@ -211,7 +196,7 @@ function SignInForm({
           <AuthButton
             label="Continue with Google"
             logo={googleLogo}
-            onClick={signInWithGoogle}
+            onClick={handlers.signInWithGoogle}
           />
           <div className="flex items-center justify-center w-full h-12">
             <hr className="grow h-px bg-gray-400 border-0" />
@@ -255,7 +240,7 @@ function SignInForm({
         <div className="text-right mt-2">
           <button
             type="button"
-            onClick={handlePasswordReset}
+            onClick={handlers.handlePasswordReset}
             className="underline text-sm text-blue-600 hover:text-blue-800"
           >
             Forgot Password?

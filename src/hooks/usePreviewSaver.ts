@@ -18,78 +18,73 @@ type PreviewType =
   | "medium"
   | "mood";
 
-interface ValueResolver {
-  getValue: () => string;
+interface ValueResolverConfig {
+  storeKey: keyof ReturnType<typeof useGenerationStore.getState>;
   transform?: (value: string) => string;
   blockNone?: boolean;
 }
 
-export const usePreviewSaver = () => {
-  const {
-    generatedImage,
-    model,
-    colorScheme,
-    lighting,
-    imageStyle,
-    perspective,
-    composition,
-    medium,
-    mood,
-    setShowMarkAsPreview,
-    setPreview,
-  } = useGenerationStore();
+/**
+ * Static configuration for value resolvers.
+ * Defined outside the hook to prevent recreation on every render.
+ */
+const VALUE_RESOLVER_CONFIG: Record<PreviewType, ValueResolverConfig> = {
+  model: { storeKey: "model" },
+  color: { storeKey: "colorScheme", blockNone: true },
+  lighting: { storeKey: "lighting", blockNone: true },
+  style: {
+    storeKey: "imageStyle",
+    transform: (val) => {
+      const styleObj = artStyles.find((s) => s.label === val);
+      return styleObj ? normalizeValue(styleObj.value) : normalizeValue(val);
+    },
+  },
+  perspective: {
+    storeKey: "perspective",
+    transform: getPerspectiveFromLabel,
+    blockNone: true,
+  },
+  composition: {
+    storeKey: "composition",
+    transform: getCompositionFromLabel,
+    blockNone: true,
+  },
+  medium: {
+    storeKey: "medium",
+    transform: getMediumFromLabel,
+    blockNone: true,
+  },
+  mood: {
+    storeKey: "mood",
+    transform: getMoodFromLabel,
+    blockNone: true,
+  },
+};
 
-  // Value resolvers for each preview type
-  const valueResolvers: Record<PreviewType, ValueResolver> = {
-    model: { getValue: () => model },
-    color: { getValue: () => colorScheme, blockNone: true },
-    lighting: { getValue: () => lighting, blockNone: true },
-    style: {
-      getValue: () => imageStyle,
-      transform: (val) => {
-        const styleObj = artStyles.find((s) => s.label === val);
-        return styleObj ? normalizeValue(styleObj.value) : normalizeValue(val);
-      },
-    },
-    perspective: {
-      getValue: () => perspective,
-      transform: getPerspectiveFromLabel,
-      blockNone: true,
-    },
-    composition: {
-      getValue: () => composition,
-      transform: getCompositionFromLabel,
-      blockNone: true,
-    },
-    medium: {
-      getValue: () => medium,
-      transform: getMediumFromLabel,
-      blockNone: true,
-    },
-    mood: {
-      getValue: () => mood,
-      transform: getMoodFromLabel,
-      blockNone: true,
-    },
-  };
+export const usePreviewSaver = () => {
+  const generatedImage = useGenerationStore((s) => s.generatedImage);
+  const setShowMarkAsPreview = useGenerationStore(
+    (s) => s.setShowMarkAsPreview
+  );
+  const setPreview = useGenerationStore((s) => s.setPreview);
 
   const saveAsPreview = useCallback(
     async (type: PreviewType) => {
       if (!generatedImage) return;
 
-      const resolver = valueResolvers[type];
-      const rawValue = resolver.getValue();
+      // Get current store state
+      const state = useGenerationStore.getState();
+      const config = VALUE_RESOLVER_CONFIG[type];
+      const rawValue = state[config.storeKey] as string;
 
       // Check for "None" values
-      if (resolver.blockNone && rawValue === "None") {
+      if (config.blockNone && rawValue === "None") {
         toast.error("Cannot save 'None' as a preview");
         return;
       }
 
       // Transform value if needed
-      const value = resolver.transform
-        ? resolver.transform(rawValue)
-        : rawValue;
+      const value = config.transform ? config.transform(rawValue) : rawValue;
 
       if (!value) {
         toast.error(`Please select a ${type} first`);
@@ -123,19 +118,7 @@ export const usePreviewSaver = () => {
         console.error(error);
       }
     },
-    [
-      generatedImage,
-      model,
-      colorScheme,
-      lighting,
-      imageStyle,
-      perspective,
-      composition,
-      medium,
-      mood,
-      setShowMarkAsPreview,
-      setPreview,
-    ]
+    [generatedImage, setShowMarkAsPreview, setPreview]
   );
 
   return { saveAsPreview };
