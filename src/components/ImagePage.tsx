@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { db } from "../firebase/firebaseClient";
 import { doc, updateDoc } from "firebase/firestore";
 import "../app/globals.css";
@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import TextareaAutosize from "react-textarea-autosize";
 import useProfileStore from "@/zustand/useProfileStore";
 import { creditsToMinus } from "@/utils/credits";
-import ModalComponent from "./VideoModalComponent";
+import VideoModalComponent from "./VideoModalComponent";
 import { removeBackground } from "@/actions/removeBackground";
 import { SiStagetimer } from "react-icons/si";
 import { ImageData } from "@/types/image";
@@ -92,8 +92,6 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const briaApiKey = useProfileStore((s) => s.profile.bria_api_key);
   const credits = useProfileStore((s) => s.profile.credits);
   const minusCredits = useProfileStore((state) => state.minusCredits);
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -355,17 +353,15 @@ const ImagePage = ({ id }: ImagePageProps) => {
       )}
 
       {isModalOpen && imageData && (
-        <ModalComponent
-          imageData={{ ...imageData }}
+        <VideoModalComponent
+          imageData={imageData as ImageData}
           isOpen={isModalOpen}
           onRequestClose={() => setIsModalOpen(false)}
           downloadUrl={imageData.downloadUrl}
           ariaHideApp={false}
-          initialData={hasVideo && imageData}
+          initialData={hasVideo ? (imageData as ImageData) : false}
         />
       )}
-
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 };

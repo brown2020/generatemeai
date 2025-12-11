@@ -1,35 +1,37 @@
 "use client";
 
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import TextareaAutosize from "react-textarea-autosize";
+import Select, { SingleValue } from "react-select";
+import Modal from "react-modal";
+import toast from "react-hot-toast";
+
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { db } from "@/firebase/firebaseClient";
 import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
-import { useState } from "react";
 import { PromptDataType } from "@/types/promptdata";
-import Select, { SingleValue } from "react-select";
+import { ImageData } from "@/types/image";
 import useProfileStore from "@/zustand/useProfileStore";
-import toast from "react-hot-toast";
 import { findModelByValue, models, SelectModel } from "@/constants/models";
 import { model } from "@/types/model";
 import { creditsToMinus } from "@/utils/credits";
 import { animations } from "@/constants/animations";
-import Modal from "react-modal";
 import { generateVideo } from "@/actions/generateVideo";
 import { audios } from "@/constants/audios";
-import { useRouter } from "next/navigation";
 
-interface ModalProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  imageData: any;
+type VideoMode = "video" | "animation";
+
+interface VideoModalProps {
+  imageData: ImageData;
   isOpen: boolean;
   onRequestClose: () => void;
   downloadUrl: string;
   ariaHideApp: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  initialData?: any;
+  initialData?: ImageData | false;
 }
 
-const ModalComponent: React.FC<ModalProps> = ({
+const VideoModalComponent: React.FC<VideoModalProps> = ({
   imageData,
   isOpen,
   onRequestClose,
@@ -38,61 +40,91 @@ const ModalComponent: React.FC<ModalProps> = ({
   initialData,
 }) => {
   const router = useRouter();
-
   const uid = useAuthStore((s) => s.uid);
 
   const useCredits = useProfileStore((s) => s.profile.useCredits);
   const didApiKey = useProfileStore((s) => s.profile.did_api_key);
   const runwayApiKey = useProfileStore((s) => s.profile.runway_ml_api_key);
-
   const credits = useProfileStore((s) => s.profile.credits);
-  const minusCredits = useProfileStore((state) => state.minusCredits);
+  const minusCredits = useProfileStore((s) => s.minusCredits);
 
-  const [mode, setMode] = useState<"video" | "animation">(
-    initialData && !initialData?.scriptPrompt ? "animation" : "video"
-  );
-  const [scriptPrompt, setScriptPrompt] = useState<string>(
-    initialData?.scriptPrompt || ""
+  // Determine initial mode based on initialData
+  const getInitialMode = (): VideoMode => {
+    if (
+      initialData &&
+      typeof initialData !== "boolean" &&
+      !initialData.scriptPrompt
+    ) {
+      return "animation";
+    }
+    return "video";
+  };
+
+  const getInitialValue = <T,>(field: keyof ImageData, defaultValue: T): T => {
+    if (initialData && typeof initialData !== "boolean") {
+      return (initialData[field] as T) ?? defaultValue;
+    }
+    return defaultValue;
+  };
+
+  const [mode, setMode] = useState<VideoMode>(getInitialMode());
+  const [scriptPrompt, setScriptPrompt] = useState(
+    getInitialValue("scriptPrompt", "")
   );
   const [videoModel, setVideoModel] = useState<model>(
-    initialData?.videoModel || "d-id"
+    getInitialValue("videoModel", "d-id") as model
   );
-  const [audio, setAudio] = useState<string>(initialData?.audio || "Matthew");
-  const [animation, setAnimation] = useState<string>(
-    initialData?.animation || "nostalgia"
+  const [audio, setAudio] = useState(getInitialValue("audio", "Matthew"));
+  const [animation, setAnimation] = useState(
+    getInitialValue("animation", "nostalgia")
   );
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
 
-  async function saveHistory(
-    videoDownloadUrl: string,
-    audio: string,
-    videoModel: string,
-    scriptPrompt: string,
-    animation: string
-  ) {
-    const coll = collection(db, "profiles", uid, "covers");
-    const docRef = doc(coll);
+  const saveHistory = useCallback(
+    async (
+      videoDownloadUrl: string,
+      audioValue: string,
+      videoModelValue: string,
+      scriptPromptValue: string,
+      animationValue: string
+    ) => {
+      const coll = collection(db, "profiles", uid, "covers");
+      const docRef = doc(coll);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id, ...restOfImageData } = imageData;
+      const { id: _id, ...restOfImageData } = imageData;
 
-    const finalPromptData: PromptDataType = {
-      ...restOfImageData,
-      id: docRef.id,
-      timestamp: Timestamp.now(),
-      videoDownloadUrl: videoDownloadUrl || "",
-      audio: audio || "",
-      videoModel: videoModel || "",
-      scriptPrompt: scriptPrompt,
-      animation: findModelByValue(videoModel as model)?.hasAnimationType
-        ? animation || ""
-        : "",
-    };
+      const finalPromptData: PromptDataType = {
+        freestyle: restOfImageData.freestyle || "",
+        style: restOfImageData.style || "",
+        model: restOfImageData.model || "",
+        colorScheme: restOfImageData.colorScheme || "None",
+        lighting: restOfImageData.lighting || "None",
+        perspective: restOfImageData.perspective || "None",
+        composition: restOfImageData.composition || "None",
+        medium: restOfImageData.medium || "None",
+        mood: restOfImageData.mood || "None",
+        tags: restOfImageData.tags || [],
+        downloadUrl: restOfImageData.downloadUrl,
+        id: docRef.id,
+        timestamp: Timestamp.now(),
+        // Video-specific fields stored in the object
+        ...({
+          videoDownloadUrl: videoDownloadUrl || "",
+          audio: audioValue || "",
+          videoModel: videoModelValue || "",
+          scriptPrompt: scriptPromptValue,
+          animation: findModelByValue(videoModelValue as model)
+            ?.hasAnimationType
+            ? animationValue || ""
+            : "",
+        } as Partial<PromptDataType>),
+      };
 
-    await setDoc(docRef, finalPromptData);
-
-    return docRef.id;
-  }
+      await setDoc(docRef, finalPromptData);
+      return docRef.id;
+    },
+    [imageData, uid]
+  );
 
   const handleGenerate = async () => {
     try {
@@ -235,9 +267,7 @@ const ModalComponent: React.FC<ModalProps> = ({
                 onChange={(v: SingleValue<SelectModel>) =>
                   setVideoModel(v ? v.value : "d-id")
                 }
-                defaultValue={findModelByValue(
-                  initialData?.videoModel || "d-id"
-                )}
+                defaultValue={findModelByValue(videoModel)}
                 value={findModelByValue(videoModel || "d-id")}
                 options={models.filter(
                   (m) =>
@@ -279,14 +309,10 @@ const ModalComponent: React.FC<ModalProps> = ({
                     name="animation"
                     onChange={(
                       v: SingleValue<{ label: string; value: string }>
-                    ) =>
-                      setAnimation(
-                        v ? v.value : initialData?.animation || "nostalgia"
-                      )
-                    }
+                    ) => setAnimation(v ? v.value : animation)}
                     defaultValue={{
-                      label: initialData?.animation || "nostalgia",
-                      value: initialData?.animation || "nostalgia",
+                      label: animation,
+                      value: animation,
                     }}
                     options={animations.map((animation) => ({
                       label: animation.label,
@@ -316,4 +342,4 @@ const ModalComponent: React.FC<ModalProps> = ({
   );
 };
 
-export default ModalComponent;
+export default VideoModalComponent;
