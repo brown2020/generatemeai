@@ -5,6 +5,12 @@ import { motion } from "framer-motion";
 import { useAuthState } from "@/zustand/selectors";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import {
+  homeImageAnimation,
+  homeImageTransition,
+  homeImageHover,
+  homeImageTap,
+} from "@/constants/animations";
 
 interface HomePageProps {
   initialImages: string[];
@@ -28,21 +34,11 @@ export default function HomePage({ initialImages = [] }: HomePageProps) {
                 paddingBottom: "100%",
                 cursor: "pointer",
               }}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.5)",
-              }}
-              animate={{
-                rotate: [0, 1, -1, 0],
-                scale: [1, 1.02, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                repeatType: "loop",
-                ease: "easeInOut",
-              }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={homeImageHover}
+              variants={homeImageAnimation}
+              animate="animate"
+              transition={homeImageTransition}
+              whileTap={homeImageTap}
             />
           ))}
         </div>

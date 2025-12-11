@@ -1,78 +1,87 @@
-import { useState, useEffect } from "react";
-import { Image as ImageIcon } from "lucide-react";
-import { checkImageExists } from "@/utils/imageUtils";
+"use client";
+
+import { memo, useCallback } from "react";
 
 interface SelectableCardProps {
-  /** Display label for the card */
+  /** Display label */
   label: string;
-  /** Whether the card is currently selected */
+  /** Preview image URL */
+  previewUrl?: string;
+  /** Whether this card is selected */
   isSelected: boolean;
-  /** Click handler for the card */
+  /** Click handler */
   onClick: () => void;
-  /** Function that returns an array of possible preview image paths */
-  getPreviewPaths: () => string[];
+  /** Optional badge text */
+  badge?: string;
+  /** Whether to show preview image */
+  showPreview?: boolean;
 }
 
 /**
- * A generic selectable card component with preview image support.
- * Used for model selection, style selection, and other similar UI patterns.
+ * Generic selectable card component for models, styles, etc.
  */
-export const SelectableCard = ({
+export const SelectableCard = memo(function SelectableCard({
   label,
+  previewUrl,
   isSelected,
   onClick,
-  getPreviewPaths,
-}: SelectableCardProps) => {
-  const [previewImage, setPreviewImage] = useState<string>("");
-
-  useEffect(() => {
-    const loadPreview = async () => {
-      const possibleImages = getPreviewPaths();
-
-      for (const img of possibleImages) {
-        const exists = await checkImageExists(img);
-        if (exists) {
-          setPreviewImage(img);
-          break;
-        }
-      }
-    };
-
-    loadPreview();
-  }, [getPreviewPaths]);
+  badge,
+  showPreview = true,
+}: SelectableCardProps) {
+  const handleClick = useCallback(() => {
+    onClick();
+  }, [onClick]);
 
   return (
-    <div className="w-full aspect-3/4">
-      <button
-        onClick={onClick}
-        className={`relative group w-full h-full rounded-lg overflow-hidden transition-all
-          ${
-            isSelected
-              ? "ring-2 ring-blue-500 scale-[0.98]"
-              : "hover:scale-[0.98] hover:shadow-lg"
-          }
-        `}
+    <div
+      className={`relative flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition-all
+        ${
+          isSelected
+            ? "border-blue-600 bg-blue-50"
+            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+        }`}
+      onClick={handleClick}
+    >
+      {showPreview && previewUrl && (
+        <div className="w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
+          <img
+            src={previewUrl}
+            alt={label}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      )}
+
+      <span
+        className={`text-xs font-medium text-center line-clamp-2 ${
+          isSelected ? "text-blue-700" : "text-gray-700"
+        }`}
       >
-        <div className="absolute inset-0 bg-gray-100">
-          {previewImage ? (
-            <img
-              src={previewImage}
-              alt={label}
-              className="w-full h-full object-cover"
-              onError={() => setPreviewImage("")}
+        {label}
+      </span>
+
+      {badge && (
+        <span className="absolute top-1 right-1 px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 rounded">
+          {badge}
+        </span>
+      )}
+
+      {isSelected && (
+        <div className="absolute top-1 left-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+          <svg
+            className="w-2.5 h-2.5 text-white"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <ImageIcon size={32} />
-            </div>
-          )}
+          </svg>
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent pt-8 pb-3 px-2">
-          <div className="text-center text-white text-sm font-medium">
-            {label}
-          </div>
-        </div>
-      </button>
+      )}
     </div>
   );
-};
+});

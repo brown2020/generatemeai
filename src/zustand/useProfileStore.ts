@@ -24,13 +24,16 @@ export interface ProfileType {
   ideogram_api_key: string;
 }
 
+const DEFAULT_CREDITS = 1000;
+const MIN_CREDITS_THRESHOLD = 100;
+
 const defaultProfile: ProfileType = {
   email: "",
   contactEmail: "",
   displayName: "",
   photoUrl: "",
   emailVerified: false,
-  credits: 0,
+  credits: DEFAULT_CREDITS,
   fireworks_api_key: "",
   openai_api_key: "",
   stability_api_key: "",
@@ -53,22 +56,52 @@ interface ProfileState {
   deleteAccount: () => Promise<void>;
 }
 
-const mergeProfileWithDefaults = (
-  profile: Partial<ProfileType>,
-  authState: {
-    authEmail?: string;
-    authDisplayName?: string;
-    authPhotoUrl?: string;
-  }
-): ProfileType => ({
-  ...defaultProfile,
-  ...profile,
-  credits: profile.credits && profile.credits >= 100 ? profile.credits : 1000,
-  email: authState.authEmail || profile.email || "",
-  contactEmail: profile.contactEmail || authState.authEmail || "",
-  displayName: profile.displayName || authState.authDisplayName || "",
-  photoUrl: profile.photoUrl || authState.authPhotoUrl || "",
-});
+/**
+ * Creates a profile by merging defaults with auth state and optional existing data.
+ */
+const createProfileFromAuth = (
+  existingProfile?: Partial<ProfileType>
+): ProfileType => {
+  const { authEmail, authDisplayName, authPhotoUrl, authEmailVerified } =
+    getAuthState();
+
+  const baseProfile = existingProfile
+    ? { ...defaultProfile, ...existingProfile }
+    : { ...defaultProfile };
+
+  // Ensure minimum credits
+  const credits =
+    baseProfile.credits >= MIN_CREDITS_THRESHOLD
+      ? baseProfile.credits
+      : DEFAULT_CREDITS;
+
+  return {
+    ...baseProfile,
+    credits,
+    email: authEmail || baseProfile.email,
+    contactEmail: baseProfile.contactEmail || authEmail || "",
+    displayName: baseProfile.displayName || authDisplayName || "",
+    photoUrl: baseProfile.photoUrl || authPhotoUrl || "",
+    emailVerified: authEmailVerified || baseProfile.emailVerified,
+  };
+};
+
+/**
+ * Updates credits in Firestore.
+ */
+async function updateCredits(uid: string, credits: number): Promise<void> {
+  const userRef = doc(db, `users/${uid}/profile/userData`);
+  await updateDoc(userRef, { credits });
+}
+
+/**
+ * Logs profile errors consistently.
+ */
+function handleProfileError(action: string, error: unknown): void {
+  const errorMessage =
+    error instanceof Error ? error.message : "An unknown error occurred";
+  console.error(`Error ${action}:`, errorMessage);
+}
 
 const useProfileStore = create<ProfileState>((set, get) => ({
   profile: defaultProfile,
@@ -77,25 +110,13 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     const uid = getAuthUidOrNull();
     if (!uid) return;
 
-    const { authEmail, authDisplayName, authPhotoUrl, authEmailVerified } =
-      getAuthState();
-
     try {
       const userRef = doc(db, `users/${uid}/profile/userData`);
       const docSnap = await getDoc(userRef);
 
-      const newProfile = docSnap.exists()
-        ? mergeProfileWithDefaults(docSnap.data() as ProfileType, {
-            authEmail,
-            authDisplayName,
-            authPhotoUrl,
-          })
-        : createNewProfile(
-            authEmail,
-            authDisplayName,
-            authPhotoUrl,
-            authEmailVerified
-          );
+      const newProfile = createProfileFromAuth(
+        docSnap.exists() ? (docSnap.data() as ProfileType) : undefined
+      );
 
       await setDoc(userRef, newProfile);
       set({ profile: newProfile });
@@ -168,46 +189,5 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 }));
-
-// Helper function to create a new profile
-function createNewProfile(
-  authEmail?: string,
-  authDisplayName?: string,
-  authPhotoUrl?: string,
-  authEmailVerified?: boolean
-): ProfileType {
-  return {
-    email: authEmail || "",
-    contactEmail: "",
-    displayName: authDisplayName || "",
-    photoUrl: authPhotoUrl || "",
-    emailVerified: authEmailVerified || false,
-    credits: 1000,
-    fireworks_api_key: "",
-    openai_api_key: "",
-    stability_api_key: "",
-    bria_api_key: "",
-    did_api_key: "",
-    replicate_api_key: "",
-    selectedAvatar: "",
-    selectedTalkingPhoto: "",
-    useCredits: true,
-    runway_ml_api_key: "",
-    ideogram_api_key: "",
-  };
-}
-
-// Helper function to update credits
-async function updateCredits(uid: string, credits: number): Promise<void> {
-  const userRef = doc(db, `users/${uid}/profile/userData`);
-  await updateDoc(userRef, { credits });
-}
-
-// Helper function to handle errors
-function handleProfileError(action: string, error: unknown): void {
-  const errorMessage =
-    error instanceof Error ? error.message : "An unknown error occurred";
-  console.error(`Error ${action}:`, errorMessage);
-}
 
 export default useProfileStore;

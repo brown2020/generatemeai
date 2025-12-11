@@ -1,28 +1,83 @@
 "use server";
 
 import { adminBucket } from "@/firebase/firebaseAdmin";
-import { model } from "@/types/model";
 import { strategies } from "@/strategies";
 import { resolveApiKeyFromForm } from "@/utils/apiKeyResolver";
 import { assertSufficientCredits } from "@/utils/creditValidator";
-import { getErrorMessage } from "@/utils/errors";
+import {
+  ActionResult,
+  successResult,
+  errorResult,
+  getErrorMessage,
+} from "@/utils/errors";
 
 /**
- * Result type for image generation.
+ * Image generation result data.
  */
-type GenerateImageResult =
-  | { imageUrl: string; imageReference?: string; error?: never }
-  | { error: string; imageUrl?: never; imageReference?: never };
+interface ImageGenerationData {
+  imageUrl: string;
+  imageReference?: string;
+}
+
+/**
+ * Saves a generated image to Firebase Storage.
+ */
+async function saveGeneratedImage(
+  imageData: ArrayBuffer | Buffer,
+  uid: string,
+  prompt: string
+): Promise<string> {
+  const finalImage = Buffer.isBuffer(imageData)
+    ? imageData
+    : Buffer.from(new Uint8Array(imageData));
+  const fileName = `generated/${uid}/${Date.now()}.jpg`;
+  const file = adminBucket.file(fileName);
+
+  await file.save(finalImage, {
+    contentType: "image/jpeg",
+  });
+
+  await file.setMetadata({
+    metadata: { prompt },
+  });
+
+  const [signedUrl] = await file.getSignedUrl({
+    action: "read",
+    expires: "03-17-2125",
+  });
+
+  return signedUrl;
+}
+
+/**
+ * Saves a reference image to Firebase Storage.
+ */
+async function saveReferenceImage(img: File, uid: string): Promise<string> {
+  const imageBuffer = Buffer.from(await img.arrayBuffer());
+  const referenceFileName = `image-references/${uid}/${Date.now()}.jpg`;
+  const referenceFile = adminBucket.file(referenceFileName);
+
+  await referenceFile.save(imageBuffer, {
+    contentType: "image/jpeg",
+  });
+
+  const [signedUrl] = await referenceFile.getSignedUrl({
+    action: "read",
+    expires: "03-17-2125",
+  });
+
+  return signedUrl;
+}
 
 /**
  * Generates an image using the specified AI model.
  *
  * @param data - FormData containing generation parameters
- * @returns Generated image URL or error
+ * @returns ActionResult with image URL or error
  */
 export async function generateImage(
   data: FormData
-): Promise<GenerateImageResult> {
+): Promise<ActionResult<ImageGenerationData>> {
   try {
     // Extract required parameters
     const message = data.get("message") as string | null;
@@ -34,7 +89,10 @@ export async function generateImage(
 
     // Validate required parameters
     if (!message || !uid || !modelName) {
-      throw new Error("Required parameters (message, uid, model) are missing.");
+      return errorResult(
+        "Required parameters (message, uid, model) are missing.",
+        "INVALID_INPUT"
+      );
     }
 
     // Check credits
@@ -43,13 +101,16 @@ export async function generateImage(
     // Get the strategy for the model
     const strategy = strategies[modelName];
     if (!strategy) {
-      throw new Error(`Unsupported model: ${modelName}`);
+      return errorResult(`Unsupported model: ${modelName}`, "INVALID_INPUT");
     }
 
     // Resolve API key
     const apiKey = resolveApiKeyFromForm(modelName, useCredits, data);
     if (!apiKey) {
-      throw new Error(`API key not configured for model: ${modelName}`);
+      return errorResult(
+        `API key not configured for model: ${modelName}`,
+        "INVALID_API_KEY"
+      );
     }
 
     // Generate image
@@ -60,52 +121,26 @@ export async function generateImage(
       useCredits,
     });
 
-    // Save generated image to Firebase
-    let imageUrl: string | undefined;
-    if (imageData) {
-      const finalImage = Buffer.from(new Uint8Array(imageData));
-      const fileName = `generated/${uid}/${Date.now()}.jpg`;
-      const file = adminBucket.file(fileName);
-
-      await file.save(finalImage, {
-        contentType: "image/jpeg",
-      });
-
-      await file.setMetadata({
-        metadata: { prompt: message },
-      });
-
-      [imageUrl] = await file.getSignedUrl({
-        action: "read",
-        expires: "03-17-2125",
-      });
+    if (!imageData) {
+      return errorResult(
+        "Image generation failed - no image data returned",
+        "GENERATION_FAILED"
+      );
     }
+
+    // Save generated image to Firebase
+    const imageUrl = await saveGeneratedImage(imageData, uid, message);
 
     // Handle uploaded reference image
     let imageReference: string | undefined;
     if (img) {
-      const imageBuffer = Buffer.from(await img.arrayBuffer());
-      const referenceFileName = `image-references/${uid}/${Date.now()}.jpg`;
-      const referenceFile = adminBucket.file(referenceFileName);
-
-      await referenceFile.save(imageBuffer, {
-        contentType: "image/jpeg",
-      });
-
-      [imageReference] = await referenceFile.getSignedUrl({
-        action: "read",
-        expires: "03-17-2125",
-      });
+      imageReference = await saveReferenceImage(img, uid);
     }
 
-    if (!imageUrl) {
-      throw new Error("Image generation failed - no image data returned");
-    }
-
-    return { imageUrl, imageReference };
+    return successResult({ imageUrl, imageReference });
   } catch (error) {
     const errorMessage = getErrorMessage(error);
     console.error("Error generating image:", errorMessage);
-    return { error: errorMessage };
+    return errorResult(errorMessage, "GENERATION_FAILED");
   }
 }

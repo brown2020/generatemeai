@@ -1,22 +1,23 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Copy, Check, LogOut } from "lucide-react";
+import { Copy, Check, LogOut } from "lucide-react";
+import { useState } from "react";
 
 import PaymentsPage from "./PaymentsPage";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useAuthLogic } from "@/hooks/useAuthLogic";
 import { API_KEY_CONFIGS, getApiKeyValue } from "@/constants/apiKeys";
+import { ApiKeyInput } from "./profile/ApiKeyInput";
 
 export default function Profile() {
   const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
   const deleteAccount = useProfileStore((state) => state.deleteAccount);
   const { uid, authEmail } = useAuthStore((state) => state);
-  const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const { handleSignOut } = useAuthLogic();
   const router = useRouter();
@@ -33,10 +34,6 @@ export default function Profile() {
     setTimeout(() => setCopiedKey(null), 2000);
   }, []);
 
-  const toggleApiKeyVisibility = useCallback((key: string) => {
-    setShowApiKey((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
-
   const handleDeleteAccount = useCallback(() => {
     if (
       confirm(
@@ -50,6 +47,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header Section */}
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 relative overflow-hidden flex justify-between items-center">
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 to-purple-500" />
           <div>
@@ -70,6 +68,7 @@ export default function Profile() {
           </button>
         </div>
 
+        {/* Account Information Section */}
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
@@ -130,6 +129,7 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* API Keys Section */}
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
@@ -137,55 +137,19 @@ export default function Profile() {
               API Keys
             </h2>
             <div className="space-y-6">
-              {API_KEY_CONFIGS.map(({ key, label }) => {
-                const value = getApiKeyValue(profile, key);
-                return (
-                  <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {label}
-                    </label>
-                    <div className="relative group">
-                      <input
-                        type={showApiKey[key] ? "text" : "password"}
-                        value={value}
-                        onChange={(e) =>
-                          updateProfile({ [key]: e.target.value })
-                        }
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-20
-                          text-sm transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500
-                          hover:border-gray-400"
-                        placeholder={`Enter your ${label}`}
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        <button
-                          onClick={() => handleCopyToClipboard(value, key)}
-                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          {copiedKey === key ? (
-                            <Check className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => toggleApiKeyVisibility(key)}
-                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          {showApiKey[key] ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {API_KEY_CONFIGS.map(({ key, label }) => (
+                <ApiKeyInput
+                  key={key}
+                  label={label}
+                  value={getApiKeyValue(profile, key)}
+                  onChange={(value) => updateProfile({ [key]: value })}
+                />
+              ))}
             </div>
           </div>
         </div>
 
+        {/* Credits & Payments Section */}
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
@@ -196,6 +160,7 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Settings Section */}
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">

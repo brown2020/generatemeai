@@ -7,11 +7,12 @@ import Link from "next/link";
 export default function Footer() {
   const uid = useAuthStore((s) => s.uid);
 
+  // Simplified filter: show footer items that are visible to everyone,
+  // guests, or authenticated users based on their state
   const menuItems = MENU_ITEMS.filter((item) => {
-    if (item.footer && item.show === "everyone") return true;
-    if (item.footer && item.show === "guest_only") return true;
-    if (item.footer && item.show === "user_only") return uid;
-    return false;
+    if (!item.footer) return false;
+    if (item.show === "everyone" || item.show === "guest_only") return true;
+    return item.show === "user_only" && !!uid;
   });
 
   return (
