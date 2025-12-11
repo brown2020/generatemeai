@@ -4,6 +4,7 @@ import { deleteCookie, setCookie } from "cookies-next";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
+import { STORAGE_KEYS } from "@/constants/storage";
 
 const REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
 const DEBOUNCE_DELAY = 1000;
@@ -13,7 +14,7 @@ const useAuthToken = (cookieName = "authToken") => {
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
 
-  const lastTokenRefreshKey = `lastTokenRefresh_${cookieName}`;
+  const lastTokenRefreshKey = `${STORAGE_KEYS.LAST_TOKEN_REFRESH}${cookieName}`;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 

@@ -2,6 +2,10 @@
 
 import React from "react";
 
+/**
+ * Navigation item data structure.
+ * Matches NavItemData in types/menu.d.ts for global usage.
+ */
 export interface NavItemData {
   label: string;
   icon: React.ElementType;

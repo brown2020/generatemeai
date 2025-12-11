@@ -25,7 +25,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.log({ error, errorInfo });
+    // Log error to console for debugging
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+
+    // TODO: Send to error reporting service (e.g., Sentry) in production
+    // if (process.env.NODE_ENV === 'production') {
+    //   reportError({ error, errorInfo });
+    // }
   }
 
   handleTryAgain = () => {
@@ -34,11 +40,20 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   renderErrorDetails() {
     const { errorMessage, errorStack } = this.state;
+
+    // Only show detailed error info in development
+    if (process.env.NODE_ENV !== "development") {
+      return null;
+    }
+
     return (
-      <div>
-        <p>Error Message: {errorMessage}</p>
-        <p>Error Stack:</p>
-        <pre>{errorStack}</pre>
+      <div className="mt-4 text-sm opacity-75">
+        <p className="font-semibold">Error Message:</p>
+        <p className="mb-2">{errorMessage}</p>
+        <p className="font-semibold">Stack Trace:</p>
+        <pre className="text-xs overflow-auto max-h-48 bg-black/20 p-2 rounded">
+          {errorStack}
+        </pre>
       </div>
     );
   }
@@ -52,15 +67,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             service. Try reloading.
           </h2>
           <button
-            className="btn btn-primary mr-auto"
+            className="btn btn-primary mr-auto px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition-colors"
             type="button"
             onClick={this.handleTryAgain}
           >
             Reload App
           </button>
-          <div>
-            Here is some error information you can share with the developer:
-          </div>
           {this.renderErrorDetails()}
         </div>
       );
