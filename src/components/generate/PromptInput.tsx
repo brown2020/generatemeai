@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useRef } from "react";
+import { ChangeEvent, useRef, useMemo, useEffect } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import {
   Mic,
@@ -41,6 +41,21 @@ export const PromptInput = ({
 }: PromptInputProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Create object URL for preview and clean up on unmount or file change
+  const previewUrl = useMemo(() => {
+    if (!uploadedImage) return null;
+    return URL.createObjectURL(uploadedImage);
+  }, [uploadedImage]);
+
+  // Clean up object URL when it changes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
@@ -73,6 +88,7 @@ export const PromptInput = ({
         <div className="absolute bottom-3 right-3 flex items-center gap-2">
           {supportsImageUpload && (
             <button
+              type="button"
               onClick={handleUploadClick}
               className="group relative inline-flex items-center justify-center w-9 h-9 
                 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 
@@ -84,6 +100,7 @@ export const PromptInput = ({
           )}
 
           <button
+            type="button"
             onClick={onToggleRecording}
             className={`group relative inline-flex items-center justify-center w-9 h-9 
               rounded-lg transition-all duration-200 hover:shadow-md
@@ -102,6 +119,7 @@ export const PromptInput = ({
           </button>
 
           <button
+            type="button"
             onClick={onOptimize}
             disabled={!value || isOptimizing}
             className={`group relative inline-flex items-center justify-center w-9 h-9 
@@ -128,15 +146,16 @@ export const PromptInput = ({
         </div>
       </div>
 
-      {supportsImageUpload && uploadedImage && (
+      {supportsImageUpload && uploadedImage && previewUrl && (
         <div className="relative inline-block">
           <div className="relative group">
             <img
-              src={URL.createObjectURL(uploadedImage)}
+              src={previewUrl}
               alt="Reference"
               className="w-40 h-40 object-cover rounded-lg border-2 border-blue-600 shadow-md transition-transform hover:scale-105"
             />
             <button
+              type="button"
               className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 transition-colors shadow-md"
               onClick={onRemoveImage}
               title="Remove Image"

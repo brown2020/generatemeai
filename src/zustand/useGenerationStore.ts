@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { model } from "@/types/model";
+import type { Model } from "@/constants/modelRegistry";
 
 export interface GenerationState {
   imagePrompt: string;
   imageStyle: string;
-  model: model;
+  model: Model;
   colorScheme: string;
   lighting: string;
   perspective: string;
@@ -36,46 +36,32 @@ export interface GenerationState {
     | "mood"
     | null;
   previewValue: string | null;
+}
 
-  // Generic field updater (for less common fields)
+// Separate actions interface for cleaner typing
+export interface GenerationActions {
+  /** Generic field updater - preferred for new code */
   updateField: <K extends keyof GenerationState>(
     field: K,
     value: GenerationState[K]
   ) => void;
-
-  // Batch update for multiple fields
+  /** Batch update for multiple fields */
   updateFields: (fields: Partial<GenerationState>) => void;
-
-  // Frequently used setters (kept for convenience)
-  setImagePrompt: (prompt: string) => void;
-  setImageStyle: (style: string) => void;
-  setModel: (model: model) => void;
-  setColorScheme: (color: string) => void;
-  setLighting: (lighting: string) => void;
-  setPerspective: (perspective: string) => void;
-  setComposition: (composition: string) => void;
-  setMedium: (medium: string) => void;
-  setMood: (mood: string) => void;
-  setSelectedCategory: (category: string) => void;
-  setTags: (tags: string[]) => void;
-  setSuggestedTags: (tags: string[]) => void;
-  setGeneratedImage: (url: string) => void;
-  setUploadedImage: (file: File | null) => void;
-  setLoading: (loading: boolean) => void;
-  setIsRecording: (isRecording: boolean) => void;
-  setIsOptimizing: (isOptimizing: boolean) => void;
-  setShowMarkAsPreview: (show: boolean) => void;
+  /** Set preview state */
   setPreview: (
     type: GenerationState["previewType"],
     value: string | null
   ) => void;
+  /** Reset to initial state */
   reset: () => void;
 }
 
-const initialState = {
+export type GenerationStore = GenerationState & GenerationActions;
+
+const initialState: GenerationState = {
   imagePrompt: "",
   imageStyle: "",
-  model: "playground-v2" as model,
+  model: "playground-v2",
   colorScheme: "None",
   lighting: "None",
   perspective: "None",
@@ -95,41 +81,97 @@ const initialState = {
   previewValue: null,
 };
 
-export const useGenerationStore = create<GenerationState>()(
+export const useGenerationStore = create<GenerationStore>()(
   devtools(
     (set) => ({
       ...initialState,
 
-      // Generic field updater
       updateField: (field, value) =>
         set({ [field]: value } as Partial<GenerationState>),
 
-      // Batch update
       updateFields: (fields) => set(fields),
 
-      // Individual setters (kept for convenience and backward compatibility)
-      setImagePrompt: (imagePrompt) => set({ imagePrompt }),
-      setImageStyle: (imageStyle) => set({ imageStyle }),
-      setModel: (model) => set({ model }),
-      setColorScheme: (colorScheme) => set({ colorScheme }),
-      setLighting: (lighting) => set({ lighting }),
-      setPerspective: (perspective) => set({ perspective }),
-      setComposition: (composition) => set({ composition }),
-      setMedium: (medium) => set({ medium }),
-      setMood: (mood) => set({ mood }),
-      setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
-      setTags: (tags) => set({ tags }),
-      setSuggestedTags: (suggestedTags) => set({ suggestedTags }),
-      setGeneratedImage: (generatedImage) => set({ generatedImage }),
-      setUploadedImage: (uploadedImage) => set({ uploadedImage }),
-      setLoading: (loading) => set({ loading }),
-      setIsRecording: (isRecording) => set({ isRecording }),
-      setIsOptimizing: (isOptimizing) => set({ isOptimizing }),
-      setShowMarkAsPreview: (showMarkAsPreview) => set({ showMarkAsPreview }),
       setPreview: (previewType, previewValue) =>
         set({ previewType, previewValue }),
+
       reset: () => set(initialState),
     }),
     { name: "GenerationStore" }
   )
 );
+
+// ============================================================================
+// Convenience selectors for common field access patterns
+// Use these in components instead of accessing store directly
+// ============================================================================
+
+/** Select a single field from the store */
+export const selectField =
+  <K extends keyof GenerationState>(field: K) =>
+  (state: GenerationStore) =>
+    state[field];
+
+/** Create a setter for a specific field */
+export const createFieldSetter =
+  <K extends keyof GenerationState>(field: K) =>
+  (value: GenerationState[K]) =>
+    useGenerationStore.getState().updateField(field, value);
+
+// ============================================================================
+// Legacy setter hooks for backward compatibility
+// Prefer using updateField directly in new code
+// ============================================================================
+
+export const setImagePrompt = (value: string) =>
+  useGenerationStore.getState().updateField("imagePrompt", value);
+
+export const setImageStyle = (value: string) =>
+  useGenerationStore.getState().updateField("imageStyle", value);
+
+export const setModel = (value: Model) =>
+  useGenerationStore.getState().updateField("model", value);
+
+export const setColorScheme = (value: string) =>
+  useGenerationStore.getState().updateField("colorScheme", value);
+
+export const setLighting = (value: string) =>
+  useGenerationStore.getState().updateField("lighting", value);
+
+export const setPerspective = (value: string) =>
+  useGenerationStore.getState().updateField("perspective", value);
+
+export const setComposition = (value: string) =>
+  useGenerationStore.getState().updateField("composition", value);
+
+export const setMedium = (value: string) =>
+  useGenerationStore.getState().updateField("medium", value);
+
+export const setMood = (value: string) =>
+  useGenerationStore.getState().updateField("mood", value);
+
+export const setSelectedCategory = (value: string) =>
+  useGenerationStore.getState().updateField("selectedCategory", value);
+
+export const setTags = (value: string[]) =>
+  useGenerationStore.getState().updateField("tags", value);
+
+export const setSuggestedTags = (value: string[]) =>
+  useGenerationStore.getState().updateField("suggestedTags", value);
+
+export const setGeneratedImage = (value: string) =>
+  useGenerationStore.getState().updateField("generatedImage", value);
+
+export const setUploadedImage = (value: File | null) =>
+  useGenerationStore.getState().updateField("uploadedImage", value);
+
+export const setLoading = (value: boolean) =>
+  useGenerationStore.getState().updateField("loading", value);
+
+export const setIsRecording = (value: boolean) =>
+  useGenerationStore.getState().updateField("isRecording", value);
+
+export const setIsOptimizing = (value: boolean) =>
+  useGenerationStore.getState().updateField("isOptimizing", value);
+
+export const setShowMarkAsPreview = (value: boolean) =>
+  useGenerationStore.getState().updateField("showMarkAsPreview", value);

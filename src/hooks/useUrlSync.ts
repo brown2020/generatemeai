@@ -7,7 +7,7 @@ import {
   findLightingByValue,
   findLightingByLabel,
 } from "@/constants/lightings";
-import { model } from "@/types/model";
+import type { Model } from "@/constants/modelRegistry";
 
 /**
  * Syncs URL search parameters to the generation store.
@@ -22,8 +22,8 @@ export const useUrlSync = () => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    // Get stable action references from the store
-    const store = useGenerationStore.getState();
+    // Get stable action reference from the store
+    const { updateField } = useGenerationStore.getState();
 
     // Parse all search params
     const params = {
@@ -42,15 +42,15 @@ export const useUrlSync = () => {
     };
 
     // Apply params to store
-    if (params.freestyle) store.setImagePrompt(params.freestyle);
-    if (params.style) store.setImageStyle(params.style);
-    if (params.model) store.setModel(params.model as model);
+    if (params.freestyle) updateField("imagePrompt", params.freestyle);
+    if (params.style) updateField("imageStyle", params.style);
+    if (params.model) updateField("model", params.model as Model);
 
     // Handle color with value/label lookup
     if (params.color) {
       const colorOption =
         findColorByValue(params.color) || findColorByLabel(params.color);
-      if (colorOption) store.setColorScheme(colorOption.label);
+      if (colorOption) updateField("colorScheme", colorOption.label);
     }
 
     // Handle lighting with value/label lookup
@@ -58,19 +58,22 @@ export const useUrlSync = () => {
       const lightingOption =
         findLightingByValue(params.lighting) ||
         findLightingByLabel(params.lighting);
-      if (lightingOption) store.setLighting(lightingOption.label);
+      if (lightingOption) updateField("lighting", lightingOption.label);
     }
 
-    if (params.tags) store.setTags(params.tags);
-    if (params.imageCategory) store.setSelectedCategory(params.imageCategory);
-    if (params.perspective) store.setPerspective(params.perspective);
-    if (params.composition) store.setComposition(params.composition);
-    if (params.medium) store.setMedium(params.medium);
-    if (params.mood) store.setMood(params.mood);
+    if (params.tags) updateField("tags", params.tags);
+    if (params.imageCategory)
+      updateField("selectedCategory", params.imageCategory);
+    if (params.perspective) updateField("perspective", params.perspective);
+    if (params.composition) updateField("composition", params.composition);
+    if (params.medium) updateField("medium", params.medium);
+    if (params.mood) updateField("mood", params.mood);
 
     // Load image reference asynchronously
     if (params.imageReference) {
-      loadImageFromUrl(params.imageReference, store.setUploadedImage);
+      loadImageFromUrl(params.imageReference, (file) =>
+        updateField("uploadedImage", file)
+      );
     }
   }, [searchParams]);
 };

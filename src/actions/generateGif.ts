@@ -4,6 +4,12 @@ import { adminBucket, adminDb } from "@/firebase/firebaseAdmin";
 import ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 import { Timestamp } from "firebase-admin/firestore";
+import {
+  ActionResult,
+  successResult,
+  errorResult,
+  getErrorMessage,
+} from "@/utils/errors";
 
 // Configure ffmpeg path based on platform
 const getFfmpegPath = (): string => {
@@ -18,6 +24,14 @@ const getFfmpegPath = (): string => {
 };
 
 ffmpeg.setFfmpegPath(getFfmpegPath());
+
+/**
+ * GIF conversion result data.
+ */
+interface GifConversionData {
+  newId: string;
+  gifUrl: string;
+}
 
 /**
  * Converts a video URL to a GIF buffer using ffmpeg.
@@ -59,47 +73,68 @@ async function convertToGIF(videoUrl: string): Promise<Buffer> {
 
 /**
  * Processes a video to GIF and saves it to Firebase Storage and Firestore.
+ *
+ * @param firebaseVideoUrl - URL of the video to convert
+ * @param id - Original document ID
+ * @param uid - User ID
+ * @returns ActionResult with new document ID and GIF URL or error
  */
 export async function processVideoToGIF(
   firebaseVideoUrl: string,
   id: string,
   uid: string
-): Promise<string | undefined> {
-  // Convert video to GIF
-  const videoBuffer = await convertToGIF(firebaseVideoUrl);
+): Promise<ActionResult<GifConversionData>> {
+  try {
+    // Validate inputs
+    if (!firebaseVideoUrl || !id || !uid) {
+      return errorResult(
+        "Missing required parameters for GIF conversion",
+        "INVALID_INPUT"
+      );
+    }
 
-  // Get original document data using Admin SDK
-  const docRef = adminDb.doc(`profiles/${uid}/covers/${id}`);
-  const docSnap = await docRef.get();
+    // Convert video to GIF
+    const videoBuffer = await convertToGIF(firebaseVideoUrl);
 
-  if (!docSnap.exists) {
-    throw new Error("Original document not found");
+    // Get original document data using Admin SDK
+    const docRef = adminDb.doc(`profiles/${uid}/covers/${id}`);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return errorResult("Original document not found", "NOT_FOUND");
+    }
+
+    const data = docSnap.data();
+
+    // Create new document reference
+    const collRef = adminDb.collection(`profiles/${uid}/covers`);
+    const cloneRef = collRef.doc();
+
+    // Upload GIF to storage
+    const newFilePath = `video-generation/${Date.now()}.gif`;
+    const gifFileRef = adminBucket.file(newFilePath);
+
+    await gifFileRef.save(videoBuffer, { contentType: "image/gif" });
+
+    const [gifUrl] = await gifFileRef.getSignedUrl({
+      action: "read",
+      expires: "03-17-2125",
+    });
+
+    // Save new document with GIF URL
+    await cloneRef.set({
+      ...data,
+      id: cloneRef.id,
+      videoDownloadUrl: gifUrl,
+      timestamp: Timestamp.now(),
+    });
+
+    return successResult({
+      newId: cloneRef.id,
+      gifUrl,
+    });
+  } catch (error) {
+    console.error("Error converting video to GIF:", error);
+    return errorResult(getErrorMessage(error), "GENERATION_FAILED");
   }
-
-  const data = docSnap.data();
-
-  // Create new document reference
-  const collRef = adminDb.collection(`profiles/${uid}/covers`);
-  const cloneRef = collRef.doc();
-
-  // Upload GIF to storage
-  const newFilePath = `video-generation/${Date.now()}.gif`;
-  const gifFileRef = adminBucket.file(newFilePath);
-
-  await gifFileRef.save(videoBuffer, { contentType: "image/gif" });
-
-  const [gifsReferenceUrl] = await gifFileRef.getSignedUrl({
-    action: "read",
-    expires: "03-17-2125",
-  });
-
-  // Save new document with GIF URL
-  await cloneRef.set({
-    ...data,
-    id: cloneRef.id,
-    videoDownloadUrl: gifsReferenceUrl,
-    timestamp: Timestamp.now(),
-  });
-
-  return cloneRef.id;
 }

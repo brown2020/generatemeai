@@ -3,12 +3,9 @@
  * Import from "@/utils" for cleaner imports.
  */
 
-// API and credits
-export {
-  resolveApiKey,
-  resolveApiKeyFromForm,
-  extractApiKeysFromForm,
-} from "./apiKeyResolver";
+// API and credits (from centralized registry)
+export { resolveApiKey, resolveApiKeyFromForm } from "./apiKeyResolver";
+export { extractApiKeysFromForm } from "./apiKeyResolver";
 export {
   validateCredits,
   validateCreditsFromForm,
