@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
 import CookieConsent from "react-cookie-consent";
@@ -23,7 +23,14 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const { loading, uid } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);
   const router = useRouter();
   const pathname = usePathname();
+  const [isWebView, setIsWebView] = useState(false);
+
   useInitializeStores();
+
+  // Check for WebView environment (safe for hydration)
+  useEffect(() => {
+    setIsWebView(typeof window !== "undefined" && !!window.ReactNativeWebView);
+  }, []);
 
   // Consolidated window-related effects
   useEffect(() => {
@@ -63,9 +70,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   if (loading)
     return (
       <ErrorBoundary>
-        <div
-          className={`flex flex-col items-center justify-center h-full bg-[#333b51]`}
-        >
+        <div className="flex flex-col items-center justify-center h-full bg-[#333b51]">
           <ClipLoader color="#fff" size={80} />
         </div>
       </ErrorBoundary>
@@ -75,7 +80,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <div className="flex flex-col h-full">
         {children}
-        {!window.ReactNativeWebView && (
+        {!isWebView && (
           <CookieConsent>
             This app uses cookies to enhance the user experience.
           </CookieConsent>

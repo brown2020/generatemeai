@@ -31,6 +31,7 @@ import { ModelCard } from "@/components/generation/ModelCard";
 import { StyleCard } from "@/components/generation/StyleCard";
 import { PreviewMarker } from "@/components/generation/PreviewMarker";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { model } from "@/types/model";
 import { useUrlSync } from "@/hooks/useUrlSync";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
@@ -113,6 +114,8 @@ export default function GenerateImage() {
   // Memoized handlers
   const handleTagSuggestions = useCallback(
     async (prompt: string) => {
+      if (!prompt.trim()) return;
+
       const suggestions = await suggestTags(
         prompt,
         colorScheme,
@@ -149,12 +152,18 @@ export default function GenerateImage() {
     ]
   );
 
+  // Debounce tag suggestions to avoid excessive API calls
+  const debouncedTagSuggestions = useDebouncedCallback(
+    handleTagSuggestions,
+    500
+  );
+
   const handlePromptChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
       setImagePrompt(e.target.value);
-      handleTagSuggestions(e.target.value);
+      debouncedTagSuggestions(e.target.value);
     },
-    [setImagePrompt, handleTagSuggestions]
+    [setImagePrompt, debouncedTagSuggestions]
   );
 
   const handleClearAll = useCallback(() => {

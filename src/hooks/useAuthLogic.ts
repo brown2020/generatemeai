@@ -12,22 +12,12 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
 import { isIOSReactNativeWebView } from "@/utils/platform";
-
-function isFirebaseError(
-  error: unknown
-): error is { code: string; message: string } {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    "message" in error
-  );
-}
+import { isFirebaseError } from "@/utils/errors";
 
 export const useAuthLogic = () => {
   const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
   const clearAuthDetails = useAuthStore((s) => s.clearAuthDetails);
-  
+
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [name, setName] = useState<string>("");
@@ -35,7 +25,7 @@ export const useAuthLogic = () => {
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [isEmailLinkLogin, setIsEmailLinkLogin] = useState(false);
   const [showGoogleSignIn, setShowGoogleSignIn] = useState(true);
-  
+
   const formRef = useRef<HTMLFormElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +104,7 @@ export const useAuthLogic = () => {
   const handlePasswordLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         window.localStorage.setItem("generateEmail", email);
         window.localStorage.setItem("generateName", email.split("@")[0]);
       }
@@ -129,7 +119,7 @@ export const useAuthLogic = () => {
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         window.localStorage.setItem("generateEmail", email);
         window.localStorage.setItem("generateName", email.split("@")[0]);
       }
@@ -148,7 +138,7 @@ export const useAuthLogic = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     const actionCodeSettings = {
       url: `${window.location.origin}/loginfinish`,
@@ -182,12 +172,19 @@ export const useAuthLogic = () => {
   };
 
   return {
-    email, setEmail,
-    password, setPassword,
-    name, setName,
-    acceptTerms, setAcceptTerms,
-    isVisible, showModal, hideModal,
-    isEmailLinkLogin, setIsEmailLinkLogin,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    name,
+    setName,
+    acceptTerms,
+    setAcceptTerms,
+    isVisible,
+    showModal,
+    hideModal,
+    isEmailLinkLogin,
+    setIsEmailLinkLogin,
     showGoogleSignIn,
     formRef,
     modalRef,
@@ -199,4 +196,3 @@ export const useAuthLogic = () => {
     handlePasswordReset,
   };
 };
-
