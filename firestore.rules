@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    /**
+     * Returns true if the currently authenticated user owns the "cover" doc with the same id.
+     * This is how we securely authorize writes to `publicImages/{imageId}` even though that path
+     * does not include a uid segment.
+     */
+    function hasCoverWithId(imageId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/profiles/$(request.auth.uid)/covers/$(imageId));
+    }
+
+    // -----------------------------------------------------------------------
+    // Users: auth state + profile + payments (private to the authenticated user)
+    // -----------------------------------------------------------------------
+
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+
+      // Users can create/update their own base user doc, but cannot set privilege flags from the client.
+      allow create, update: if isOwner(uid)
+        && !(
+          // Block client-side privilege escalation / entitlement fields.
+          request.resource.data.keys().hasAny(['isAdmin', 'isAllowed', 'isInvited', 'premium'])
+        );
+
+      allow delete: if isOwner(uid);
+    }
+
+    // Any subcollections under the user's document are private to that user.
+    match /users/{uid}/{document=**} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // -----------------------------------------------------------------------
+    // Generated content (private by default): profiles/{uid}/covers/{id}
+    // -----------------------------------------------------------------------
+
+    match /profiles/{uid}/{document=**} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // -----------------------------------------------------------------------
+    // Public share: publicImages/{imageId}
+    // - Anyone can read a sharable image doc.
+    // - Only the owner (who has the matching cover doc) can create/update/delete it.
+    // -----------------------------------------------------------------------
+
+    match /publicImages/{imageId} {
+      // Allow direct fetch of a single public image doc.
+      //
+      // Why unconditional? When a doc doesn't exist (private/unshared), Firestore returns
+      // PERMISSION_DENIED if `get` isn't allowed, which surfaces as a noisy console error.
+      // We enforce the invariant that docs in `publicImages/*` are only created/updated with
+      // `isSharable == true`, so allowing `get` does not expose private content.
+      allow get: if true;
+
+      // Block public collection browsing by default (you can loosen this if you add a public gallery).
+      allow list: if false;
+
+      allow create, update: if hasCoverWithId(imageId)
+        && request.resource.data.isSharable == true
+        && request.resource.data.id == imageId;
+
+      // Allow owner to unpublish.
+      allow delete: if hasCoverWithId(imageId);
+    }
+
+    // -----------------------------------------------------------------------
+    // Default deny
+    // -----------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+

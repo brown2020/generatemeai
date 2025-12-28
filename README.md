@@ -17,14 +17,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16.0-black?logo=next.js" alt="Next.js 16">
-  <img src="https://img.shields.io/badge/React-19.0-61DAFB?logo=react" alt="React 19">
-  <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?logo=tailwind-css" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Firebase-12.2-FFCA28?logo=firebase" alt="Firebase">
-  <img src="https://img.shields.io/badge/Zustand-5.0-brown" alt="Zustand">
-  <img src="https://img.shields.io/badge/Vercel_AI_SDK-5.0-black?logo=vercel" alt="Vercel AI SDK">
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
+  <img src="https://img.shields.io/badge/Next.js-16.1.1-black?logo=next.js" alt="Next.js 16.1.1">
+  <img src="https://img.shields.io/badge/React-19.2.3-61DAFB?logo=react" alt="React 19.2.3">
+  <img src="https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript" alt="TypeScript 5.9.3">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4.1.18-38B2AC?logo=tailwind-css" alt="Tailwind CSS 4.1.18">
+  <img src="https://img.shields.io/badge/Firebase-12.7.0-FFCA28?logo=firebase" alt="Firebase 12.7.0">
+  <img src="https://img.shields.io/badge/Zustand-5.0.9-brown" alt="Zustand 5.0.9">
+  <img src="https://img.shields.io/badge/Vercel_AI_SDK-6.0.3-black?logo=vercel" alt="Vercel AI SDK 6.0.3">
+  <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0 License">
 </p>
 
 ---
@@ -120,24 +120,24 @@ Built with modern React patterns, this project showcases best practices includin
 
 | Package                                       | Version | Description                                 |
 | --------------------------------------------- | ------- | ------------------------------------------- |
-| [Next.js](https://nextjs.org/)                | 16.0.3  | React framework with App Router & Turbopack |
-| [React](https://react.dev/)                   | 19.0.0  | UI library with Server Components           |
-| [TypeScript](https://www.typescriptlang.org/) | 5.6.2   | Type-safe JavaScript                        |
+| [Next.js](https://nextjs.org/)                | 16.1.1  | React framework with App Router & Turbopack |
+| [React](https://react.dev/)                   | 19.2.3  | UI library with Server Components           |
+| [TypeScript](https://www.typescriptlang.org/) | 5.9.3   | Type-safe JavaScript                        |
 
 ### State Management
 
 | Package                                  | Version | Description                  |
 | ---------------------------------------- | ------- | ---------------------------- |
-| [Zustand](https://zustand-demo.pmnd.rs/) | 5.0.1   | Lightweight state management |
+| [Zustand](https://zustand-demo.pmnd.rs/) | 5.0.9   | Lightweight state management |
 
 ### Styling & UI
 
 | Package                                                     | Version | Description                 |
 | ----------------------------------------------------------- | ------- | --------------------------- |
-| [Tailwind CSS](https://tailwindcss.com/)                    | 4.0.9   | Utility-first CSS framework |
-| [Framer Motion](https://www.framer.com/motion/)             | 12.4.7  | Animation library           |
-| [Lucide React](https://lucide.dev/)                         | 0.559.0 | Icon library                |
-| [React Icons](https://react-icons.github.io/react-icons/)   | 5.3.0   | Additional icons            |
+| [Tailwind CSS](https://tailwindcss.com/)                    | 4.1.18  | Utility-first CSS framework |
+| [Framer Motion](https://www.framer.com/motion/)             | 12.23.26 | Animation library          |
+| [Lucide React](https://lucide.dev/)                         | 0.562.0 | Icon library                |
+| [React Icons](https://react-icons.github.io/react-icons/)   | 5.5.0   | Additional icons            |
 | [tailwind-merge](https://github.com/dcastil/tailwind-merge) | 3.4.0   | Merge Tailwind classes      |
 | [clsx](https://github.com/lukeed/clsx)                      | 2.1.1   | Class name utility          |
 
@@ -145,32 +145,32 @@ Built with modern React patterns, this project showcases best practices includin
 
 | Package                                                                     | Version | Description                        |
 | --------------------------------------------------------------------------- | ------- | ---------------------------------- |
-| [Firebase](https://firebase.google.com/)                                    | 12.2.1  | Authentication, Firestore, Storage |
-| [Firebase Admin](https://firebase.google.com/docs/admin/setup)              | 13.0.1  | Server-side Firebase SDK           |
+| [Firebase](https://firebase.google.com/)                                    | 12.7.0  | Authentication, Firestore, Storage |
+| [Firebase Admin](https://firebase.google.com/docs/admin/setup)              | 13.6.0  | Server-side Firebase SDK           |
 | [react-firebase-hooks](https://github.com/CSFrequency/react-firebase-hooks) | 5.1.1   | React hooks for Firebase           |
 
 ### AI Integration
 
 | Package                                                                   | Version | Description                     |
 | ------------------------------------------------------------------------- | ------- | ------------------------------- |
-| [Vercel AI SDK](https://sdk.vercel.ai/)                                   | 5.0.44  | AI SDK core                     |
-| [@ai-sdk/openai](https://sdk.vercel.ai/providers/ai-sdk-providers/openai) | 2.0.30  | OpenAI provider                 |
-| [@ai-sdk/rsc](https://sdk.vercel.ai/docs/api-reference/ai-sdk-rsc)        | 1.0.44  | React Server Components support |
-| [Replicate](https://replicate.com/)                                       | 1.0.0   | Replicate API client            |
+| [Vercel AI SDK](https://sdk.vercel.ai/)                                   | 6.0.3   | AI SDK core                     |
+| [@ai-sdk/openai](https://sdk.vercel.ai/providers/ai-sdk-providers/openai) | 3.0.1   | OpenAI provider                 |
+| [@ai-sdk/rsc](https://sdk.vercel.ai/docs/api-reference/ai-sdk-rsc)        | 2.0.3   | React Server Components support |
+| [Replicate](https://replicate.com/)                                       | 1.4.0   | Replicate API client            |
 
 ### Payments
 
 | Package                                                            | Version | Description             |
 | ------------------------------------------------------------------ | ------- | ----------------------- |
-| [Stripe](https://stripe.com/)                                      | 20.0.0  | Payment processing      |
-| [@stripe/react-stripe-js](https://stripe.com/docs/stripe-js/react) | 5.4.0   | React Stripe components |
-| [@stripe/stripe-js](https://stripe.com/docs/js)                    | 8.5.2   | Stripe.js               |
+| [Stripe](https://stripe.com/)                                      | 20.1.0  | Payment processing      |
+| [@stripe/react-stripe-js](https://stripe.com/docs/stripe-js/react) | 5.4.1   | React Stripe components |
+| [@stripe/stripe-js](https://stripe.com/docs/js)                    | 8.6.0   | Stripe.js               |
 
 ### Media Processing
 
 | Package                                                              | Version | Description                       |
 | -------------------------------------------------------------------- | ------- | --------------------------------- |
-| [Sharp](https://sharp.pixelplumbing.com/)                            | 0.34.1  | High-performance image processing |
+| [Sharp](https://sharp.pixelplumbing.com/)                            | 0.34.5  | High-performance image processing |
 | [fluent-ffmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg) | 2.1.3   | FFmpeg wrapper                    |
 | [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)         | 5.2.0   | Static FFmpeg binaries            |
 | [dom-to-image](https://github.com/tsayen/dom-to-image)               | 2.6.0   | DOM to image conversion           |
@@ -191,7 +191,7 @@ Built with modern React patterns, this project showcases best practices includin
 
 | Package                                                     | Version | Description                 |
 | ----------------------------------------------------------- | ------- | --------------------------- |
-| [cookies-next](https://github.com/andreizanik/cookies-next) | 6.1.0   | Cookie handling for Next.js |
+| [cookies-next](https://github.com/andreizanik/cookies-next) | 6.1.1   | Cookie handling for Next.js |
 | [lodash](https://lodash.com/)                               | 4.17.21 | Utility functions           |
 | [formdata-node](https://github.com/octet-stream/form-data)  | 6.0.3   | FormData implementation     |
 
@@ -242,6 +242,34 @@ Built with modern React patterns, this project showcases best practices includin
    - Create a Firestore database
    - Create a Storage bucket
    - Download your service account key for server-side operations
+
+   **Deploy security rules (recommended):**
+
+   - Firestore rules: `firestore.rules`
+   - Storage rules: `storage.rules`
+
+   With Firebase CLI installed/configured:
+
+   ```bash
+   firebase deploy --only firestore:rules,storage
+   ```
+
+---
+
+## Firebase Security Rules
+
+This repo includes production-ready Firebase rules that **protect user-generated content by default**:
+
+- **Firestore (`firestore.rules`)**
+  - Private content: `profiles/{uid}/covers/{id}` is **owner-only** read/write.
+  - Private user data: `users/{uid}/**` is **owner-only** read/write.
+  - Public sharing: `publicImages/{imageId}` supports **public `get`** (no `list`) to avoid noisy permission errors when a doc is missing/unshared. Only the owner can **create/update/delete** (must have `profiles/{auth.uid}/covers/{imageId}`), and shared docs are enforced to be written with `isSharable == true`.
+  - **Note on “password protection”**: passwords are stored in the public doc today; do not treat it as a secret.
+
+- **Storage (`storage.rules`)**
+  - Private user uploads: `generated/{uid}/*` and `image-references/{uid}/*` are **owner-only** read/write (with basic image + size limits).
+  - Public static assets: `previews/**` is public read.
+  - Server-only artifacts: `video-generation/*` is denied for SDK access (served via signed URLs).
 
 5. **Run the development server**
 
@@ -712,8 +740,9 @@ Requirements:
 
 **Images Not Loading**
 
-- Verify Firebase Storage rules allow authenticated reads
-- Check that `next.config.mjs` includes all image domains
+- If you're using Firebase Storage **SDK reads**, ensure rules allow the reads you expect.
+- This app primarily serves generated media via **signed URLs** (Admin SDK), so Storage rules typically won't block rendering.
+- Check that `next.config.mjs` includes all required image domains.
 
 **Build Errors**
 
@@ -724,7 +753,7 @@ Requirements:
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0. See the [LICENSE.md](LICENSE.md) file for details.
 
 ---
 
