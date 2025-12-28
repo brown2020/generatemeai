@@ -10,6 +10,7 @@ interface UseImagePageDataParams {
   id: string;
   uid: string;
   authPending: boolean;
+  authReady: boolean;
 }
 
 interface ImagePageDataState {
@@ -63,6 +64,7 @@ export const useImagePageData = ({
   id,
   uid,
   authPending,
+  authReady,
 }: UseImagePageDataParams): UseImagePageDataReturn => {
   const [imageData, setImageData] = useState<ImageData | null | false>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -78,6 +80,10 @@ export const useImagePageData = ({
 
     const fetchImageData = async () => {
       try {
+        // Wait until auth has resolved (prevents a brief "uid==''" phase that can
+        // cause permission-denied reads against `publicImages/{id}` for private images).
+        if (!authReady) return;
+
         // Try to fetch as owner first (if authenticated)
         if (uid && !authPending) {
           const ownerDocRef = doc(db, FirestorePaths.profileCover(uid, id));
@@ -130,7 +136,7 @@ export const useImagePageData = ({
     return () => {
       isMounted = false;
     };
-  }, [id, uid, authPending, refreshCounter]);
+  }, [id, uid, authPending, authReady, refreshCounter]);
 
   const refreshData = useCallback(() => setRefreshCounter((c) => c + 1), []);
 

@@ -37,6 +37,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const router = useRouter();
   const uid = useAuthStore((s) => s.uid);
   const authPending = useAuthStore((s) => s.authPending);
+  const authReady = useAuthStore((s) => s.authReady);
 
   // Profile state
   const profile = useProfileStore((s) => s.profile);
@@ -56,7 +57,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
     setCaption,
     setBackgroundColor,
     refreshData,
-  } = useImagePageData({ id, uid, authPending });
+  } = useImagePageData({ id, uid, authPending, authReady });
 
   const {
     toggleSharable,

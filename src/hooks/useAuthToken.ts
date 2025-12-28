@@ -107,11 +107,21 @@ const useAuthToken = (cookieName = "authToken") => {
         scheduleTokenRefresh();
       });
     } else {
-      clearAuthDetails();
+      // Important: auth can be "resolved" even when signed out.
+      // We keep `authReady=true` so pages can safely decide between owner vs public reads
+      // without a transient "unauthenticated" phase causing permission-denied errors.
+      setAuthDetails({
+        uid: "",
+        authEmail: "",
+        authDisplayName: "",
+        authPhotoUrl: "",
+        authEmailVerified: false,
+        authReady: true,
+        authPending: false,
+      });
       deleteCookie(cookieName);
     }
   }, [
-    clearAuthDetails,
     cookieName,
     setAuthDetails,
     user,
