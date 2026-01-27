@@ -99,20 +99,3 @@ export const useGenerationStore = create<GenerationStore>()(
     { name: "GenerationStore" }
   )
 );
-
-// ============================================================================
-// Convenience selectors for common field access patterns
-// Use these in components instead of accessing store directly
-// ============================================================================
-
-/** Select a single field from the store */
-export const selectField =
-  <K extends keyof GenerationState>(field: K) =>
-  (state: GenerationStore) =>
-    state[field];
-
-/** Create a setter for a specific field */
-export const createFieldSetter =
-  <K extends keyof GenerationState>(field: K) =>
-  (value: GenerationState[K]) =>
-    useGenerationStore.getState().updateField(field, value);

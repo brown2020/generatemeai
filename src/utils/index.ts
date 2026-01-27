@@ -45,6 +45,24 @@ export {
 } from "./errors";
 export type { ErrorCode, ActionResult } from "./errors";
 
+// Environment validation
+export { validateServerEnv, validateClientEnv, getEnv } from "./env";
+
+// Validation schemas
+export {
+  imageGenerationSchema,
+  tagSuggestionSchema,
+  backgroundRemovalSchema,
+  paymentCheckoutSchema,
+  parseFormData,
+} from "./validationSchemas";
+export type {
+  ImageGenerationInput,
+  TagSuggestionInput,
+  BackgroundRemovalInput,
+  PaymentCheckoutInput,
+} from "./validationSchemas";
+
 // Prompt utilities
 export {
   generatePrompt,

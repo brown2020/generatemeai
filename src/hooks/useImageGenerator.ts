@@ -93,8 +93,9 @@ export const useImageGenerator = () => {
 
       // Handle ActionResult response
       if (!result.success) {
-        toast.error(`Failed to generate image: ${result.error}`);
-        throw new Error(result.error);
+        const errorMessage = result.error || "Failed to generate image";
+        toast.error(errorMessage);
+        return; // Early return instead of throwing
       }
 
       const { imageUrl: downloadURL, imageReference = "" } = result.data;
@@ -130,11 +131,14 @@ export const useImageGenerator = () => {
         );
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error generating image:", error.message);
-      } else {
-        console.error("An unknown error occurred during image generation.");
-      }
+      // Standardized error handling with user feedback
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred during image generation";
+      
+      console.error("Error generating image:", error);
+      toast.error(errorMessage);
     } finally {
       generationState.updateField("loading", false);
     }

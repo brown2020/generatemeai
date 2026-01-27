@@ -3,7 +3,14 @@
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { creditsToMinus } from "@/constants/modelRegistry";
-import { ActionResult, successResult, errorResult } from "@/utils/errors";
+import {
+  ActionResult,
+  successResult,
+  errorResult,
+  ValidationError,
+} from "@/utils/errors";
+import { tagSuggestionSchema } from "@/utils/validationSchemas";
+import { z } from "zod";
 
 interface SuggestTagsParams {
   freestyle: string;
@@ -58,8 +65,21 @@ export const suggestTags = async (
   credits: number
 ): Promise<ActionResult<string>> => {
   try {
+    // Validate input
+    const validatedInput = tagSuggestionSchema.parse({
+      prompt: freestyle,
+      colorScheme: color,
+      lighting,
+      imageStyle: style,
+      selectedCategory: imageCategory,
+      currentTags: tags,
+      openAPIKey,
+      useCredits,
+      credits,
+    });
+
     // Check credits
-    if (useCredits && credits < creditsToMinus("chatgpt")) {
+    if (validatedInput.useCredits && validatedInput.credits < creditsToMinus("chatgpt")) {
       return errorResult(
         "Not enough credits to suggest tags. Please purchase credits or use your own API Keys.",
         "INSUFFICIENT_CREDITS"
@@ -67,19 +87,25 @@ export const suggestTags = async (
     }
 
     // Determine API key to use
-    const apiKey = useCredits ? process.env.OPENAI_API_KEY! : openAPIKey;
+    const apiKey = validatedInput.useCredits
+      ? process.env.OPENAI_API_KEY
+      : validatedInput.openAPIKey;
+
+    if (!apiKey) {
+      return errorResult("OpenAI API key is required.", "INVALID_API_KEY");
+    }
 
     // Create OpenAI provider instance
     const openai = createOpenAI({ apiKey });
 
     // Build the prompt
     const prompt = buildTagSuggestionPrompt({
-      freestyle,
-      color,
-      lighting,
-      style,
-      imageCategory,
-      tags,
+      freestyle: validatedInput.prompt,
+      color: validatedInput.colorScheme || "",
+      lighting: validatedInput.lighting || "",
+      style: validatedInput.imageStyle || "",
+      imageCategory: validatedInput.selectedCategory || "",
+      tags: validatedInput.currentTags || [],
     });
 
     // Generate text using AI SDK
@@ -94,6 +120,15 @@ export const suggestTags = async (
 
     return successResult(text);
   } catch (error: unknown) {
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      const firstError = error.issues[0];
+      return errorResult(
+        firstError?.message || "Validation failed",
+        "VALIDATION_ERROR"
+      );
+    }
+
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error suggesting tags:", error);
