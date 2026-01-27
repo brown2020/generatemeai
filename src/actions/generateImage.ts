@@ -8,12 +8,17 @@ import {
   successResult,
   errorResult,
   getErrorMessage,
+  ValidationError,
 } from "@/utils/errors";
 import {
   saveToStorage,
   createGeneratedImagePath,
   createReferenceImagePath,
 } from "@/utils/storage";
+import {
+  imageGenerationSchema,
+  parseFormData,
+} from "@/utils/validationSchemas";
 
 /**
  * Image generation result data.
@@ -33,21 +38,12 @@ export async function generateImage(
   data: FormData
 ): Promise<ActionResult<ImageGenerationData>> {
   try {
-    // Extract required parameters
-    const message = data.get("message") as string | null;
-    const uid = data.get("uid") as string | null;
-    const modelName = data.get("model") as string | null;
-    const useCredits = data.get("useCredits") === "true";
-    const credits = Number(data.get("credits") || 0);
-    const img = data.get("imageField") as File | null;
-
-    // Validate required parameters
-    if (!message || !uid || !modelName) {
-      return errorResult(
-        "Required parameters (message, uid, model) are missing.",
-        "INVALID_INPUT"
-      );
-    }
+    // Validate and parse input
+    const validatedInput = parseFormData(imageGenerationSchema, data);
+    const { message, uid, model: modelName, useCredits, credits, imageField } = validatedInput;
+    
+    // Normalize imageField (convert undefined to null)
+    const img = imageField ?? null;
 
     // Check credits
     assertSufficientCredits(useCredits, credits, modelName);
@@ -100,6 +96,11 @@ export async function generateImage(
 
     return successResult({ imageUrl, imageReference });
   } catch (error) {
+    // Handle validation errors
+    if (error instanceof ValidationError) {
+      return errorResult(error.message, "VALIDATION_ERROR");
+    }
+
     const errorMessage = getErrorMessage(error);
     console.error("Error generating image:", errorMessage);
     return errorResult(errorMessage, "GENERATION_FAILED");

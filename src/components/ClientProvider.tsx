@@ -10,6 +10,17 @@ import { useInitializeStores } from "@/zustand/useInitializeStores";
 import ErrorBoundary from "./ErrorBoundary";
 
 /**
+ * Get validated cookie name from environment.
+ */
+const getCookieName = (): string => {
+  const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME;
+  if (!cookieName) {
+    throw new Error("NEXT_PUBLIC_COOKIE_NAME environment variable is not set");
+  }
+  return cookieName;
+};
+
+/**
  * Client-side provider that handles:
  * - Auth token management and store initialization
  * - WebView detection and viewport handling
@@ -18,7 +29,7 @@ import ErrorBoundary from "./ErrorBoundary";
  * Note: Route protection is handled by proxy.ts at the edge.
  */
 export function ClientProvider({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuthToken(process.env.NEXT_PUBLIC_COOKIE_NAME!);
+  const { loading } = useAuthToken(getCookieName());
   const [isWebView, setIsWebView] = useState(false);
 
   useInitializeStores();
