@@ -76,8 +76,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   minimumScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Allow user scaling for accessibility (WCAG 1.4.4 Resize Text)
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "contain",
   themeColor: "#ffffff",
 };
@@ -91,11 +92,22 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ClientProvider>
+          {/* Skip to main content link for keyboard navigation */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Skip to main content
+          </a>
           <div className="flex flex-col h-full">
             <Header />
-            <div className="flex flex-col h-container-small md:h-container-custom overflow-y-scroll">
+            <main
+              id="main-content"
+              className="flex flex-col h-container-small md:h-container-custom overflow-y-scroll"
+              tabIndex={-1}
+            >
               <div className="flex flex-col h-full flex-1">{children}</div>
-            </div>
+            </main>
             <BottomBar />
           </div>
         </ClientProvider>

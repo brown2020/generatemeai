@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { db } from "@/firebase/firebaseClient";
 import { doc, updateDoc } from "firebase/firestore";
 import { processVideoToGIF } from "@/actions/generateGif";
@@ -13,6 +13,12 @@ import { getFileTypeFromUrl } from "@/utils/imageUtils";
 import { removeBackground } from "@/actions/removeBackground";
 import { ImageData } from "@/types/image";
 import { FirestorePaths } from "@/firebase/paths";
+
+/**
+ * Modal types for the image page.
+ * Using a discriminated union provides type safety and simplifies state management.
+ */
+type ModalType = "password" | "colorPicker" | "video" | null;
 import {
   useImagePageData,
   useImagePageActions,
@@ -74,19 +80,29 @@ const ImagePage = ({ id }: ImagePageProps) => {
     refreshData,
   });
 
-  // Modal states
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  // Consolidated modal state - only one modal can be open at a time
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [password, setPassword] = useState("");
   const [passwordVerified, setPasswordVerified] = useState(false);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Derived modal states for cleaner component props
+  const modalState = useMemo(
+    () => ({
+      showPasswordModal: activeModal === "password",
+      showColorPicker: activeModal === "colorPicker",
+      isVideoModalOpen: activeModal === "video",
+    }),
+    [activeModal]
+  );
+
+  const closeModal = useCallback(() => setActiveModal(null), []);
 
   // Handlers
   const handleToggleSharable = useCallback(async () => {
     await toggleSharable(password);
-    setShowPasswordModal(false);
-  }, [toggleSharable, password]);
+    closeModal();
+  }, [toggleSharable, password, closeModal]);
 
   const onCaptionChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -98,9 +114,9 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const onChangeBackground = useCallback(
     async (color: string) => {
       await changeBackground(color, setBackgroundColor);
-      setShowColorPicker(false);
+      closeModal();
     },
-    [changeBackground, setBackgroundColor]
+    [changeBackground, setBackgroundColor, closeModal]
   );
 
   const handleBackgroundRemove = useCallback(async () => {
@@ -206,7 +222,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
           uid={uid}
           onToggleSharable={handleToggleSharable}
           onDelete={handleDelete}
-          onShowPasswordModal={() => setShowPasswordModal(true)}
+          onShowPasswordModal={() => setActiveModal("password")}
         />
       )}
 
@@ -236,26 +252,26 @@ const ImagePage = ({ id }: ImagePageProps) => {
           loading={loading}
           caption={caption}
           onCaptionChange={onCaptionChange}
-          onShowColorPicker={() => setShowColorPicker(true)}
+          onShowColorPicker={() => setActiveModal("colorPicker")}
           onBackgroundRemove={handleBackgroundRemove}
           onTryAgain={handleTryAgain}
-          onShowVideoModal={() => setIsVideoModalOpen(true)}
+          onShowVideoModal={() => setActiveModal("video")}
           onCreateGif={handleCreateGif}
         />
       )}
 
       <ImagePageModals
-        showPasswordModal={showPasswordModal}
+        showPasswordModal={modalState.showPasswordModal}
         password={password}
         setPassword={setPassword}
         onPasswordConfirm={handleToggleSharable}
-        onPasswordCancel={() => setShowPasswordModal(false)}
-        showColorPicker={showColorPicker}
+        onPasswordCancel={closeModal}
+        showColorPicker={modalState.showColorPicker}
         backgroundColor={backgroundColor}
         onColorConfirm={onChangeBackground}
-        onColorCancel={() => setShowColorPicker(false)}
-        isVideoModalOpen={isVideoModalOpen}
-        onVideoModalClose={() => setIsVideoModalOpen(false)}
+        onColorCancel={closeModal}
+        isVideoModalOpen={modalState.isVideoModalOpen}
+        onVideoModalClose={closeModal}
         imageData={imageData}
         hasVideo={hasVideo}
       />

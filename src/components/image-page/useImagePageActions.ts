@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { db } from "@/firebase/firebaseClient";
 import { doc, runTransaction, deleteDoc, updateDoc } from "firebase/firestore";
 import { FirestorePaths } from "@/firebase/paths";
 import { ImageData } from "@/types/image";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { getErrorMessage } from "@/utils/errors";
 
 interface UseImagePageActionsParams {
   id: string;
@@ -31,12 +32,20 @@ export const useImagePageActions = ({
   const router = useRouter();
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup debounce on unmount
-  const cleanupDebounce = () => {
+  // Cleanup debounce helper
+  const cleanupDebounce = useCallback(() => {
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
+      debounceTimeout.current = null;
     }
-  };
+  }, []);
+
+  // Auto-cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      cleanupDebounce();
+    };
+  }, [cleanupDebounce]);
 
   const toggleSharable = useCallback(
     async (password: string = "") => {
@@ -84,7 +93,7 @@ export const useImagePageActions = ({
           `Image is now ${newSharableState ? "sharable" : "private"}`
         );
       } catch (error) {
-        toast.error("Error updating share status: " + error);
+        toast.error(`Error updating share status: ${getErrorMessage(error)}`);
       }
     },
     [imageData, uid, id, isSharable, setIsSharable]
@@ -104,7 +113,7 @@ export const useImagePageActions = ({
         toast.success("Image deleted successfully");
         setTimeout(() => router.push("/images"), 1000);
       } catch (error) {
-        toast.error("Error deleting image: " + error);
+        toast.error(`Error deleting image: ${getErrorMessage(error)}`);
       }
     }
   }, [imageData, uid, id, router]);
@@ -129,7 +138,7 @@ export const useImagePageActions = ({
           refreshData();
           toast.success("Caption updated successfully");
         } catch (error) {
-          toast.error("Error updating caption: " + error);
+          toast.error(`Error updating caption: ${getErrorMessage(error)}`);
         }
       }, 1000);
     },

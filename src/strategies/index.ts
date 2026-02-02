@@ -31,42 +31,30 @@ const strategyImplementations: Record<string, GenerationStrategy> = {
 /**
  * Get strategy by model name - derives from MODEL_REGISTRY.strategyKey.
  * Returns undefined for unsupported models or models without strategies.
+ *
+ * This is the primary API for strategy lookup. Accepts either a typed Model
+ * or a string (for server actions where the model comes from FormData).
  */
-export const getStrategy = (
-  modelName: Model
-): GenerationStrategy | undefined => {
-  const config = getModelConfig(modelName);
+export function getStrategy(modelName: string): GenerationStrategy | undefined {
+  if (!isValidModel(modelName)) return undefined;
+  const config = getModelConfig(modelName as Model);
   return config?.strategyKey
     ? strategyImplementations[config.strategyKey]
     : undefined;
-};
-
-/**
- * Strategy registry for dynamic string-based lookups (server actions).
- * Uses a proxy to derive strategies from MODEL_REGISTRY on access.
- */
-export const strategies: Record<string, GenerationStrategy | undefined> =
-  new Proxy({} as Record<string, GenerationStrategy | undefined>, {
-    get(_, modelName: string) {
-      if (!isValidModel(modelName)) return undefined;
-      return getStrategy(modelName);
-    },
-  });
+}
 
 /**
  * Checks if a model has a registered strategy.
  */
-export const hasStrategy = (modelName: string): modelName is Model => {
+export function hasStrategy(modelName: string): modelName is Model {
   if (!isValidModel(modelName)) return false;
   const config = getModelConfig(modelName);
   return !!config?.strategyKey && config.strategyKey in strategyImplementations;
-};
+}
 
 /**
  * Get strategy by strategy key directly (for internal use).
  */
-export const getStrategyByKey = (
-  key: string
-): GenerationStrategy | undefined => {
+export function getStrategyByKey(key: string): GenerationStrategy | undefined {
   return strategyImplementations[key];
-};
+}

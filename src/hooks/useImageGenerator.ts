@@ -100,8 +100,13 @@ export const useImageGenerator = () => {
 
       const { imageUrl: downloadURL, imageReference = "" } = result.data;
 
+      // Deduct credits if using credit system
       if (profile.useCredits) {
-        await minusCredits(creditsToMinus(generationState.model));
+        const creditsDeducted = await minusCredits(creditsToMinus(generationState.model));
+        if (!creditsDeducted) {
+          // Credits deduction failed - still show the image but warn user
+          toast.error("Warning: Failed to deduct credits. Please contact support.");
+        }
       }
 
       generationState.updateField("generatedImage", downloadURL);

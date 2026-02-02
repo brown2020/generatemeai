@@ -17,11 +17,19 @@ const useAuthToken = (cookieName = "authToken") => {
   const lastTokenRefreshKey = `${STORAGE_KEYS.LAST_TOKEN_REFRESH}${cookieName}`;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
   const refreshAuthToken = useCallback(async () => {
+    // Don't refresh if component is unmounted
+    if (!isMountedRef.current) return;
+
     try {
       if (!auth.currentUser) throw new Error("No user found");
       const idTokenResult = await getIdToken(auth.currentUser, true);
+
+      // Check mount status again after async operation
+      if (!isMountedRef.current) return;
 
       setCookie(cookieName, idTokenResult, {
         secure: process.env.NODE_ENV === "production",
@@ -32,6 +40,9 @@ const useAuthToken = (cookieName = "authToken") => {
         window.localStorage.setItem(lastTokenRefreshKey, Date.now().toString());
       }
     } catch (err: unknown) {
+      // Only handle error if still mounted
+      if (!isMountedRef.current) return;
+
       if (err instanceof Error) {
         console.error(err.message);
       } else {
@@ -99,13 +110,25 @@ const useAuthToken = (cookieName = "authToken") => {
       });
 
       // Set auth cookie immediately for proxy.ts route protection
-      getIdToken(user).then((token) => {
-        setCookie(cookieName, token, {
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-        });
-        scheduleTokenRefresh();
-      });
+      // Use async IIFE with proper error handling and mount check
+      (async () => {
+        try {
+          const token = await getIdToken(user);
+          // Check if still mounted before updating state
+          if (!isMountedRef.current) return;
+
+          setCookie(cookieName, token, {
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+          });
+          scheduleTokenRefresh();
+        } catch (err) {
+          // Only log if still mounted
+          if (isMountedRef.current) {
+            console.error("Failed to get initial auth token:", err);
+          }
+        }
+      })();
     } else {
       // Important: auth can be "resolved" even when signed out.
       // We keep `authReady=true` so pages can safely decide between owner vs public reads
@@ -127,6 +150,14 @@ const useAuthToken = (cookieName = "authToken") => {
     user,
     scheduleTokenRefresh,
   ]);
+
+  // Cleanup on unmount - mark as unmounted to prevent stale updates
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   return { uid: user?.uid, loading, error };
 };

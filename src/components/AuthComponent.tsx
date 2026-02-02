@@ -3,6 +3,8 @@
 import { useAuthState } from "@/zustand/selectors";
 import { useAuthLogic } from "@/hooks/useAuthLogic";
 import { AuthModal } from "./auth";
+import { Button } from "@/components/ui";
+import { ArrowRight } from "lucide-react";
 
 /**
  * Authentication component that handles sign in/out and displays auth state.
@@ -63,16 +65,17 @@ export default function AuthComponent() {
     <>
       {/* Auth trigger buttons */}
       {uid ? (
-        <button
-          onClick={showModal}
-          className="btn-secondary max-w-md mx-auto text-white"
-        >
+        <Button onClick={showModal} variant="secondary" size="lg">
           You are signed in
-        </button>
+        </Button>
       ) : (
-        <button onClick={showModal} className="btn-white max-w-md mx-auto">
-          Sign In to Enable Your Account
-        </button>
+        <Button
+          onClick={showModal}
+          size="lg"
+          rightIcon={<ArrowRight className="h-5 w-5" />}
+        >
+          Get Started Free
+        </Button>
       )}
 
       {/* Auth modal */}
