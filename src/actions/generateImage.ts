@@ -1,6 +1,6 @@
 "use server";
 
-import { strategies } from "@/strategies";
+import { getStrategy } from "@/strategies";
 import { resolveApiKeyFromForm } from "@/utils/apiKeyResolver";
 import { assertSufficientCredits } from "@/utils/creditValidator";
 import {
@@ -49,7 +49,7 @@ export async function generateImage(
     assertSufficientCredits(useCredits, credits, modelName);
 
     // Get the strategy for the model
-    const strategy = strategies[modelName];
+    const strategy = getStrategy(modelName);
     if (!strategy) {
       return errorResult(`Unsupported model: ${modelName}`, "INVALID_INPUT");
     }

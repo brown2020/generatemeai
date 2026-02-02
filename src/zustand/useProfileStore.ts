@@ -134,13 +134,16 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     const uid = getAuthUidOrNull();
     if (!uid) return;
 
+    const previousProfile = get().profile;
+    const updatedProfile = { ...previousProfile, ...newProfile };
+
     try {
       const userRef = getProfileRef(uid);
-      const updatedProfile = { ...get().profile, ...newProfile };
-
-      set({ profile: updatedProfile });
+      // Write to Firestore first - only update local state on success
       await updateDoc(userRef, updatedProfile);
+      set({ profile: updatedProfile });
     } catch (error) {
+      // On failure, local state remains unchanged (no rollback needed)
       handleProfileError("updating profile", error);
     }
   },
