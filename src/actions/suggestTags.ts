@@ -7,10 +7,11 @@ import {
   ActionResult,
   successResult,
   errorResult,
-  ValidationError,
+  AuthenticationError,
 } from "@/utils/errors";
 import { tagSuggestionSchema } from "@/utils/validationSchemas";
 import { z } from "zod";
+import { authenticateAction } from "@/utils/serverAuth";
 
 interface SuggestTagsParams {
   freestyle: string;
@@ -65,6 +66,9 @@ export const suggestTags = async (
   credits: number
 ): Promise<ActionResult<string>> => {
   try {
+    // Authenticate server-side
+    await authenticateAction();
+
     // Validate input
     const validatedInput = tagSuggestionSchema.parse({
       prompt: freestyle,
@@ -120,7 +124,9 @@ export const suggestTags = async (
 
     return successResult(text);
   } catch (error: unknown) {
-    // Handle validation errors
+    if (error instanceof AuthenticationError) {
+      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
+    }
     if (error instanceof z.ZodError) {
       const firstError = error.issues[0];
       return errorResult(
@@ -131,7 +137,7 @@ export const suggestTags = async (
 
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("Error suggesting tags:", error);
+    console.error("Error suggesting tags:", errorMessage);
     return errorResult(errorMessage, "GENERATION_FAILED");
   }
 };

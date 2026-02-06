@@ -9,8 +9,10 @@ import {
   successResult,
   errorResult,
   getErrorMessage,
+  AuthenticationError,
 } from "@/utils/errors";
 import { saveGif } from "@/utils/storage";
+import { authenticateAction } from "@/utils/serverAuth";
 
 // Configure ffmpeg path based on platform
 const getFfmpegPath = (): string => {
@@ -45,15 +47,9 @@ async function convertToGIF(videoUrl: string): Promise<Buffer> {
     ffmpeg()
       .input(videoUrl)
       .outputFormat("gif")
-      .addOption("-loglevel", "verbose")
-      .on("end", () => {
-        console.log("Conversion to GIF completed.");
-      })
+      .addOption("-loglevel", "quiet")
       .on("error", (err: Error) => {
         reject(new Error(err.message));
-      })
-      .on("stderr", (stderr: string) => {
-        console.log(`FFmpeg stderr: ${stderr}`);
       })
       .pipe(gifStream, { end: true });
 
@@ -62,7 +58,6 @@ async function convertToGIF(videoUrl: string): Promise<Buffer> {
     });
 
     gifStream.on("finish", () => {
-      console.log("GIF stream finished. Total size:", gifBuffer.length);
       resolve(Buffer.concat(gifBuffer));
     });
 
@@ -82,12 +77,14 @@ async function convertToGIF(videoUrl: string): Promise<Buffer> {
  */
 export async function processVideoToGIF(
   firebaseVideoUrl: string,
-  id: string,
-  uid: string
+  id: string
 ): Promise<ActionResult<GifConversionData>> {
   try {
+    // Authenticate — derive uid server-side
+    const uid = await authenticateAction();
+
     // Validate inputs
-    if (!firebaseVideoUrl || !id || !uid) {
+    if (!firebaseVideoUrl || !id) {
       return errorResult(
         "Missing required parameters for GIF conversion",
         "INVALID_INPUT"
@@ -127,7 +124,10 @@ export async function processVideoToGIF(
       gifUrl,
     });
   } catch (error) {
-    console.error("Error converting video to GIF:", error);
+    if (error instanceof AuthenticationError) {
+      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
+    }
+    console.error("Error converting video to GIF:", getErrorMessage(error));
     return errorResult(getErrorMessage(error), "GENERATION_FAILED");
   }
 }

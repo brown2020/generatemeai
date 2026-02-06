@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { isProtectedRoute } from "@/constants/routes";
 
 /**
- * Next.js 16 Proxy - handles route protection at the edge.
- * Replaces middleware.ts for better performance and security.
+ * Next.js 16 Proxy - UX-level route guard at the edge.
  *
- * This runs before the page renders, preventing flash of protected content.
+ * IMPORTANT: This is a "soft gate" only — it checks for the existence of an
+ * auth cookie to prevent unauthenticated users from seeing a flash of
+ * protected content. It does NOT verify the token cryptographically.
+ *
+ * Real security is enforced in Server Actions via `authenticateAction()`
+ * (see src/utils/serverAuth.ts), which verifies the Firebase ID token with
+ * the Admin SDK on every mutation.
+ *
  * Route definitions are in @/constants/routes.ts for single source of truth.
- *
- * Note: Static files and assets are filtered by the config.matcher below,
- * so this function only receives route requests that need protection checks.
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

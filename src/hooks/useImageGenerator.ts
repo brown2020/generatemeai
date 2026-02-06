@@ -136,13 +136,10 @@ export const useImageGenerator = () => {
         );
       }
     } catch (error: unknown) {
-      // Standardized error handling with user feedback
       const errorMessage =
         error instanceof Error
           ? error.message
           : "An unexpected error occurred during image generation";
-      
-      console.error("Error generating image:", error);
       toast.error(errorMessage);
     } finally {
       generationState.updateField("loading", false);

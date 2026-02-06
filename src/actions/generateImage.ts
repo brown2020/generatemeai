@@ -9,6 +9,7 @@ import {
   errorResult,
   getErrorMessage,
   ValidationError,
+  AuthenticationError,
 } from "@/utils/errors";
 import {
   saveToStorage,
@@ -19,6 +20,7 @@ import {
   imageGenerationSchema,
   parseFormData,
 } from "@/utils/validationSchemas";
+import { authenticateAction } from "@/utils/serverAuth";
 
 /**
  * Image generation result data.
@@ -38,9 +40,12 @@ export async function generateImage(
   data: FormData
 ): Promise<ActionResult<ImageGenerationData>> {
   try {
+    // Authenticate — derive uid server-side, ignore client-provided uid
+    const uid = await authenticateAction();
+
     // Validate and parse input
     const validatedInput = parseFormData(imageGenerationSchema, data);
-    const { message, uid, model: modelName, useCredits, credits, imageField } = validatedInput;
+    const { message, model: modelName, useCredits, credits, imageField } = validatedInput;
     
     // Normalize imageField (convert undefined to null)
     const img = imageField ?? null;
@@ -96,7 +101,9 @@ export async function generateImage(
 
     return successResult({ imageUrl, imageReference });
   } catch (error) {
-    // Handle validation errors
+    if (error instanceof AuthenticationError) {
+      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
+    }
     if (error instanceof ValidationError) {
       return errorResult(error.message, "VALIDATION_ERROR");
     }

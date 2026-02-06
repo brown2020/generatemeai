@@ -58,7 +58,10 @@ export const TagManager = ({
       setNewTag("");
       if (showToast) toast.success("Tag added successfully");
     } catch (error) {
-      if (showToast) toast.error("Error adding tag: " + error);
+      if (showToast) {
+        const msg = error instanceof Error ? error.message : "Unknown error";
+        toast.error(`Error adding tag: ${msg}`);
+      }
     }
   };
 
@@ -75,7 +78,8 @@ export const TagManager = ({
       setTags(updatedTags);
       toast.success("Tag removed successfully");
     } catch (error) {
-      toast.error("Error removing tag: " + error);
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Error removing tag: ${msg}`);
     }
   };
 
@@ -103,13 +107,14 @@ export const TagManager = ({
       const suggestions = result.data.split(",").map((s) => s.trim());
       if (suggestions.length >= 1) {
         if (useCredits) {
-          minusCredits(1);
+          await minusCredits(1);
         }
         await handleAddTag(false, suggestions);
         toast.success("Tags added successfully");
       }
     } catch (err) {
-      toast.error("Error adding tags: " + err);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Error adding tags: ${msg}`);
     }
   };
 

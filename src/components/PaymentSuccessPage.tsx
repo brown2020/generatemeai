@@ -41,7 +41,6 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
 
         // Handle ActionResult response
         if (!result.success) {
-          console.error("Payment validation failed:", result.error);
           setMessage(result.error);
           setLoading(false);
           return;
@@ -80,7 +79,6 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
           const creditsToAdd = data.amount + 1;
           await addCredits(creditsToAdd);
         } else {
-          console.error("Payment validation failed:", data.status);
           setMessage("Payment validation failed");
         }
       } catch (error) {
@@ -105,7 +103,6 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
           <div className="bg-white p-2 rounded-md my-5 text-4xl font-bold mx-auto">
             ${amount / 100}
           </div>
-          <div>Uid: {uid}</div>
           <div>Id: {id}</div>
           <div>Created: {new Date(created).toLocaleString()}</div>
           <div>Status: {status}</div>

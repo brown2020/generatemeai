@@ -8,6 +8,10 @@ export function resizeImage(file: File): Promise<Blob> {
 
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Failed to get canvas 2D context."));
+        return;
+      }
       canvas.width = 1024;
       canvas.height = 1024;
 
@@ -25,7 +29,7 @@ export function resizeImage(file: File): Promise<Blob> {
       const offsetX = (canvas.width - scaledWidth) / 2;
       const offsetY = (canvas.height - scaledHeight) / 2;
 
-      ctx?.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
+      ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
 
       canvas.toBlob((blob) => {
         if (blob) {
