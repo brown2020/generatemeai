@@ -27,6 +27,7 @@ import { authenticateAction } from "@/utils/serverAuth";
  */
 interface ImageGenerationData {
   imageUrl: string;
+  imageUrls: string[];
   imageReference?: string;
 }
 
@@ -45,7 +46,16 @@ export async function generateImage(
 
     // Validate and parse input
     const validatedInput = parseFormData(imageGenerationSchema, data);
-    const { message, model: modelName, useCredits, credits, imageField } = validatedInput;
+    const {
+      message,
+      model: modelName,
+      useCredits,
+      credits,
+      imageField,
+      aspectRatio,
+      negativePrompt,
+      imageCount,
+    } = validatedInput;
     
     // Normalize imageField (convert undefined to null)
     const img = imageField ?? null;
@@ -68,12 +78,15 @@ export async function generateImage(
       );
     }
 
-    // Generate image
+    // Generate image(s)
     const imageData = await strategy({
       message,
       img,
       apiKey,
       useCredits,
+      aspectRatio: aspectRatio || "1:1",
+      negativePrompt: negativePrompt || undefined,
+      imageCount: imageCount || 1,
     });
 
     if (!imageData) {
@@ -83,12 +96,19 @@ export async function generateImage(
       );
     }
 
-    // Save generated image to Firebase
-    const imageUrl = await saveToStorage({
-      data: imageData,
-      path: createGeneratedImagePath(uid),
-      metadata: { prompt: message },
-    });
+    // Handle single or multi-image results
+    const isMulti = Array.isArray(imageData);
+    const dataArray = isMulti ? imageData : [imageData];
+
+    const imageUrls = await Promise.all(
+      dataArray.map((d) =>
+        saveToStorage({
+          data: d,
+          path: createGeneratedImagePath(uid),
+          metadata: { prompt: message },
+        })
+      )
+    );
 
     // Handle uploaded reference image
     let imageReference: string | undefined;
@@ -99,7 +119,7 @@ export async function generateImage(
       });
     }
 
-    return successResult({ imageUrl, imageReference });
+    return successResult({ imageUrl: imageUrls[0], imageUrls, imageReference });
   } catch (error) {
     if (error instanceof AuthenticationError) {
       return errorResult(error.message, "AUTHENTICATION_REQUIRED");

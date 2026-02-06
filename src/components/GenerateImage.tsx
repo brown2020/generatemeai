@@ -15,6 +15,11 @@ import toast from "react-hot-toast";
 import {
   getImageModels,
   supportsImageUpload,
+  supportsAspectRatio as modelSupportsAspectRatioFn,
+  supportsNegativePrompt as modelSupportsNegativePromptFn,
+  getMaxImages,
+  creditsToMinus,
+  ASPECT_RATIOS,
   type Model,
 } from "@/constants/modelRegistry";
 import { suggestTags } from "@/actions/suggestTags";
@@ -69,8 +74,11 @@ function GenerateImage() {
   const formState = useGenerationStore(
     useShallow((s) => ({
       imagePrompt: s.imagePrompt,
+      negativePrompt: s.negativePrompt,
       imageStyle: s.imageStyle,
       model: s.model,
+      aspectRatio: s.aspectRatio,
+      imageCount: s.imageCount,
       colorScheme: s.colorScheme,
       lighting: s.lighting,
       selectedCategory: s.selectedCategory,
@@ -83,6 +91,7 @@ function GenerateImage() {
   const outputState = useGenerationStore(
     useShallow((s) => ({
       generatedImage: s.generatedImage,
+      generatedImages: s.generatedImages,
       colorScheme: s.colorScheme,
       lighting: s.lighting,
       perspective: s.perspective,
@@ -114,6 +123,13 @@ function GenerateImage() {
   const isPromptValid = !!formState.imagePrompt.trim();
   const isModelValid = !!formState.model;
   const modelSupportsUpload = supportsImageUpload(formState.model);
+  const showAspectRatio = modelSupportsAspectRatioFn(formState.model);
+  const showNegativePrompt = modelSupportsNegativePromptFn(formState.model);
+  const maxImages = getMaxImages(formState.model);
+  const creditCost = useMemo(
+    () => creditsToMinus(formState.model) * formState.imageCount,
+    [formState.model, formState.imageCount]
+  );
 
   // Click outside handler for preview type selector
   useEffect(() => {
@@ -302,6 +318,68 @@ function GenerateImage() {
           </div>
         </div>
 
+        {/* Negative Prompt */}
+        {showNegativePrompt && (
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">
+              Negative Prompt
+              <span className="text-gray-400 font-normal ml-1">(what to exclude)</span>
+            </label>
+            <textarea
+              value={formState.negativePrompt}
+              onChange={(e) => storeActions.updateField("negativePrompt", e.target.value)}
+              placeholder="e.g. blurry, low quality, watermark, text..."
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            />
+          </div>
+        )}
+
+        {/* Aspect Ratio + Image Count row */}
+        <div className="flex flex-wrap gap-4">
+          {showAspectRatio && (
+            <div className="flex-1 min-w-[200px] space-y-2">
+              <label className="text-sm font-medium text-gray-700">Aspect Ratio</label>
+              <div className="flex flex-wrap gap-2">
+                {ASPECT_RATIOS.map((ar) => (
+                  <button
+                    key={ar.value}
+                    onClick={() => storeActions.updateField("aspectRatio", ar.value)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                      formState.aspectRatio === ar.value
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {ar.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {maxImages > 1 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Images</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4].filter((n) => n <= maxImages).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => storeActions.updateField("imageCount", n)}
+                    className={`w-10 h-10 text-sm font-medium rounded-lg border transition-all ${
+                      formState.imageCount === n
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <GenerationSettingsWrapper />
 
         <button
@@ -325,13 +403,21 @@ function GenerateImage() {
               <PulseLoader color="#fff" size={12} />
             </div>
           ) : (
-            "Generate Image"
+            <span className="flex items-center justify-center gap-2">
+              Generate{formState.imageCount > 1 ? ` ${formState.imageCount} Images` : " Image"}
+              {profileData.useCredits && (
+                <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
+                  {creditCost} credits
+                </span>
+              )}
+            </span>
           )}
         </button>
 
         <div className="w-full">
           <GeneratedImagePreview
             imageUrl={outputState.generatedImage}
+            imageUrls={outputState.generatedImages}
             showPreviewMarker={isPreviewMarkingEnabled}
             colorScheme={outputState.colorScheme}
             lighting={outputState.lighting}
@@ -339,6 +425,7 @@ function GenerateImage() {
             composition={outputState.composition}
             medium={outputState.medium}
             mood={outputState.mood}
+            onSelectImage={(url) => storeActions.updateField("generatedImage", url)}
           />
         </div>
       </div>

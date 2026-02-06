@@ -26,8 +26,11 @@ export const useImageGenerator = () => {
   const generationState = useGenerationStore(
     useShallow((s) => ({
       imagePrompt: s.imagePrompt,
+      negativePrompt: s.negativePrompt,
       imageStyle: s.imageStyle,
       model: s.model,
+      aspectRatio: s.aspectRatio,
+      imageCount: s.imageCount,
       colorScheme: s.colorScheme,
       lighting: s.lighting,
       perspective: s.perspective,
@@ -87,6 +90,9 @@ export const useImageGenerator = () => {
         model: generationState.model,
         profile,
         uploadedImage: generationState.uploadedImage,
+        aspectRatio: generationState.aspectRatio,
+        negativePrompt: generationState.negativePrompt || undefined,
+        imageCount: generationState.imageCount,
       });
 
       const result = await generateImage(formData);
@@ -95,10 +101,10 @@ export const useImageGenerator = () => {
       if (!result.success) {
         const errorMessage = result.error || "Failed to generate image";
         toast.error(errorMessage);
-        return; // Early return instead of throwing
+        return;
       }
 
-      const { imageUrl: downloadURL, imageReference = "" } = result.data;
+      const { imageUrl: downloadURL, imageUrls = [], imageReference = "" } = result.data;
 
       // Deduct credits if using credit system
       if (profile.useCredits) {
@@ -110,6 +116,7 @@ export const useImageGenerator = () => {
       }
 
       generationState.updateField("generatedImage", downloadURL);
+      generationState.updateField("generatedImages", imageUrls);
 
       if (downloadURL) {
         await saveHistory(
