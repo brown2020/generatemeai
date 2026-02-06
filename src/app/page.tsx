@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
-import Footer from "@/components/Footer";
 import HomePage from "@/components/HomePage";
+import { PageWithFooter } from "@/components/layouts/PageWithFooter";
 import { adminDb } from "@/firebase/firebaseAdmin";
 
 /**
@@ -40,9 +40,8 @@ export default async function Home() {
   const images = await getPublicImages();
 
   return (
-    <>
+    <PageWithFooter withPadding={false}>
       <HomePage initialImages={images} />
-      <Footer />
-    </>
+    </PageWithFooter>
   );
 }
