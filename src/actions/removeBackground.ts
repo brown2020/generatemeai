@@ -39,7 +39,11 @@ export const removeBackground = async (
     }
 
     // Fetch image and create form data
-    const imageBlob = await fetch(imageUrl).then((res) => res.blob());
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      return errorResult("Failed to fetch source image.", "GENERATION_FAILED");
+    }
+    const imageBlob = await imageResponse.blob();
     const formData = new FormData();
     formData.append("file", imageBlob, "image.png");
 

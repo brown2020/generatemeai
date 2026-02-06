@@ -137,7 +137,7 @@ async function createPayment(
   });
 
   return {
-    id: newPaymentDoc.id,
+    id: payment.id,
     amount: payment.amount,
     createdAt: Timestamp.now(),
     status: payment.status,
@@ -162,7 +162,8 @@ async function findProcessedPayment(
   const querySnapshot = await getDocs(q);
 
   if (!querySnapshot.empty) {
-    return querySnapshot.docs[0].data() as PaymentType;
+    const docData = querySnapshot.docs[0].data();
+    return { ...docData, id: docData.id ?? querySnapshot.docs[0].id } as PaymentType;
   }
 
   return null;

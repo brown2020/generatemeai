@@ -106,7 +106,6 @@ export const useSignOut = () => {
 // ============================================================================
 
 export {
-  getAuthenticatedUid,
   isAuthenticated,
   getAuthUidOrNull,
   getAuthState,

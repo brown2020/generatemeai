@@ -132,6 +132,6 @@ export const suggestTags = async (
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Error suggesting tags:", error);
-    return errorResult(errorMessage);
+    return errorResult(errorMessage, "GENERATION_FAILED");
   }
 };

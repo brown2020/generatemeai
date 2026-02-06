@@ -61,6 +61,25 @@ export const backgroundRemovalSchema = z.object({
 export type BackgroundRemovalInput = z.infer<typeof backgroundRemovalSchema>;
 
 /**
+ * Video generation request schema.
+ */
+export const videoGenerationSchema = z.object({
+  videoModel: z.enum(["d-id", "runway-ml"], {
+    message: "Invalid video model",
+  }),
+  imageUrl: z.string().url("Invalid image URL"),
+  useCredits: z.boolean(),
+  credits: z.number().min(0, "Credits cannot be negative"),
+  scriptPrompt: z.string().nullable().optional(),
+  audio: z.string().nullable().optional(),
+  animationType: z.string().nullable().optional(),
+  didAPIKey: z.string().optional(),
+  runwayApiKey: z.string().optional(),
+});
+
+export type VideoGenerationInput = z.infer<typeof videoGenerationSchema>;
+
+/**
  * Payment checkout schema.
  */
 export const paymentCheckoutSchema = z.object({

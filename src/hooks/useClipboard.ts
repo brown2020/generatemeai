@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 
 interface UseClipboardOptions {
@@ -15,6 +15,15 @@ interface UseClipboardOptions {
 export const useClipboard = (options: UseClipboardOptions = {}) => {
   const { successMessage = "Copied to clipboard", resetDelay = 2000 } = options;
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const copy = useCallback(
     async (text: string, key?: string) => {
@@ -22,7 +31,10 @@ export const useClipboard = (options: UseClipboardOptions = {}) => {
         await navigator.clipboard.writeText(text);
         setCopiedKey(key ?? text);
         toast.success(successMessage);
-        setTimeout(() => setCopiedKey(null), resetDelay);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => setCopiedKey(null), resetDelay);
         return true;
       } catch (error) {
         toast.error("Failed to copy to clipboard");

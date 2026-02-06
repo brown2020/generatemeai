@@ -41,12 +41,15 @@ export async function pollWithTimeout<T>(
   const { maxAttempts = 24, intervalMs = 5000, onAttempt } = options;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    await delay(intervalMs);
     onAttempt?.(attempt);
 
     const result = await pollFn();
     if (isDone(result)) {
       return result;
+    }
+
+    if (attempt < maxAttempts) {
+      await delay(intervalMs);
     }
   }
 
@@ -64,7 +67,6 @@ export async function pollWithTimeoutSafe<T>(
   const { maxAttempts = 24, intervalMs = 5000, onAttempt } = options;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    await delay(intervalMs);
     onAttempt?.(attempt);
 
     try {
@@ -75,6 +77,10 @@ export async function pollWithTimeoutSafe<T>(
     } catch (error) {
       // Continue polling on error, let it eventually timeout
       console.warn(`Poll attempt ${attempt} failed:`, error);
+    }
+
+    if (attempt < maxAttempts) {
+      await delay(intervalMs);
     }
   }
 
