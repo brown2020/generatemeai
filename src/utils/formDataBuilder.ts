@@ -46,13 +46,26 @@ export const createImageGenerationFormData = (params: {
   model: string;
   profile: Pick<ProfileType, ApiKeyProfileKey | "useCredits" | "credits">;
   uploadedImage?: File | null;
+  aspectRatio?: string;
+  negativePrompt?: string;
+  imageCount?: number;
 }): FormData => {
-  const { message, uid, model, profile, uploadedImage } = params;
+  const { message, uid, model, profile, uploadedImage, aspectRatio, negativePrompt, imageCount } = params;
   const formData = new FormData();
 
   formData.append("message", message);
   formData.append("uid", uid);
   formData.append("model", model);
+
+  if (aspectRatio) {
+    formData.append("aspectRatio", aspectRatio);
+  }
+  if (negativePrompt) {
+    formData.append("negativePrompt", negativePrompt);
+  }
+  if (imageCount && imageCount > 1) {
+    formData.append("imageCount", imageCount.toString());
+  }
 
   appendApiKeysToForm(formData, profile);
   appendCreditsToForm(formData, profile.useCredits, profile.credits);

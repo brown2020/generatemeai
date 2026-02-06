@@ -4,8 +4,11 @@ import type { Model } from "@/constants/modelRegistry";
 
 export interface GenerationState {
   imagePrompt: string;
+  negativePrompt: string;
   imageStyle: string;
   model: Model;
+  aspectRatio: string;
+  imageCount: number;
   colorScheme: string;
   lighting: string;
   perspective: string;
@@ -16,6 +19,7 @@ export interface GenerationState {
   tags: string[];
   suggestedTags: string[];
   generatedImage: string;
+  generatedImages: string[];
   uploadedImage: File | null;
 
   // UI State
@@ -60,8 +64,11 @@ export type GenerationStore = GenerationState & GenerationActions;
 
 const initialState: GenerationState = {
   imagePrompt: "",
+  negativePrompt: "",
   imageStyle: "",
   model: "playground-v2",
+  aspectRatio: "1:1",
+  imageCount: 1,
   colorScheme: "None",
   lighting: "None",
   perspective: "None",
@@ -72,6 +79,7 @@ const initialState: GenerationState = {
   tags: [],
   suggestedTags: [],
   generatedImage: "",
+  generatedImages: [],
   uploadedImage: null,
   loading: false,
   isRecording: false,

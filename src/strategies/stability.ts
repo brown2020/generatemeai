@@ -4,6 +4,8 @@ export const stabilityStrategy: GenerationStrategy = async ({
   message,
   img,
   apiKey,
+  aspectRatio,
+  negativePrompt,
 }) => {
   const formData = new FormData();
   if (img) {
@@ -12,9 +14,12 @@ export const stabilityStrategy: GenerationStrategy = async ({
     formData.append("strength", "0.7");
   } else {
     formData.append("mode", "text-to-image");
-    formData.append("aspect_ratio", "1:1");
+    formData.append("aspect_ratio", aspectRatio || "1:1");
   }
   formData.append("prompt", message);
+  if (negativePrompt) {
+    formData.append("negative_prompt", negativePrompt);
+  }
   formData.append("output_format", "png");
   formData.append("model", "sd3-turbo");
   formData.append("isValidPrompt", "true");

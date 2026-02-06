@@ -7,6 +7,21 @@
 import type { GenerationStrategy } from "@/strategies/types";
 
 /**
+ * Standard aspect ratio options available across models.
+ */
+export const ASPECT_RATIOS = [
+  { value: "1:1", label: "1:1 Square", width: 1024, height: 1024 },
+  { value: "16:9", label: "16:9 Landscape", width: 1344, height: 768 },
+  { value: "9:16", label: "9:16 Portrait", width: 768, height: 1344 },
+  { value: "4:3", label: "4:3 Standard", width: 1152, height: 896 },
+  { value: "3:4", label: "3:4 Portrait", width: 896, height: 1152 },
+  { value: "3:2", label: "3:2 Photo", width: 1216, height: 832 },
+  { value: "2:3", label: "2:3 Photo Portrait", width: 832, height: 1216 },
+] as const;
+
+export type AspectRatioValue = (typeof ASPECT_RATIOS)[number]["value"];
+
+/**
  * Model capability flags.
  */
 export interface ModelCapabilities {
@@ -15,6 +30,9 @@ export interface ModelCapabilities {
   hasAnimationType: boolean;
   hasScriptPromptVideoGen: boolean;
   supportsImageUpload: boolean;
+  supportsAspectRatio: boolean;
+  supportsNegativePrompt: boolean;
+  maxImages: number;
 }
 
 /**
@@ -57,6 +75,9 @@ const IMAGE_ONLY_CAPABILITIES: ModelCapabilities = {
   hasAnimationType: false,
   hasScriptPromptVideoGen: false,
   supportsImageUpload: true,
+  supportsAspectRatio: true,
+  supportsNegativePrompt: false,
+  maxImages: 4,
 };
 
 /**
@@ -78,7 +99,7 @@ export const MODEL_REGISTRY = {
     type: "image",
     credits: { envKey: "NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE", fallback: 4 },
     apiKey: { envKey: "OPENAI_API_KEY", formDataKey: "openAPIKey" },
-    capabilities: NO_UPLOAD_CAPABILITIES,
+    capabilities: { ...NO_UPLOAD_CAPABILITIES, supportsAspectRatio: false, maxImages: 1 },
     strategyKey: "dalle",
   },
   "stable-diffusion-xl": {
@@ -104,7 +125,7 @@ export const MODEL_REGISTRY = {
       fallback: 4,
     },
     apiKey: { envKey: "STABILITY_API_KEY", formDataKey: "stabilityAPIKey" },
-    capabilities: IMAGE_ONLY_CAPABILITIES,
+    capabilities: { ...IMAGE_ONLY_CAPABILITIES, supportsNegativePrompt: true },
     strategyKey: "stability",
   },
   "playground-v2": {
@@ -150,7 +171,7 @@ export const MODEL_REGISTRY = {
     type: "image",
     credits: { envKey: "NEXT_PUBLIC_CREDITS_PER_IDEOGRAM", fallback: 4 },
     apiKey: { envKey: "IDEOGRAM_API_KEY", formDataKey: "ideogramAPIKey" },
-    capabilities: NO_UPLOAD_CAPABILITIES,
+    capabilities: { ...NO_UPLOAD_CAPABILITIES, supportsNegativePrompt: true, maxImages: 1 },
     strategyKey: "ideogram",
   },
   "d-id": {
@@ -166,6 +187,9 @@ export const MODEL_REGISTRY = {
       hasAnimationType: true,
       hasScriptPromptVideoGen: true,
       supportsImageUpload: false,
+      supportsAspectRatio: false,
+      supportsNegativePrompt: false,
+      maxImages: 1,
     },
   },
   "runway-ml": {
@@ -181,6 +205,9 @@ export const MODEL_REGISTRY = {
       hasAnimationType: false,
       hasScriptPromptVideoGen: false,
       supportsImageUpload: false,
+      supportsAspectRatio: false,
+      supportsNegativePrompt: false,
+      maxImages: 1,
     },
   },
   // Utility models (not shown in UI but used for credits)
@@ -323,6 +350,40 @@ export const resolveApiKeyFromForm = (
 export const supportsImageUpload = (modelName: string): boolean => {
   const config = getModelConfig(modelName);
   return config?.capabilities.supportsImageUpload ?? false;
+};
+
+/**
+ * Check if a model supports aspect ratio selection.
+ */
+export const supportsAspectRatio = (modelName: string): boolean => {
+  const config = getModelConfig(modelName);
+  return config?.capabilities.supportsAspectRatio ?? false;
+};
+
+/**
+ * Check if a model supports negative prompts.
+ */
+export const supportsNegativePrompt = (modelName: string): boolean => {
+  const config = getModelConfig(modelName);
+  return config?.capabilities.supportsNegativePrompt ?? false;
+};
+
+/**
+ * Get the maximum number of images a model can generate at once.
+ */
+export const getMaxImages = (modelName: string): number => {
+  const config = getModelConfig(modelName);
+  return config?.capabilities.maxImages ?? 1;
+};
+
+/**
+ * Get the pixel dimensions for a given aspect ratio string.
+ */
+export const getAspectRatioDimensions = (
+  ratio: string
+): { width: number; height: number } => {
+  const found = ASPECT_RATIOS.find((r) => r.value === ratio);
+  return found ? { width: found.width, height: found.height } : { width: 1024, height: 1024 };
 };
 
 // ============================================================================

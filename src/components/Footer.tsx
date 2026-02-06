@@ -18,7 +18,7 @@ export default function Footer() {
   });
 
   return (
-    <div className="flex flex-wrap space-x-2 w-full h-14 items-center px-5 justify-center shrink-0">
+    <div className="flex flex-wrap gap-x-2 w-full min-h-14 items-center px-5 py-2 justify-center shrink-0 bg-white border-t border-gray-100">
       {menuItems.map((item) => (
         <Link
           key={item.label}
@@ -31,7 +31,7 @@ export default function Footer() {
       {uid && (
         <button
           onClick={handleSignOut}
-          className="text-black/50 hover:text-black/100 flex items-center gap-1"
+          className="text-black/50 hover:text-black flex items-center gap-1"
         >
           <LogOut className="w-3 h-3" />
           <span>Sign Out</span>

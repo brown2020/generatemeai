@@ -5,9 +5,13 @@ import { GenerationStrategy, StrategyContext } from "./types";
  * This factory function eliminates code duplication across different Fireworks models.
  */
 const createFireworksStrategy = (modelName: string): GenerationStrategy => {
-  return async ({ message, img, apiKey }: StrategyContext) => {
+  return async ({ message, img, apiKey, aspectRatio, imageCount }: StrategyContext) => {
     const baseUrl =
       "https://api.fireworks.ai/inference/v1/image_generation/accounts/fireworks/models";
+
+    const { getAspectRatioDimensions } = await import("@/constants/modelRegistry");
+    const { width, height } = getAspectRatioDimensions(aspectRatio || "1:1");
+    const count = imageCount || 1;
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${apiKey}`,
@@ -35,9 +39,9 @@ const createFireworksStrategy = (modelName: string): GenerationStrategy => {
       headers["Content-Type"] = "application/json";
       body = JSON.stringify({
         cfg_scale: 7,
-        height: 1024,
-        width: 1024,
-        samples: 1,
+        height,
+        width,
+        samples: count,
         steps: 30,
         seed: 0,
         safety_check: false,

@@ -3,11 +3,14 @@ export interface StrategyContext {
   img: File | null;
   apiKey: string;
   useCredits: boolean;
+  aspectRatio?: string;
+  negativePrompt?: string;
+  imageCount?: number;
 }
 
 export type GenerationStrategy = (
   context: StrategyContext
-) => Promise<ArrayBuffer | Buffer>;
+) => Promise<ArrayBuffer | Buffer | Array<ArrayBuffer | Buffer>>;
 
 export interface DalleResponse {
   data: {

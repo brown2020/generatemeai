@@ -20,6 +20,9 @@ export const imageGenerationSchema = z.object({
   }),
   useCredits: z.boolean(),
   credits: z.number().min(0, "Credits cannot be negative"),
+  aspectRatio: z.string().optional(),
+  negativePrompt: z.string().max(1000, "Negative prompt too long").optional(),
+  imageCount: z.number().int().min(1).max(4).optional(),
   imageField: z.instanceof(File).optional().nullable(),
   openai_api_key: z.string().optional(),
   replicate_api_key: z.string().optional(),
@@ -104,7 +107,7 @@ export function parseFormData<T extends z.ZodTypeAny>(
       data[key] = value === "true";
     }
     // Handle number conversions
-    else if (key === "credits" || key === "amount") {
+    else if (key === "credits" || key === "amount" || key === "imageCount") {
       data[key] = Number(value);
     }
     // Handle file fields
