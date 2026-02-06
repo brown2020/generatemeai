@@ -34,15 +34,6 @@ export const getAuthState = () => {
   };
 };
 
-// ============================================================================
-// Aliases for backward compatibility with hooks/useAuth.ts
-// ============================================================================
-
-/**
- * @alias getAuthUidOrNull - for backward compatibility
- */
-export const getAuthenticatedUid = getAuthUidOrNull;
-
 /**
  * Checks if a user is currently authenticated.
  * Use in non-hook contexts.

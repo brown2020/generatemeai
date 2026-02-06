@@ -20,9 +20,13 @@ export interface SaveToStorageOptions {
 }
 
 /**
- * Default signed URL expiration date (100 years from now).
+ * Computes a signed URL expiration date ~100 years from now.
  */
-const DEFAULT_EXPIRY = "03-17-2125";
+function getDefaultExpiry(): string {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() + 100);
+  return date.toISOString();
+}
 
 /**
  * Converts various data types to a Buffer.
@@ -75,7 +79,7 @@ export async function saveToStorage({
 
   const [signedUrl] = await file.getSignedUrl({
     action: "read",
-    expires: DEFAULT_EXPIRY,
+    expires: getDefaultExpiry(),
   });
 
   return signedUrl;
@@ -110,6 +114,9 @@ export const createGifPath = (): string => `video-generation/${Date.now()}.gif`;
  */
 export async function saveVideoFromUrl(videoUrl: string): Promise<string> {
   const response = await fetch(videoUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch video: ${response.status} ${response.statusText}`);
+  }
   const buffer = Buffer.from(await response.arrayBuffer());
 
   return saveToStorage({

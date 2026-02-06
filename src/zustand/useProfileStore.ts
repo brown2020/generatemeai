@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import { FirestorePaths } from "@/firebase/paths";
 import { deleteUser, getAuth } from "firebase/auth";
@@ -93,10 +93,11 @@ const createProfileFromAuth = (
 const getProfileRef = (uid: string) => doc(db, FirestorePaths.userProfile(uid));
 
 /**
- * Updates credits in Firestore.
+ * Atomically adjusts credits in Firestore using increment().
+ * Prevents race conditions from concurrent credit operations.
  */
-async function updateCredits(uid: string, credits: number): Promise<void> {
-  await updateDoc(getProfileRef(uid), { credits });
+async function adjustCredits(uid: string, delta: number): Promise<void> {
+  await updateDoc(getProfileRef(uid), { credits: increment(delta) });
 }
 
 /**
@@ -123,7 +124,20 @@ const useProfileStore = create<ProfileState>((set, get) => ({
         docSnap.exists() ? (docSnap.data() as ProfileType) : undefined
       );
 
-      await setDoc(userRef, newProfile);
+      if (docSnap.exists()) {
+        // Only update auth-derived fields, don't overwrite the whole profile
+        await updateDoc(userRef, {
+          email: newProfile.email,
+          contactEmail: newProfile.contactEmail,
+          displayName: newProfile.displayName,
+          photoUrl: newProfile.photoUrl,
+          emailVerified: newProfile.emailVerified,
+        });
+      } else {
+        // Create new profile
+        await setDoc(userRef, newProfile);
+      }
+
       set({ profile: newProfile });
     } catch (error) {
       handleProfileError("fetching or creating profile", error);
@@ -172,9 +186,8 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (profile.credits < amount) return false;
 
     try {
-      const newCredits = profile.credits - amount;
-      await updateCredits(uid, newCredits);
-      set({ profile: { ...profile, credits: newCredits } });
+      await adjustCredits(uid, -amount);
+      set({ profile: { ...profile, credits: profile.credits - amount } });
       return true;
     } catch (error) {
       handleProfileError("using credits", error);
@@ -187,11 +200,10 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid) return;
 
     const profile = get().profile;
-    const newCredits = profile.credits + amount;
 
     try {
-      await updateCredits(uid, newCredits);
-      set({ profile: { ...profile, credits: newCredits } });
+      await adjustCredits(uid, amount);
+      set({ profile: { ...profile, credits: profile.credits + amount } });
     } catch (error) {
       handleProfileError("adding credits", error);
     }

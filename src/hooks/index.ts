@@ -12,7 +12,6 @@ export {
   useAuthStatus,
   useSignOut,
   // Non-hook utilities (re-exported from zustand/helpers)
-  getAuthenticatedUid,
   isAuthenticated,
   getAuthUidOrNull,
   getAuthState,

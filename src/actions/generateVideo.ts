@@ -8,8 +8,10 @@ import {
   successResult,
   errorResult,
   getErrorMessage,
+  ValidationError,
 } from "@/utils/errors";
 import { saveVideoFromUrl } from "@/utils/storage";
+import { videoGenerationSchema, parseFormData } from "@/utils/validationSchemas";
 
 /**
  * Response types for video generation APIs.
@@ -179,22 +181,17 @@ export async function generateVideo(
   data: FormData
 ): Promise<ActionResult<VideoGenerationData>> {
   try {
-    // Extract parameters
-    const useCredits = data.get("useCredits") === "true";
-    const credits = Number(data.get("credits") || 0);
-    const videoModel = data.get("videoModel") as string | null;
-    const imageUrl = data.get("imageUrl") as string | null;
-    const scriptPrompt = data.get("scriptPrompt") as string | null;
-    const audio = data.get("audio") as string | null;
-    const animationType = data.get("animationType") as string | null;
-
-    // Validate required parameters
-    if (!videoModel || !imageUrl) {
-      return errorResult(
-        "Required parameters (videoModel, imageUrl) are missing.",
-        "INVALID_INPUT"
-      );
-    }
+    // Validate and parse input
+    const validatedInput = parseFormData(videoGenerationSchema, data);
+    const {
+      videoModel,
+      imageUrl,
+      useCredits,
+      credits,
+      scriptPrompt,
+      audio,
+      animationType,
+    } = validatedInput;
 
     if (!animationType && (!scriptPrompt || !audio)) {
       return errorResult(
@@ -209,8 +206,8 @@ export async function generateVideo(
     // Resolve API key
     const userApiKey =
       videoModel === "d-id"
-        ? (data.get("didAPIKey") as string)
-        : (data.get("runwayApiKey") as string);
+        ? validatedInput.didAPIKey
+        : validatedInput.runwayApiKey;
     const apiKey = resolveApiKey(videoModel, useCredits, userApiKey);
 
     if (!apiKey) {
@@ -226,9 +223,9 @@ export async function generateVideo(
     if (videoModel === "d-id") {
       videoUrl = await generateDIdVideo(
         imageUrl,
-        scriptPrompt,
-        audio,
-        animationType,
+        scriptPrompt ?? null,
+        audio ?? null,
+        animationType ?? null,
         apiKey
       );
     } else if (videoModel === "runway-ml") {
@@ -245,6 +242,9 @@ export async function generateVideo(
 
     return successResult({ videoUrl: savedVideoUrl });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return errorResult(error.message, "VALIDATION_ERROR");
+    }
     const errorMessage = getErrorMessage(error);
     console.error("Error generating video:", errorMessage);
     return errorResult(errorMessage, "GENERATION_FAILED");
