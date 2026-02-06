@@ -6,7 +6,9 @@ import {
   successResult,
   errorResult,
   getErrorMessage,
+  AuthenticationError,
 } from "@/utils/errors";
+import { authenticateAction } from "@/utils/serverAuth";
 
 const BRIA_API_URL = "https://engine.prod.bria-api.com/v1/background/remove";
 
@@ -29,6 +31,9 @@ export const removeBackground = async (
   briaApiKey: string
 ): Promise<ActionResult<BackgroundRemovalData>> => {
   try {
+    // Authenticate server-side
+    await authenticateAction();
+
     // Validate credits
     assertSufficientCredits(useCredits, credits, "bria.ai");
 
@@ -66,7 +71,10 @@ export const removeBackground = async (
 
     return errorResult("Removing background failed.", "GENERATION_FAILED");
   } catch (error: unknown) {
-    console.error("Error removing background:", error);
+    if (error instanceof AuthenticationError) {
+      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
+    }
+    console.error("Error removing background:", getErrorMessage(error));
     return errorResult(getErrorMessage(error), "GENERATION_FAILED");
   }
 };

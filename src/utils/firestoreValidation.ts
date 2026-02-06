@@ -110,12 +110,8 @@ export function validateImageListItems(
   items: unknown[]
 ): ValidatedImageListItem[] {
   return items
-    .map((item, index) => {
-      const validated = validateImageListItem(item);
-      if (!validated) {
-        console.warn(`Skipping invalid image list item at index ${index}`);
-      }
-      return validated;
+    .map((item) => {
+      return validateImageListItem(item);
     })
     .filter((item): item is ValidatedImageListItem => item !== null);
 }

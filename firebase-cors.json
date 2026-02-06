@@ -1,8 +1,7 @@
 [
     {
         "origin": [
-            "https://generate.me",
-            "http://localhost:3000"
+            "https://generate.me"
         ],
         "responseHeader": [
             "Content-Type"

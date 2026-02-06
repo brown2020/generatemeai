@@ -18,7 +18,6 @@ export const useGenerationHistory = () => {
     category: string
   ): Promise<void> => {
     if (!uid) {
-      console.error("User ID is required to save history");
       return;
     }
 
@@ -46,8 +45,7 @@ export const useGenerationHistory = () => {
       };
 
       await setDoc(docRef, finalPromptData);
-    } catch (err) {
-      console.error("Error saving history:", err);
+    } catch {
       toast.error("Failed to save generation history");
     }
   };

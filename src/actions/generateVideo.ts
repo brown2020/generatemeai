@@ -9,9 +9,11 @@ import {
   errorResult,
   getErrorMessage,
   ValidationError,
+  AuthenticationError,
 } from "@/utils/errors";
 import { saveVideoFromUrl } from "@/utils/storage";
 import { videoGenerationSchema, parseFormData } from "@/utils/validationSchemas";
+import { authenticateAction } from "@/utils/serverAuth";
 
 /**
  * Response types for video generation APIs.
@@ -181,6 +183,9 @@ export async function generateVideo(
   data: FormData
 ): Promise<ActionResult<VideoGenerationData>> {
   try {
+    // Authenticate server-side
+    await authenticateAction();
+
     // Validate and parse input
     const validatedInput = parseFormData(videoGenerationSchema, data);
     const {
@@ -242,6 +247,9 @@ export async function generateVideo(
 
     return successResult({ videoUrl: savedVideoUrl });
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
+    }
     if (error instanceof ValidationError) {
       return errorResult(error.message, "VALIDATION_ERROR");
     }

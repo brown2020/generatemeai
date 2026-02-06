@@ -6,7 +6,9 @@ import {
   successResult,
   errorResult,
   getErrorMessage,
+  AuthenticationError,
 } from "@/utils/errors";
+import { authenticateAction } from "@/utils/serverAuth";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
@@ -42,6 +44,9 @@ export async function createPaymentIntent(
   const product = process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME;
 
   try {
+    // Authenticate server-side
+    await authenticateAction();
+
     if (!product) {
       return errorResult("Stripe product name is not defined", "INVALID_INPUT");
     }
@@ -62,7 +67,10 @@ export async function createPaymentIntent(
 
     return successResult({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    console.error("Error creating payment intent:", error);
+    if (error instanceof AuthenticationError) {
+      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
+    }
+    console.error("Error creating payment intent:", getErrorMessage(error));
     return errorResult(getErrorMessage(error), "GENERATION_FAILED");
   }
 }
@@ -77,6 +85,9 @@ export async function validatePaymentIntent(
   paymentIntentId: string
 ): Promise<ActionResult<ValidatedPaymentData>> {
   try {
+    // Authenticate server-side
+    await authenticateAction();
+
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status !== "succeeded") {
@@ -93,7 +104,10 @@ export async function validatePaymentIntent(
       description: paymentIntent.description,
     });
   } catch (error) {
-    console.error("Error validating payment intent:", error);
+    if (error instanceof AuthenticationError) {
+      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
+    }
+    console.error("Error validating payment intent:", getErrorMessage(error));
     return errorResult(getErrorMessage(error), "GENERATION_FAILED");
   }
 }

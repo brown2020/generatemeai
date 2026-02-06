@@ -107,8 +107,7 @@ export const useAuthLogic = () => {
     try {
       await signOut(auth);
       clearAuthDetails();
-    } catch (error) {
-      console.error("Error signing out:", error);
+    } catch {
       toast.error("An error occurred while signing out.");
     } finally {
       hideModal();
@@ -157,8 +156,7 @@ export const useAuthLogic = () => {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
       storeAuthInfo(email, name);
       setAuthDetails({ authPending: true });
-    } catch (error) {
-      console.error("Error sending sign-in link:", error);
+    } catch {
       toast.error("An error occurred while sending the sign-in link.");
       hideModal();
     }

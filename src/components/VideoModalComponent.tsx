@@ -181,12 +181,8 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
 
         router.push(`/images/${docId}`);
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error generating image:", error.message);
-      } else {
-        console.error("An unknown error occurred during image generation.");
-      }
+    } catch {
+      // Error already surfaced to user via toast.error above
     } finally {
       setLoading(false);
     }

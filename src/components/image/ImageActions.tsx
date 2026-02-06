@@ -49,8 +49,8 @@ export const ImageActions = ({
 
         window.URL.revokeObjectURL(blobUrl);
       } catch (error) {
-        console.error("Video download error:", error);
-        toast.error("Download error: " + error);
+        const msg = error instanceof Error ? error.message : "Unknown error";
+        toast.error(`Download error: ${msg}`);
       }
     } else {
       const container = document.getElementById("image-container");
@@ -71,7 +71,8 @@ export const ImageActions = ({
         link.click();
         document.body.removeChild(link);
       } catch (error) {
-        toast.error("Download error: " + error);
+        const msg = error instanceof Error ? error.message : "Unknown error";
+        toast.error(`Download error: ${msg}`);
       }
     }
   };

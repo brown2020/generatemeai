@@ -114,9 +114,8 @@ export const usePreviewSaver = () => {
         });
         updateField("showMarkAsPreview", false);
         setPreview(null, null);
-      } catch (error) {
+      } catch {
         toast.error("Failed to save preview image");
-        console.error(error);
       }
     },
     [generatedImage, updateField, setPreview]

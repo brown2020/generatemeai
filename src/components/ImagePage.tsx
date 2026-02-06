@@ -159,8 +159,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
       setLoading(true);
       const result = await processVideoToGIF(
         imageData.videoDownloadUrl!,
-        id,
-        uid
+        id
       );
 
       if (result.success) {

@@ -39,15 +39,9 @@ const useAuthToken = (cookieName = "authToken") => {
       if (typeof window !== "undefined" && !window.ReactNativeWebView) {
         window.localStorage.setItem(lastTokenRefreshKey, Date.now().toString());
       }
-    } catch (err: unknown) {
+    } catch {
       // Only handle error if still mounted
       if (!isMountedRef.current) return;
-
-      if (err instanceof Error) {
-        console.error(err.message);
-      } else {
-        console.error("Error refreshing token");
-      }
       deleteCookie(cookieName);
     }
   }, [cookieName, lastTokenRefreshKey]);
@@ -122,11 +116,8 @@ const useAuthToken = (cookieName = "authToken") => {
             sameSite: "lax",
           });
           scheduleTokenRefresh();
-        } catch (err) {
-          // Only log if still mounted
-          if (isMountedRef.current) {
-            console.error("Failed to get initial auth token:", err);
-          }
+        } catch {
+          // Token fetch failed — cookie will be absent so proxy.ts will redirect if needed
         }
       })();
     } else {

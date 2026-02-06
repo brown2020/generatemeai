@@ -55,5 +55,10 @@ export const dalleStrategy: GenerationStrategy = async ({
   const imageUrl = data.data[0].url;
 
   const imageResponse = await fetch(imageUrl);
+  if (!imageResponse.ok) {
+    throw new Error(
+      `Failed to fetch generated image: ${imageResponse.status} ${imageResponse.statusText}`
+    );
+  }
   return imageResponse.arrayBuffer();
 };

@@ -93,8 +93,7 @@ export const useSignOut = () => {
     try {
       await signOut(auth);
       clearAuthDetails();
-    } catch (error) {
-      console.error("Error signing out:", error);
+    } catch {
       toast.error("An error occurred while signing out.");
     }
   }, [clearAuthDetails]);
