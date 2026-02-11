@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
 import { normalizeValue } from "@/utils/imageUtils";
 
 interface SelectableCardProps {
@@ -29,6 +29,9 @@ export const SelectableCard = memo(function SelectableCard({
   badge,
   showPreview = true,
 }: SelectableCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const handleImgError = useCallback(() => setImgError(true), []);
+
   return (
     <div
       className={`relative flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition-all
@@ -39,13 +42,14 @@ export const SelectableCard = memo(function SelectableCard({
         }`}
       onClick={onClick}
     >
-      {showPreview && previewUrl && (
+      {showPreview && previewUrl && !imgError && (
         <div className="w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
           <img
             src={previewUrl}
             alt={label}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={handleImgError}
           />
         </div>
       )}
