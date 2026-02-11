@@ -4,30 +4,25 @@ import { pollWithTimeout } from "@/utils/polling";
 interface ReplicatePrediction {
   id: string;
   status: string;
-  output?: string[];
+  output?: string | string[];
 }
 
 export const replicateStrategy: GenerationStrategy = async ({
   message,
   apiKey,
   aspectRatio,
-  imageCount,
 }) => {
   const { default: Replicate } = await import("replicate");
-  const { default: sharp } = await import("sharp");
-  const { getAspectRatioDimensions } = await import("@/constants/modelRegistry");
 
   const replicate = new Replicate({ auth: apiKey });
-  const { width, height } = getAspectRatioDimensions(aspectRatio || "1:1");
-  const count = imageCount || 1;
 
   const prediction = await replicate.predictions.create({
-    model: "black-forest-labs/flux-schnell",
+    model: "black-forest-labs/flux-2-pro",
     input: {
       prompt: message,
-      width,
-      height,
-      num_outputs: count,
+      aspect_ratio: aspectRatio || "1:1",
+      output_format: "jpeg",
+      output_quality: 90,
     },
   });
 
@@ -35,27 +30,25 @@ export const replicateStrategy: GenerationStrategy = async ({
   const result = await pollWithTimeout<ReplicatePrediction>(
     () =>
       replicate.predictions.get(prediction.id) as Promise<ReplicatePrediction>,
-    (output) => output.status !== "processing",
-    { maxAttempts: 24, intervalMs: 5000 }
+    (output) => output.status !== "processing" && output.status !== "starting",
+    { maxAttempts: 30, intervalMs: 5000 }
   );
 
-  if (result.status !== "succeeded" || !result.output?.[0]) {
+  if (result.status !== "succeeded" || !result.output) {
     throw new Error("Failed generating image via Replicate API.");
   }
 
-  // Convert each output from WebP to JPEG
-  if (count > 1 && result.output.length > 1) {
-    const buffers = await Promise.all(
-      result.output.map(async (url: string) => {
-        const data = await fetch(url).then((res) => res.arrayBuffer());
-        return await sharp(Buffer.from(data)).toFormat("jpeg").toBuffer();
-      })
+  // FLUX.2 [pro] returns a single URL or an array with one URL
+  const outputUrl = Array.isArray(result.output)
+    ? result.output[0]
+    : result.output;
+
+  const imageResponse = await fetch(outputUrl);
+  if (!imageResponse.ok) {
+    throw new Error(
+      `Failed to fetch generated image: ${imageResponse.status} ${imageResponse.statusText}`
     );
-    return buffers;
   }
 
-  const webpImageData = await fetch(result.output[0]).then((res) =>
-    res.arrayBuffer()
-  );
-  return await sharp(Buffer.from(webpImageData)).toFormat("jpeg").toBuffer();
+  return imageResponse.arrayBuffer();
 };

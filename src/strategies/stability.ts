@@ -21,7 +21,7 @@ export const stabilityStrategy: GenerationStrategy = async ({
     formData.append("negative_prompt", negativePrompt);
   }
   formData.append("output_format", "png");
-  formData.append("model", "sd3-turbo");
+  formData.append("model", "sd3.5-large-turbo");
   formData.append("isValidPrompt", "true");
 
   const apiUrl = "https://api.stability.ai/v2beta/stable-image/generate/sd3";
