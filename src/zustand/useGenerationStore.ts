@@ -66,7 +66,7 @@ const initialState: GenerationState = {
   imagePrompt: "",
   negativePrompt: "",
   imageStyle: "",
-  model: "playground-v2",
+  model: "dall-e",
   aspectRatio: "1:1",
   imageCount: 1,
   colorScheme: "None",
