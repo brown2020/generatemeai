@@ -11,8 +11,10 @@ export {
 } from "./apiKeyResolver";
 export {
   validateCredits,
-  validateCreditsFromForm,
   assertSufficientCredits,
+  assertSufficientCreditsServer,
+  deductCreditsServer,
+  getServerCredits,
 } from "./creditValidator";
 export { creditsToMinus } from "@/constants/modelRegistry";
 

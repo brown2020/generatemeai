@@ -22,7 +22,6 @@ export { default as useAuthToken } from "./useAuthToken";
 
 // Generation hooks
 export { useImageGenerator } from "./useImageGenerator";
-export { useGenerationHistory } from "./useGenerationHistory";
 export { useSpeechRecognition } from "./useSpeechRecognition";
 export { usePreviewSaver } from "./usePreviewSaver";
 

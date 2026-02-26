@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { X, Plus, Sparkle, Tag } from "lucide-react";
 import toast from "react-hot-toast";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/firebaseClient";
-import { FirestorePaths } from "@/firebase/paths";
 import { suggestTags } from "@/actions/suggestTags";
+import { updateImageTags } from "@/actions/imageActions";
 import { ImageData } from "@/types/image";
 
 interface TagManagerProps {
@@ -18,7 +16,7 @@ interface TagManagerProps {
   openAPIKey: string;
   useCredits: boolean;
   credits: number;
-  minusCredits: (amount: number) => Promise<boolean>;
+  fetchProfile: () => Promise<void>;
 }
 
 /**
@@ -33,7 +31,7 @@ export const TagManager = ({
   openAPIKey,
   useCredits,
   credits,
-  minusCredits,
+  fetchProfile,
 }: TagManagerProps) => {
   const [newTag, setNewTag] = useState("");
 
@@ -41,20 +39,20 @@ export const TagManager = ({
     showToast: boolean = true,
     tagsArray: string[] | null = null
   ) => {
-    if ((!tagsArray || !imageData) && (!newTag.trim() || !imageData)) return;
-
-    const newTagValue = tagsArray || newTag.trim();
+    if (!imageData) return;
+    if (!tagsArray && !newTag.trim()) return;
 
     try {
       const updatedTags = tagsArray
-        ? tags.concat(newTagValue)
-        : [...tags, newTagValue];
-      const docRef = uid
-        ? doc(db, FirestorePaths.profileCover(uid, imageId))
-        : doc(db, FirestorePaths.publicImage(imageId));
+        ? [...tags, ...tagsArray]
+        : [...tags, newTag.trim()];
 
-      await updateDoc(docRef, { tags: updatedTags });
-      setTags(updatedTags as string[]);
+      const result = await updateImageTags(imageId, updatedTags);
+      if (!result.success) {
+        if (showToast) toast.error(result.error);
+        return;
+      }
+      setTags(updatedTags);
       setNewTag("");
       if (showToast) toast.success("Tag added successfully");
     } catch (error) {
@@ -70,11 +68,11 @@ export const TagManager = ({
 
     try {
       const updatedTags = tags.filter((tag) => tag !== tagToRemove);
-      const docRef = uid
-        ? doc(db, FirestorePaths.profileCover(uid, imageId))
-        : doc(db, FirestorePaths.publicImage(imageId));
-
-      await updateDoc(docRef, { tags: updatedTags });
+      const result = await updateImageTags(imageId, updatedTags);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
       setTags(updatedTags);
       toast.success("Tag removed successfully");
     } catch (error) {
@@ -106,9 +104,8 @@ export const TagManager = ({
       // Handle successful response
       const suggestions = result.data.split(",").map((s) => s.trim());
       if (suggestions.length >= 1) {
-        if (useCredits) {
-          await minusCredits(1);
-        }
+        // Credits deducted server-side in suggestTags — refresh local profile
+        await fetchProfile();
         await handleAddTag(false, suggestions);
         toast.success("Tags added successfully");
       }

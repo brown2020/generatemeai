@@ -5,6 +5,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
 import { STORAGE_KEYS } from "@/constants/storage";
+import { syncAuthToFirestoreServer } from "@/actions/syncAuth";
 
 const REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
 const DEBOUNCE_DELAY = 1000;
@@ -103,12 +104,9 @@ const useAuthToken = (cookieName = "authToken") => {
         authPending: false,
       });
 
-      // Set auth cookie immediately for proxy.ts route protection
-      // Use async IIFE with proper error handling and mount check
       (async () => {
         try {
           const token = await getIdToken(user);
-          // Check if still mounted before updating state
           if (!isMountedRef.current) return;
 
           setCookie(cookieName, token, {
@@ -116,8 +114,16 @@ const useAuthToken = (cookieName = "authToken") => {
             sameSite: "lax",
           });
           scheduleTokenRefresh();
+
+          // Sync auth data server-side (fire-and-forget)
+          syncAuthToFirestoreServer({
+            email: user.email || "",
+            displayName: user.displayName || "",
+            photoUrl: user.photoURL || "",
+            emailVerified: user.emailVerified || false,
+          });
         } catch {
-          // Token fetch failed — cookie will be absent so proxy.ts will redirect if needed
+          // Token fetch failed — cookie will be absent so middleware will redirect
         }
       })();
     } else {

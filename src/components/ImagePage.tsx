@@ -1,18 +1,15 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { db } from "@/firebase/firebaseClient";
-import { doc, updateDoc } from "firebase/firestore";
 import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import useProfileStore from "@/zustand/useProfileStore";
-import { creditsToMinus } from "@/constants/modelRegistry";
 import { getFileTypeFromUrl } from "@/utils/imageUtils";
 import { removeBackground } from "@/actions/removeBackground";
+import { updateImageDownloadUrl } from "@/actions/imageActions";
 import { ImageData } from "@/types/image";
-import { FirestorePaths } from "@/firebase/paths";
 
 /**
  * Modal types for the image page.
@@ -45,9 +42,8 @@ const ImagePage = ({ id }: ImagePageProps) => {
   const authPending = useAuthStore((s) => s.authPending);
   const authReady = useAuthStore((s) => s.authReady);
 
-  // Profile state
   const profile = useProfileStore((s) => s.profile);
-  const minusCredits = useProfileStore((s) => s.minusCredits);
+  const fetchProfile = useProfileStore((s) => s.fetchProfile);
 
   // Use custom hooks for data and actions
   const {
@@ -131,15 +127,10 @@ const ImagePage = ({ id }: ImagePageProps) => {
       );
 
       if (result.success) {
-        if (profile.useCredits) {
-          minusCredits(creditsToMinus("bria.ai"));
-        }
-
-        const docRef = uid
-          ? doc(db, FirestorePaths.profileCover(uid, id))
-          : doc(db, FirestorePaths.publicImage(id));
-
-        await updateDoc(docRef, { downloadUrl: result.data.result_url });
+        // Update via server action instead of client Firestore
+        await updateImageDownloadUrl(id, result.data.result_url);
+        // Refresh profile to pick up new credit balance
+        await fetchProfile();
         refreshData();
         toast.success("Background removed successfully!");
       } else {
@@ -151,7 +142,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
       console.error("Error removing background:", error);
       toast.error(`Failed to remove background: ${errorMessage}`);
     }
-  }, [imageData, uid, id, profile, minusCredits, refreshData]);
+  }, [imageData, id, profile, refreshData, fetchProfile]);
 
   const handleCreateGif = useCallback(async () => {
     if (!imageData || typeof imageData === "boolean") return;
@@ -177,11 +168,23 @@ const ImagePage = ({ id }: ImagePageProps) => {
     }
   }, [imageData, id, uid, router]);
 
-  // Render states
   if (imageData === false) {
     return (
-      <div className="text-center text-3xl mt-10">
-        The image does not exist or is private.
+      <div className="min-h-[50vh] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Image not found
+          </h2>
+          <p className="text-gray-500">
+            This image doesn't exist or is private.
+          </p>
+        </div>
       </div>
     );
   }
@@ -237,7 +240,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
           openAPIKey={profile.openai_api_key}
           useCredits={profile.useCredits}
           credits={profile.credits}
-          minusCredits={minusCredits}
+          fetchProfile={fetchProfile}
         />
       )}
 

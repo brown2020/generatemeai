@@ -3,8 +3,10 @@ import fs from "fs";
 import path from "path";
 import { z } from "zod";
 import { normalizeValue } from "@/utils/imageUtils";
+import { adminAuth } from "@/firebase/firebaseAdmin";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const COOKIE_NAME = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
 
 const ALLOWED_URL_HOSTS = [
   "storage.googleapis.com",
@@ -34,6 +36,26 @@ export async function POST(request: Request) {
       { error: "Preview marking is disabled" },
       { status: 403 }
     );
+  }
+
+  // Authenticate the request
+  const cookieHeader = request.headers.get("cookie") || "";
+  const cookies = Object.fromEntries(
+    cookieHeader.split(";").map((c) => {
+      const [key, ...val] = c.trim().split("=");
+      return [key, val.join("=")];
+    })
+  );
+  const token = cookies[COOKIE_NAME];
+
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await adminAuth.verifyIdToken(token);
+  } catch {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
   try {

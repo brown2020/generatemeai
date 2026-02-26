@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import { deleteDoc, doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
-import { db } from "@/firebase/firebaseClient";
-import { FirestorePaths } from "@/firebase/paths";
-import { deleteUser, getAuth } from "firebase/auth";
 import { getAuthState, getAuthUidOrNull } from "./helpers";
+import {
+  fetchProfileServer,
+  updateProfileServer,
+} from "@/actions/profileActions";
 
 export interface ProfileType {
   email: string;
@@ -52,57 +52,38 @@ interface ProfileState {
   profile: ProfileType;
   fetchProfile: () => Promise<void>;
   updateProfile: (newProfile: Partial<ProfileType>) => Promise<void>;
-  minusCredits: (amount: number) => Promise<boolean>;
-  addCredits: (amount: number) => Promise<void>;
-  deleteAccount: () => Promise<void>;
 }
 
 /**
- * Creates a profile by merging defaults with auth state and optional existing data.
+ * Merges server data with auth state to build the local profile.
  */
 const createProfileFromAuth = (
-  existingProfile?: Partial<ProfileType>
+  serverData?: Record<string, unknown>
 ): ProfileType => {
   const { authEmail, authDisplayName, authPhotoUrl, authEmailVerified } =
     getAuthState();
 
-  const baseProfile = existingProfile
-    ? { ...defaultProfile, ...existingProfile }
+  const baseProfile = serverData
+    ? { ...defaultProfile, ...serverData }
     : { ...defaultProfile };
 
-  // Ensure minimum credits
   const credits =
-    baseProfile.credits >= MIN_CREDITS_THRESHOLD
+    typeof baseProfile.credits === "number" && baseProfile.credits >= MIN_CREDITS_THRESHOLD
       ? baseProfile.credits
       : DEFAULT_CREDITS;
 
   return {
+    ...defaultProfile,
     ...baseProfile,
     credits,
-    email: authEmail || baseProfile.email,
-    contactEmail: baseProfile.contactEmail || authEmail || "",
-    displayName: baseProfile.displayName || authDisplayName || "",
-    photoUrl: baseProfile.photoUrl || authPhotoUrl || "",
-    emailVerified: authEmailVerified || baseProfile.emailVerified,
+    email: (authEmail || baseProfile.email || "") as string,
+    contactEmail: (baseProfile.contactEmail || authEmail || "") as string,
+    displayName: (baseProfile.displayName || authDisplayName || "") as string,
+    photoUrl: (baseProfile.photoUrl || authPhotoUrl || "") as string,
+    emailVerified: (authEmailVerified || baseProfile.emailVerified || false) as boolean,
   };
 };
 
-/**
- * Gets the Firestore document reference for a user's profile.
- */
-const getProfileRef = (uid: string) => doc(db, FirestorePaths.userProfile(uid));
-
-/**
- * Atomically adjusts credits in Firestore using increment().
- * Prevents race conditions from concurrent credit operations.
- */
-async function adjustCredits(uid: string, delta: number): Promise<void> {
-  await updateDoc(getProfileRef(uid), { credits: increment(delta) });
-}
-
-/**
- * Logs profile errors consistently.
- */
 function handleProfileError(action: string, error: unknown): void {
   const errorMessage =
     error instanceof Error ? error.message : "An unknown error occurred";
@@ -117,26 +98,22 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid) return;
 
     try {
-      const userRef = getProfileRef(uid);
-      const docSnap = await getDoc(userRef);
-
-      const newProfile = createProfileFromAuth(
-        docSnap.exists() ? (docSnap.data() as ProfileType) : undefined
-      );
-
-      if (docSnap.exists()) {
-        // Only update auth-derived fields, don't overwrite the whole profile
-        await updateDoc(userRef, {
-          email: newProfile.email,
-          contactEmail: newProfile.contactEmail,
-          displayName: newProfile.displayName,
-          photoUrl: newProfile.photoUrl,
-          emailVerified: newProfile.emailVerified,
-        });
-      } else {
-        // Create new profile
-        await setDoc(userRef, newProfile);
+      const result = await fetchProfileServer();
+      if (!result.success) {
+        handleProfileError("fetching profile", new Error(result.error));
+        return;
       }
+
+      const newProfile = createProfileFromAuth(result.data);
+
+      // Sync auth-derived fields back to server
+      await updateProfileServer({
+        email: newProfile.email,
+        contactEmail: newProfile.contactEmail,
+        displayName: newProfile.displayName,
+        photoUrl: newProfile.photoUrl,
+        emailVerified: newProfile.emailVerified,
+      });
 
       set({ profile: newProfile });
     } catch (error) {
@@ -148,64 +125,16 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     const uid = getAuthUidOrNull();
     if (!uid) return;
 
-    const previousProfile = get().profile;
-    const updatedProfile = { ...previousProfile, ...newProfile };
-
     try {
-      const userRef = getProfileRef(uid);
-      // Write to Firestore first - only update local state on success
-      await updateDoc(userRef, updatedProfile);
-      set({ profile: updatedProfile });
+      const result = await updateProfileServer(newProfile as Record<string, unknown>);
+      if (!result.success) {
+        handleProfileError("updating profile", new Error(result.error));
+        return;
+      }
+      const previousProfile = get().profile;
+      set({ profile: { ...previousProfile, ...newProfile } });
     } catch (error) {
-      // On failure, local state remains unchanged (no rollback needed)
       handleProfileError("updating profile", error);
-    }
-  },
-
-  deleteAccount: async () => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    const uid = getAuthUidOrNull();
-
-    if (!uid || !currentUser) return;
-
-    try {
-      const userRef = getProfileRef(uid);
-      await deleteDoc(userRef);
-      await deleteUser(currentUser);
-    } catch (error) {
-      handleProfileError("deleting account", error);
-    }
-  },
-
-  minusCredits: async (amount: number) => {
-    const uid = getAuthUidOrNull();
-    if (!uid) return false;
-
-    const profile = get().profile;
-    if (profile.credits < amount) return false;
-
-    try {
-      await adjustCredits(uid, -amount);
-      set({ profile: { ...profile, credits: profile.credits - amount } });
-      return true;
-    } catch (error) {
-      handleProfileError("using credits", error);
-      return false;
-    }
-  },
-
-  addCredits: async (amount: number) => {
-    const uid = getAuthUidOrNull();
-    if (!uid) return;
-
-    const profile = get().profile;
-
-    try {
-      await adjustCredits(uid, amount);
-      set({ profile: { ...profile, credits: profile.credits + amount } });
-    } catch (error) {
-      handleProfileError("adding credits", error);
     }
   },
 }));

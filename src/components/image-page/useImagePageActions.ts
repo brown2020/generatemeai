@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useRef, useEffect } from "react";
-import { db } from "@/firebase/firebaseClient";
-import { doc, runTransaction, deleteDoc, updateDoc } from "firebase/firestore";
-import { FirestorePaths } from "@/firebase/paths";
 import { ImageData } from "@/types/image";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { getErrorMessage } from "@/utils/errors";
+import {
+  toggleImageSharable,
+  deleteImage,
+  updateImageCaption,
+  updateImageBackground,
+} from "@/actions/imageActions";
 
 interface UseImagePageActionsParams {
   id: string;
@@ -18,9 +21,6 @@ interface UseImagePageActionsParams {
   refreshData: () => void;
 }
 
-/**
- * Hook to manage image page actions (share, delete, update caption, etc.).
- */
 export const useImagePageActions = ({
   id,
   uid,
@@ -32,7 +32,6 @@ export const useImagePageActions = ({
   const router = useRouter();
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup debounce helper
   const cleanupDebounce = useCallback(() => {
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
@@ -40,7 +39,6 @@ export const useImagePageActions = ({
     }
   }, []);
 
-  // Auto-cleanup debounce on unmount
   useEffect(() => {
     return () => {
       cleanupDebounce();
@@ -52,69 +50,35 @@ export const useImagePageActions = ({
       if (!imageData || !uid) return;
 
       try {
-        const newSharableState = !isSharable;
-        const coversDocRef = doc(db, FirestorePaths.profileCover(uid, id));
-        const publicImagesDocRef = doc(db, FirestorePaths.publicImage(id));
-
-        if (newSharableState) {
-          // Make public
-          await runTransaction(db, async (transaction) => {
-            const coversDocSnap = await transaction.get(coversDocRef);
-            if (!coversDocSnap.exists()) {
-              throw new Error("Document does not exist in covers");
-            }
-            transaction.set(publicImagesDocRef, {
-              ...coversDocSnap.data(),
-              isSharable: true,
-              password,
-            });
-            transaction.update(coversDocRef, { isSharable: true });
-          });
-        } else {
-          // Make private
-          await runTransaction(db, async (transaction) => {
-            const publicImagesDocSnap = await transaction.get(
-              publicImagesDocRef
-            );
-            if (!publicImagesDocSnap.exists()) {
-              throw new Error("Document does not exist in publicImages");
-            }
-            transaction.set(coversDocRef, {
-              ...publicImagesDocSnap.data(),
-              isSharable: false,
-              password: "",
-            });
-            transaction.delete(publicImagesDocRef);
-          });
+        const result = await toggleImageSharable(id, password);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
         }
-
-        setIsSharable(newSharableState);
+        setIsSharable(result.data.isSharable);
         toast.success(
-          `Image is now ${newSharableState ? "sharable" : "private"}`
+          `Image is now ${result.data.isSharable ? "sharable" : "private"}`
         );
       } catch (error) {
         toast.error(`Error updating share status: ${getErrorMessage(error)}`);
       }
     },
-    [imageData, uid, id, isSharable, setIsSharable]
+    [imageData, uid, id, setIsSharable]
   );
 
   const handleDelete = useCallback(async () => {
     if (!imageData || !uid) return;
 
-    if (window.confirm("Are you sure you want to delete this image?")) {
-      try {
-        const docRef = doc(db, FirestorePaths.profileCover(uid, id));
-        await deleteDoc(docRef);
-
-        const publicImagesDocRef = doc(db, FirestorePaths.publicImage(id));
-        await deleteDoc(publicImagesDocRef);
-
-        toast.success("Image deleted successfully");
-        setTimeout(() => router.push("/images"), 1000);
-      } catch (error) {
-        toast.error(`Error deleting image: ${getErrorMessage(error)}`);
+    try {
+      const result = await deleteImage(id);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      toast.success("Image deleted successfully");
+      setTimeout(() => router.push("/images"), 1000);
+    } catch (error) {
+      toast.error(`Error deleting image: ${getErrorMessage(error)}`);
     }
   }, [imageData, uid, id, router]);
 
@@ -130,11 +94,11 @@ export const useImagePageActions = ({
       debounceTimeout.current = setTimeout(async () => {
         if (!imageData) return;
         try {
-          const docRef = uid
-            ? doc(db, FirestorePaths.profileCover(uid, id))
-            : doc(db, FirestorePaths.publicImage(id));
-
-          await updateDoc(docRef, { caption: event.target.value || "" });
+          const result = await updateImageCaption(id, event.target.value);
+          if (!result.success) {
+            toast.error(result.error);
+            return;
+          }
           refreshData();
           toast.success("Caption updated successfully");
         } catch (error) {
@@ -142,21 +106,25 @@ export const useImagePageActions = ({
         }
       }, 1000);
     },
-    [imageData, uid, id, refreshData]
+    [imageData, id, refreshData, cleanupDebounce]
   );
 
   const changeBackground = useCallback(
     async (color: string, setBackgroundColor: (color: string) => void) => {
-      const docRef = uid
-        ? doc(db, FirestorePaths.profileCover(uid, id))
-        : doc(db, FirestorePaths.publicImage(id));
-
-      await updateDoc(docRef, { backgroundColor: color });
-      setBackgroundColor(color);
-      refreshData();
-      toast.success("Background color changed successfully");
+      try {
+        const result = await updateImageBackground(id, color);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        setBackgroundColor(color);
+        refreshData();
+        toast.success("Background color changed successfully");
+      } catch (error) {
+        toast.error(`Error changing background: ${getErrorMessage(error)}`);
+      }
     },
-    [uid, id, refreshData]
+    [id, refreshData]
   );
 
   const handleTryAgain = useCallback(() => {

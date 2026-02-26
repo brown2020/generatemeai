@@ -9,20 +9,17 @@ import toast from "react-hot-toast";
 import { X } from "lucide-react";
 
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { db } from "@/firebase/firebaseClient";
-import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
-import { PromptDataType } from "@/types/promptdata";
 import { ImageData } from "@/types/image";
 import useProfileStore from "@/zustand/useProfileStore";
 import {
   getModelConfig,
   getVideoModels,
-  creditsToMinus,
   type Model,
   type ModelConfig,
 } from "@/constants/modelRegistry";
 import { animations } from "@/constants/animations";
 import { generateVideo } from "@/actions/generateVideo";
+import { saveGenerationHistory } from "@/actions/saveHistory";
 import { audios } from "@/constants/audios";
 
 type VideoMode = "video" | "animation";
@@ -54,7 +51,7 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
   const didApiKey = useProfileStore((s) => s.profile.did_api_key);
   const runwayApiKey = useProfileStore((s) => s.profile.runway_ml_api_key);
   const credits = useProfileStore((s) => s.profile.credits);
-  const minusCredits = useProfileStore((s) => s.minusCredits);
+  const fetchProfile = useProfileStore((s) => s.fetchProfile);
 
   // Determine initial mode based on initialData
   const getInitialMode = (): VideoMode => {
@@ -91,53 +88,6 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
   // Get current model config
   const currentModelConfig = getModelConfig(videoModel);
 
-  const saveHistory = useCallback(
-    async (
-      videoDownloadUrl: string,
-      audioValue: string,
-      videoModelValue: string,
-      scriptPromptValue: string,
-      animationValue: string
-    ) => {
-      const coll = collection(db, "profiles", uid, "covers");
-      const docRef = doc(coll);
-
-      const { id: _id, ...restOfImageData } = imageData;
-
-      const modelConfig = getModelConfig(videoModelValue);
-
-      const finalPromptData: PromptDataType = {
-        freestyle: restOfImageData.freestyle || "",
-        style: restOfImageData.style || "",
-        model: restOfImageData.model || "",
-        colorScheme: restOfImageData.colorScheme || "None",
-        lighting: restOfImageData.lighting || "None",
-        perspective: restOfImageData.perspective || "None",
-        composition: restOfImageData.composition || "None",
-        medium: restOfImageData.medium || "None",
-        mood: restOfImageData.mood || "None",
-        tags: restOfImageData.tags || [],
-        downloadUrl: restOfImageData.downloadUrl,
-        id: docRef.id,
-        timestamp: Timestamp.now(),
-        // Video-specific fields stored in the object
-        ...({
-          videoDownloadUrl: videoDownloadUrl || "",
-          audio: audioValue || "",
-          videoModel: videoModelValue || "",
-          scriptPrompt: scriptPromptValue,
-          animation: modelConfig?.capabilities.hasAnimationType
-            ? animationValue || ""
-            : "",
-        } as Partial<PromptDataType>),
-      };
-
-      await setDoc(docRef, finalPromptData);
-      return docRef.id;
-    },
-    [imageData, uid]
-  );
-
   const handleGenerate = async () => {
     try {
       setLoading(true);
@@ -156,7 +106,6 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
 
       const result = await generateVideo(formData);
 
-      // Handle ActionResult response
       if (!result.success) {
         toast.error(`Failed to generate video: ${result.error}`);
         throw new Error("Failed to generate video.");
@@ -164,22 +113,34 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
 
       const videoDownloadURL = result.data.videoUrl;
 
-      if (useCredits && videoDownloadURL) {
-        await minusCredits(creditsToMinus(videoModel));
-      }
+      // Credits deducted server-side — refresh local profile
+      await fetchProfile();
 
       if (videoDownloadURL) {
-        const docId = await saveHistory(
-          videoDownloadURL,
-          audio,
-          videoModel,
-          scriptPrompt,
-          animation
-        );
+        const modelConfig = getModelConfig(videoModel);
 
-        onRequestClose();
+        const historyResult = await saveGenerationHistory({
+          freestyle: imageData.freestyle || "",
+          style: imageData.style || "",
+          downloadUrl: imageData.downloadUrl,
+          model: imageData.model || "",
+          prompt: imageData.freestyle || "",
+          tags: imageData.tags || [],
+          imageCategory: "",
+          lighting: imageData.lighting || "None",
+          colorScheme: imageData.colorScheme || "None",
+          imageReference: "",
+          perspective: imageData.perspective || "None",
+          composition: imageData.composition || "None",
+          medium: imageData.medium || "None",
+          mood: imageData.mood || "None",
+        });
 
-        router.push(`/images/${docId}`);
+        const docId = historyResult.success ? historyResult.data.id : "";
+        if (docId) {
+          onRequestClose();
+          router.push(`/images/${docId}`);
+        }
       }
     } catch {
       // Error already surfaced to user via toast.error above

@@ -10,7 +10,13 @@ import {
 } from "@/utils/errors";
 import { authenticateAction } from "@/utils/serverAuth";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+function getStripeClient(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY environment variable is not configured");
+  }
+  return new Stripe(key);
+}
 
 /**
  * Payment intent data returned on successful creation.
@@ -51,6 +57,11 @@ export async function createPaymentIntent(
       return errorResult("Stripe product name is not defined", "INVALID_INPUT");
     }
 
+    if (amount <= 0) {
+      return errorResult("Amount must be a positive number", "INVALID_INPUT");
+    }
+
+    const stripe = getStripeClient();
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: "usd",
@@ -88,6 +99,11 @@ export async function validatePaymentIntent(
     // Authenticate server-side
     await authenticateAction();
 
+    if (!paymentIntentId || !paymentIntentId.startsWith("pi_")) {
+      return errorResult("Invalid payment intent ID", "INVALID_INPUT");
+    }
+
+    const stripe = getStripeClient();
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status !== "succeeded") {

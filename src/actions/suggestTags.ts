@@ -2,7 +2,11 @@
 
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { creditsToMinus } from "@/constants/modelRegistry";
+import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
+import {
+  assertSufficientCreditsServer,
+  deductCreditsServer,
+} from "@/utils/creditValidator";
 import {
   ActionResult,
   successResult,
@@ -66,10 +70,8 @@ export const suggestTags = async (
   credits: number
 ): Promise<ActionResult<string>> => {
   try {
-    // Authenticate server-side
-    await authenticateAction();
+    const uid = await authenticateAction();
 
-    // Validate input
     const validatedInput = tagSuggestionSchema.parse({
       prompt: freestyle,
       colorScheme: color,
@@ -82,18 +84,10 @@ export const suggestTags = async (
       credits,
     });
 
-    // Check credits
-    if (validatedInput.useCredits && validatedInput.credits < creditsToMinus("chatgpt")) {
-      return errorResult(
-        "Not enough credits to suggest tags. Please purchase credits or use your own API Keys.",
-        "INSUFFICIENT_CREDITS"
-      );
-    }
+    // Server-side credit check
+    const serverCredits = await assertSufficientCreditsServer(uid, "chatgpt");
 
-    // Determine API key to use
-    const apiKey = validatedInput.useCredits
-      ? process.env.OPENAI_API_KEY
-      : validatedInput.openAPIKey;
+    const apiKey = resolveApiKey("chatgpt", serverCredits.useCredits, validatedInput.openAPIKey);
 
     if (!apiKey) {
       return errorResult("OpenAI API key is required.", "INVALID_API_KEY");
@@ -112,7 +106,6 @@ export const suggestTags = async (
       tags: validatedInput.currentTags || [],
     });
 
-    // Generate text using AI SDK
     const { text } = await generateText({
       model: openai("gpt-4"),
       system:
@@ -121,6 +114,11 @@ export const suggestTags = async (
       maxOutputTokens: 200,
       temperature: 0.7,
     });
+
+    // Deduct credits server-side after successful generation
+    if (serverCredits.useCredits) {
+      await deductCreditsServer(uid, creditsToMinus("chatgpt"));
+    }
 
     return successResult(text);
   } catch (error: unknown) {

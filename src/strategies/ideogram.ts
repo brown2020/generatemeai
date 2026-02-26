@@ -52,6 +52,11 @@ export const ideogramStrategy: GenerationStrategy = async ({
   }
 
   const jsonResponse = (await response.json()) as IdeogramResponse;
+
+  if (!jsonResponse.data?.length || !jsonResponse.data[0]?.url) {
+    throw new Error("Ideogram API returned no image data");
+  }
+
   const imageUrl = jsonResponse.data[0].url;
   const imageResponse = await fetch(imageUrl);
 

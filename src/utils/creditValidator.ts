@@ -1,4 +1,6 @@
 import { creditsToMinus } from "@/constants/modelRegistry";
+import { adminDb } from "@/firebase/firebaseAdmin";
+import { FirestorePaths } from "@/firebase/paths";
 
 /**
  * Result of credit validation.
@@ -35,20 +37,65 @@ export const validateCredits = (
 };
 
 /**
- * Validates credits from FormData (for server actions).
+ * Reads the user's credit balance and useCredits flag from Firestore (server-side).
+ * This prevents clients from forging credit values in FormData.
  */
-export const validateCreditsFromForm = (
-  formData: FormData,
-  modelName: string
-): CreditValidationResult => {
-  const useCredits = formData.get("useCredits") === "true";
-  const credits = Number(formData.get("credits") || 0);
+export async function getServerCredits(
+  uid: string
+): Promise<{ useCredits: boolean; credits: number }> {
+  const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
+  const snap = await profileRef.get();
+  if (!snap.exists) {
+    return { useCredits: true, credits: 0 };
+  }
+  const data = snap.data()!;
+  return {
+    useCredits: data.useCredits ?? true,
+    credits: typeof data.credits === "number" ? data.credits : 0,
+  };
+}
 
-  return validateCredits(useCredits, credits, modelName);
+/**
+ * Server-side credit validation that reads from Firestore instead of trusting client data.
+ * Throws an error if credits are insufficient.
+ */
+export const assertSufficientCreditsServer = async (
+  uid: string,
+  modelName: string
+): Promise<{ useCredits: boolean; credits: number }> => {
+  const { useCredits, credits } = await getServerCredits(uid);
+  const result = validateCredits(useCredits, credits, modelName);
+  if (!result.valid) {
+    throw new Error(result.error);
+  }
+  return { useCredits, credits };
 };
 
 /**
- * Throws an error if credits are insufficient.
+ * Atomically deducts credits server-side using Firebase Admin.
+ * Uses a transaction to prevent race conditions.
+ */
+export async function deductCreditsServer(
+  uid: string,
+  amount: number
+): Promise<void> {
+  const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
+  await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(profileRef);
+    if (!snap.exists) throw new Error("Profile not found");
+    const currentCredits = snap.data()?.credits ?? 0;
+    if (currentCredits < amount) {
+      throw new Error(
+        `Insufficient credits. Required: ${amount}, Available: ${currentCredits}`
+      );
+    }
+    tx.update(profileRef, { credits: currentCredits - amount });
+  });
+}
+
+/**
+ * Throws an error if credits are insufficient (legacy client-trusted version).
+ * @deprecated Use assertSufficientCreditsServer for server actions.
  */
 export const assertSufficientCredits = (
   useCredits: boolean,
