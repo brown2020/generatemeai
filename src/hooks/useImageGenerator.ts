@@ -2,10 +2,9 @@ import { useShallow } from "zustand/react/shallow";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
 import useProfileStore from "@/zustand/useProfileStore";
-import { useGenerationHistory } from "@/hooks/useGenerationHistory";
 import { generatePrompt } from "@/utils/promptUtils";
 import { generateImage } from "@/actions/generateImage";
-import { creditsToMinus } from "@/constants/modelRegistry";
+import { saveGenerationHistory } from "@/actions/saveHistory";
 import { createImageGenerationFormData } from "@/utils/formDataBuilder";
 import { colors, getColorFromLabel } from "@/constants/colors";
 import { lightings, getLightingFromLabel } from "@/constants/lightings";
@@ -17,12 +16,9 @@ import toast from "react-hot-toast";
 
 export const useImageGenerator = () => {
   const uid = useAuthStore((s) => s.uid);
-
-  // Profile Store - get profile object for form builder
   const profile = useProfileStore((s) => s.profile);
-  const minusCredits = useProfileStore((s) => s.minusCredits);
+  const fetchProfile = useProfileStore((s) => s.fetchProfile);
 
-  // Generation Store - use shallow selector for performance
   const generationState = useGenerationStore(
     useShallow((s) => ({
       imagePrompt: s.imagePrompt,
@@ -43,8 +39,6 @@ export const useImageGenerator = () => {
       updateField: s.updateField,
     }))
   );
-
-  const { saveHistory } = useGenerationHistory();
 
   const isPromptValid = !!generationState.imagePrompt.trim();
   const isModelValid = !!generationState.model;
@@ -83,7 +77,6 @@ export const useImageGenerator = () => {
         generationState.tags
       );
 
-      // Use form builder utility
       const formData = createImageGenerationFormData({
         message: prompt,
         uid,
@@ -97,50 +90,40 @@ export const useImageGenerator = () => {
 
       const result = await generateImage(formData);
 
-      // Handle ActionResult response
       if (!result.success) {
-        const errorMessage = result.error || "Failed to generate image";
-        toast.error(errorMessage);
+        toast.error(result.error || "Failed to generate image");
         return;
       }
 
       const { imageUrl: downloadURL, imageUrls = [], imageReference = "" } = result.data;
 
-      // Deduct credits if using credit system
-      if (profile.useCredits) {
-        const creditsDeducted = await minusCredits(creditsToMinus(generationState.model));
-        if (!creditsDeducted) {
-          // Credits deduction failed - still show the image but warn user
-          toast.error("Warning: Failed to deduct credits. Please contact support.");
-        }
-      }
+      // Credits are deducted server-side in generateImage — refresh local state
+      await fetchProfile();
 
       generationState.updateField("generatedImage", downloadURL);
       generationState.updateField("generatedImages", imageUrls);
 
+      // Save history server-side
       if (downloadURL) {
-        await saveHistory(
-          uid,
-          {
-            freestyle: generationState.imagePrompt,
-            style: generationState.imageStyle,
-            lighting:
-              getLightingFromLabel(generationState.lighting) ||
-              lightings[0].value,
-            colorScheme:
-              getColorFromLabel(generationState.colorScheme) || colors[0].value,
-            imageReference,
-            perspective: generationState.perspective,
-            composition: generationState.composition,
-            medium: generationState.medium,
-            mood: generationState.mood,
-          },
+        await saveGenerationHistory({
+          freestyle: generationState.imagePrompt,
+          style: generationState.imageStyle,
+          downloadUrl: downloadURL,
+          model: generationState.model,
           prompt,
-          downloadURL,
-          generationState.model,
-          generationState.tags,
-          generationState.selectedCategory
-        );
+          tags: generationState.tags,
+          imageCategory: generationState.selectedCategory,
+          lighting:
+            getLightingFromLabel(generationState.lighting) ||
+            lightings[0].value,
+          colorScheme:
+            getColorFromLabel(generationState.colorScheme) || colors[0].value,
+          imageReference,
+          perspective: generationState.perspective,
+          composition: generationState.composition,
+          medium: generationState.medium,
+          mood: generationState.mood,
+        });
       }
     } catch (error: unknown) {
       const errorMessage =

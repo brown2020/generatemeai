@@ -1,6 +1,11 @@
 "use server";
 
-import { assertSufficientCredits, resolveApiKey } from "@/utils";
+import { resolveApiKey } from "@/utils";
+import {
+  assertSufficientCreditsServer,
+  deductCreditsServer,
+} from "@/utils/creditValidator";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import {
   ActionResult,
   successResult,
@@ -12,17 +17,12 @@ import { authenticateAction } from "@/utils/serverAuth";
 
 const BRIA_API_URL = "https://engine.prod.bria-api.com/v1/background/remove";
 
-/**
- * Background removal result data.
- */
 interface BackgroundRemovalData {
   result_url: string;
 }
 
 /**
  * Removes the background from an image using Bria AI.
- *
- * @returns ActionResult with result URL or error
  */
 export const removeBackground = async (
   useCredits: boolean,
@@ -31,19 +31,16 @@ export const removeBackground = async (
   briaApiKey: string
 ): Promise<ActionResult<BackgroundRemovalData>> => {
   try {
-    // Authenticate server-side
-    await authenticateAction();
+    const uid = await authenticateAction();
 
-    // Validate credits
-    assertSufficientCredits(useCredits, credits, "bria.ai");
+    // Server-side credit check
+    const serverCredits = await assertSufficientCreditsServer(uid, "bria.ai");
 
-    // Resolve API key
-    const apiKey = resolveApiKey("bria.ai", useCredits, briaApiKey);
+    const apiKey = resolveApiKey("bria.ai", serverCredits.useCredits, briaApiKey);
     if (!apiKey) {
       return errorResult("Bria API key is required.", "INVALID_API_KEY");
     }
 
-    // Fetch image and create form data
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
       return errorResult("Failed to fetch source image.", "GENERATION_FAILED");
@@ -52,7 +49,6 @@ export const removeBackground = async (
     const formData = new FormData();
     formData.append("file", imageBlob, "image.png");
 
-    // Make API request
     const response = await fetch(BRIA_API_URL, {
       method: "POST",
       headers: { api_token: apiKey },
@@ -62,10 +58,21 @@ export const removeBackground = async (
     const result = await response.json();
 
     if (response.ok && result.result_url) {
+      if (serverCredits.useCredits) {
+        await deductCreditsServer(uid, creditsToMinus("bria.ai"));
+      }
       return successResult({ result_url: result.result_url });
     }
 
-    if (result === "Invalid customer token key") {
+    // Bria returns JSON with error messages — check for common auth failures
+    const errorMsg =
+      typeof result === "string"
+        ? result
+        : result?.message || result?.error || "";
+    if (
+      errorMsg.toLowerCase().includes("invalid") &&
+      errorMsg.toLowerCase().includes("token")
+    ) {
       return errorResult("Bria API key is invalid.", "INVALID_API_KEY");
     }
 

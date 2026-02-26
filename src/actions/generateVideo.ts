@@ -1,7 +1,11 @@
 "use server";
 
 import { resolveApiKey } from "@/utils/apiKeyResolver";
-import { assertSufficientCredits } from "@/utils/creditValidator";
+import {
+  assertSufficientCreditsServer,
+  deductCreditsServer,
+} from "@/utils/creditValidator";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import { pollWithTimeout } from "@/utils/polling";
 import {
   ActionResult,
@@ -183,16 +187,12 @@ export async function generateVideo(
   data: FormData
 ): Promise<ActionResult<VideoGenerationData>> {
   try {
-    // Authenticate server-side
-    await authenticateAction();
+    const uid = await authenticateAction();
 
-    // Validate and parse input
     const validatedInput = parseFormData(videoGenerationSchema, data);
     const {
       videoModel,
       imageUrl,
-      useCredits,
-      credits,
       scriptPrompt,
       audio,
       animationType,
@@ -205,10 +205,9 @@ export async function generateVideo(
       );
     }
 
-    // Check credits
-    assertSufficientCredits(useCredits, credits, videoModel);
+    // Server-side credit check
+    const { useCredits } = await assertSufficientCreditsServer(uid, videoModel);
 
-    // Resolve API key
     const userApiKey =
       videoModel === "d-id"
         ? validatedInput.didAPIKey
@@ -242,8 +241,12 @@ export async function generateVideo(
       );
     }
 
-    // Save to Firebase Storage
     const savedVideoUrl = await saveVideoFromUrl(videoUrl);
+
+    // Deduct credits server-side after successful generation
+    if (useCredits) {
+      await deductCreditsServer(uid, creditsToMinus(videoModel));
+    }
 
     return successResult({ videoUrl: savedVideoUrl });
   } catch (error) {

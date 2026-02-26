@@ -1,40 +1,50 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Check, LogOut } from "lucide-react";
 
 import PaymentsPage from "./PaymentsPage";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useAuthLogic } from "@/hooks/useAuthLogic";
 import { useClipboard } from "@/hooks";
 import { API_KEY_CONFIGS, getApiKeyValue } from "@/constants/apiKeys";
 import { ApiKeyInput } from "./profile/ApiKeyInput";
+import { deleteAccountServer } from "@/actions/profileActions";
+import toast from "react-hot-toast";
 
 export default function Profile() {
   const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
-  const deleteAccount = useProfileStore((state) => state.deleteAccount);
   const { uid, authEmail } = useAuthStore((state) => state);
+  const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
   const { copy, isCopied } = useClipboard();
   const { handleSignOut } = useAuthLogic();
   const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const onSignOut = useCallback(async () => {
     await handleSignOut();
     router.push("/");
   }, [handleSignOut, router]);
 
-  const handleDeleteAccount = useCallback(() => {
-    if (
-      confirm(
-        "Are you sure you want to delete your account? This action cannot be undone."
-      )
-    ) {
-      deleteAccount();
+  const handleDeleteAccount = useCallback(async () => {
+    try {
+      const result = await deleteAccountServer();
+      if (result.success) {
+        clearAuthDetails();
+        toast.success("Account deleted successfully");
+        router.push("/");
+      } else {
+        toast.error(result.error);
+      }
+    } catch {
+      toast.error("Failed to delete account");
     }
-  }, [deleteAccount]);
+    setShowDeleteModal(false);
+  }, [clearAuthDetails, router]);
 
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white py-8 px-4 sm:px-6 lg:px-8">
@@ -180,13 +190,22 @@ export default function Profile() {
 
               <div className="pt-6 border-t border-gray-200">
                 <button
-                  onClick={handleDeleteAccount}
+                  onClick={() => setShowDeleteModal(true)}
                   className="px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium 
                     hover:bg-red-100 transition-colors active:bg-red-200"
                 >
                   Delete Account
                 </button>
               </div>
+
+              <DeleteConfirmModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDeleteAccount}
+                title="Delete Account"
+                message="This will permanently delete your account, all images, and payment history. This action cannot be undone."
+                confirmText="DELETE"
+              />
             </div>
           </div>
         </div>

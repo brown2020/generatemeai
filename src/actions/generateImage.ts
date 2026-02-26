@@ -2,7 +2,11 @@
 
 import { getStrategy } from "@/strategies";
 import { resolveApiKeyFromForm } from "@/utils/apiKeyResolver";
-import { assertSufficientCredits } from "@/utils/creditValidator";
+import {
+  assertSufficientCreditsServer,
+  deductCreditsServer,
+} from "@/utils/creditValidator";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import {
   ActionResult,
   successResult,
@@ -41,35 +45,28 @@ export async function generateImage(
   data: FormData
 ): Promise<ActionResult<ImageGenerationData>> {
   try {
-    // Authenticate — derive uid server-side, ignore client-provided uid
     const uid = await authenticateAction();
 
-    // Validate and parse input
     const validatedInput = parseFormData(imageGenerationSchema, data);
     const {
       message,
       model: modelName,
-      useCredits,
-      credits,
       imageField,
       aspectRatio,
       negativePrompt,
       imageCount,
     } = validatedInput;
     
-    // Normalize imageField (convert undefined to null)
     const img = imageField ?? null;
 
-    // Check credits
-    assertSufficientCredits(useCredits, credits, modelName);
+    // Server-side credit check — reads from Firestore, not client FormData
+    const { useCredits } = await assertSufficientCreditsServer(uid, modelName);
 
-    // Get the strategy for the model
     const strategy = getStrategy(modelName);
     if (!strategy) {
       return errorResult(`Unsupported model: ${modelName}`, "INVALID_INPUT");
     }
 
-    // Resolve API key
     const apiKey = resolveApiKeyFromForm(modelName, useCredits, data);
     if (!apiKey) {
       return errorResult(
@@ -78,7 +75,6 @@ export async function generateImage(
       );
     }
 
-    // Generate image(s)
     const imageData = await strategy({
       message,
       img,
@@ -96,9 +92,15 @@ export async function generateImage(
       );
     }
 
-    // Handle single or multi-image results
     const isMulti = Array.isArray(imageData);
     const dataArray = isMulti ? imageData : [imageData];
+
+    if (dataArray.length === 0) {
+      return errorResult(
+        "Image generation failed - empty result from provider",
+        "GENERATION_FAILED"
+      );
+    }
 
     const imageUrls = await Promise.all(
       dataArray.map((d) =>
@@ -110,13 +112,17 @@ export async function generateImage(
       )
     );
 
-    // Handle uploaded reference image
     let imageReference: string | undefined;
     if (img) {
       imageReference = await saveToStorage({
         data: img,
         path: createReferenceImagePath(uid),
       });
+    }
+
+    // Deduct credits server-side after successful generation
+    if (useCredits) {
+      await deductCreditsServer(uid, creditsToMinus(modelName));
     }
 
     return successResult({ imageUrl: imageUrls[0], imageUrls, imageReference });

@@ -73,8 +73,12 @@ export default function PaymentsPage() {
                 {payments.map((payment) => (
                   <tr key={payment.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {payment.createdAt 
-                        ? payment.createdAt.toDate().toLocaleDateString()
+                      {payment.createdAt
+                        ? typeof payment.createdAt === "object" && "toDate" in payment.createdAt
+                          ? (payment.createdAt as { toDate: () => Date }).toDate().toLocaleDateString()
+                          : typeof payment.createdAt === "object" && "_seconds" in payment.createdAt
+                            ? new Date((payment.createdAt as { _seconds: number })._seconds * 1000).toLocaleDateString()
+                            : "N/A"
                         : "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

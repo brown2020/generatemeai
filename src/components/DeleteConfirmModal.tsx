@@ -2,62 +2,96 @@
 
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
+import { AlertTriangle } from "lucide-react";
 
 type Props = {
-  showDeleteModal: boolean;
-  onHideModal: () => void;
-  onDeleteConfirm: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  /** @deprecated Use isOpen instead */
+  showDeleteModal?: boolean;
+  /** @deprecated Use onClose instead */
+  onHideModal?: () => void;
+  /** @deprecated Use onConfirm instead */
+  onDeleteConfirm?: () => void;
 };
 
-const CONFIRMATION_TEXT = "DELETE ACCOUNT";
-
 export default function DeleteConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Delete Account",
+  message = "This action cannot be undone.",
+  confirmText = "DELETE ACCOUNT",
   showDeleteModal,
   onHideModal,
   onDeleteConfirm,
 }: Props) {
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [confirmation, setConfirmation] = useState("");
 
-  const handleDeleteConfirm = useCallback(() => {
-    if (deleteConfirmation === CONFIRMATION_TEXT) {
-      onDeleteConfirm();
+  // Support legacy props
+  const visible = isOpen ?? showDeleteModal;
+  const handleClose = onClose ?? onHideModal ?? (() => {});
+  const handleConfirmAction = onConfirm ?? onDeleteConfirm ?? (() => {});
+
+  const handleConfirm = useCallback(() => {
+    if (confirmation === confirmText) {
+      handleConfirmAction();
+      setConfirmation("");
     } else {
-      toast.error(`Please type '${CONFIRMATION_TEXT}' to confirm.`);
+      toast.error(`Please type '${confirmText}' to confirm.`);
     }
-  }, [deleteConfirmation, onDeleteConfirm]);
+  }, [confirmation, confirmText, handleConfirmAction]);
 
-  if (!showDeleteModal) {
-    return null;
-  }
+  if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-3 z-50">
-      <div className="bg-white p-6 rounded-md shadow-lg max-w-md w-full">
-        <h3 className="text-lg font-semibold">
-          Are you sure you want to delete your account?
-        </h3>
-        <p className="mb-4 mt-2 text-gray-600">
-          Please type <strong>{CONFIRMATION_TEXT}</strong> to confirm.
-        </p>
-        <input
-          type="text"
-          value={deleteConfirmation}
-          onChange={(e) => setDeleteConfirmation(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 w-full mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder={`Type ${CONFIRMATION_TEXT}`}
-        />
-        <div className="flex justify-end gap-2">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4 z-50">
+      <div className="bg-white rounded-xl shadow-lg max-w-md w-full overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+              <p className="mt-1 text-sm text-gray-500">{message}</p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Type <span className="font-mono font-bold">{confirmText}</span> to confirm
+            </label>
+            <input
+              type="text"
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+                focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              placeholder={confirmText}
+            />
+          </div>
+        </div>
+
+        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
           <button
-            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
-            onClick={onHideModal}
+            onClick={() => { handleClose(); setConfirmation(""); }}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 
+              rounded-lg hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
-            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-            onClick={handleDeleteConfirm}
+            onClick={handleConfirm}
+            disabled={confirmation !== confirmText}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg
+              hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Delete Account
+            Delete
           </button>
         </div>
       </div>
