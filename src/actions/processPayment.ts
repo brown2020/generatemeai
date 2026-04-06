@@ -73,7 +73,7 @@ export async function processPaymentAndAddCredits(
     const creditsToAdd = paymentIntent.amount + 1;
 
     // Atomically: record payment + add credits in a transaction
-    await adminDb.runTransaction(async (tx) => {
+    await adminDb.runTransaction(async (tx: any) => {
       const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
       const profileSnap = await tx.get(profileRef);
 

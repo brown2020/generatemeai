@@ -111,7 +111,7 @@ export async function fetchPaymentsServer(): Promise<
     const paymentsRef = adminDb.collection(FirestorePaths.userPayments(uid));
     const snap = await paymentsRef.orderBy("createdAt", "desc").get();
 
-    const payments = snap.docs.map((doc) => ({
+    const payments = snap.docs.map((doc: any) => ({
       ...doc.data(),
       id: doc.data().id ?? doc.id,
     }));

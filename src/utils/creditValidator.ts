@@ -80,7 +80,7 @@ export async function deductCreditsServer(
   amount: number
 ): Promise<void> {
   const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
-  await adminDb.runTransaction(async (tx) => {
+  await adminDb.runTransaction(async (tx: any) => {
     const snap = await tx.get(profileRef);
     if (!snap.exists) throw new Error("Profile not found");
     const currentCredits = snap.data()?.credits ?? 0;
