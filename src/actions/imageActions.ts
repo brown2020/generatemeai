@@ -35,7 +35,7 @@ export async function toggleImageSharable(
     const currentData = coversSnap.data()!;
     const newSharableState = !currentData.isSharable;
 
-    await adminDb.runTransaction(async (tx) => {
+    await adminDb.runTransaction(async (tx: any) => {
       if (newSharableState) {
         const coverSnap = await tx.get(coversRef);
         if (!coverSnap.exists) throw new Error("Document not found");
