@@ -9,14 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.50",
-    "@ai-sdk/rsc": "^2.0.146",
+    "@ai-sdk/openai": "^3.0.51",
+    "@ai-sdk/rsc": "^2.0.149",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@stripe/react-stripe-js": "^6.1.0",
-    "@stripe/stripe-js": "^9.0.1",
+    "@stripe/stripe-js": "^9.1.0",
     "@types/dom-to-image": "^2.6.7",
-    "ai": "^6.0.146",
+    "ai": "^6.0.149",
     "clsx": "^2.1.1",
     "cookies-next": "^6.1.1",
     "dom-to-image": "^2.6.0",
