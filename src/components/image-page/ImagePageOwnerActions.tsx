@@ -8,7 +8,6 @@ import { ImageData } from "@/types/image";
 interface ImagePageOwnerActionsProps {
   imageData: ImageData;
   isOwner: boolean;
-  uid: string;
   hasVideo: boolean;
   isGif: boolean;
   loading: boolean;
@@ -32,7 +31,6 @@ interface ImagePageOwnerActionsProps {
 export const ImagePageOwnerActions = ({
   imageData,
   isOwner,
-  uid,
   hasVideo,
   isGif,
   loading,

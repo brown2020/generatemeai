@@ -10,12 +10,12 @@ export default function Header() {
 
   return (
     <div className="z-10 flex items-center justify-between h-16 px-4 bg-blue-800">
-      <div className="flex items-center cursor-pointer" onClick={navigateHome}>
+      <button className="flex items-center cursor-pointer" onClick={navigateHome}>
         <CogIcon size={30} className="text-white" />
-        <div className="text-2xl uppercase whitespace-nowrap text-white">
+        <span className="text-2xl uppercase whitespace-nowrap text-white">
           Generate.me
-        </div>
-      </div>
+        </span>
+      </button>
       <div className="flex h-full gap-2 opacity-0 md:opacity-100 items-center">
         {navItems.map((item, index) => (
           <NavItem

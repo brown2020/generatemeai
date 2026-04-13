@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TextareaAutosize from "react-textarea-autosize";
 import Select, { SingleValue } from "react-select";
@@ -117,8 +117,6 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
       await fetchProfile();
 
       if (videoDownloadURL) {
-        const modelConfig = getModelConfig(videoModel);
-
         const historyResult = await saveGenerationHistory({
           freestyle: imageData.freestyle || "",
           style: imageData.style || "",

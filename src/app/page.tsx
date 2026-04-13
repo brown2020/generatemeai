@@ -16,14 +16,13 @@ const getPublicImages = unstable_cache(
         .limit(30)
         .get();
 
-      const filteredImages = snapshot.docs.filter((doc: any) => {
+      const filteredImages = snapshot.docs.filter((doc) => {
         const data = doc.data();
         return !data.password || data.password === "";
       });
 
       const images = filteredImages.map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (doc: any) => doc.data().downloadUrl as string
+        (doc) => doc.data().downloadUrl as string
       );
 
       // Return at least 15 if possible, or whatever we have

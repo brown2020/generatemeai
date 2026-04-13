@@ -3,7 +3,7 @@
 import Stripe from "stripe";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Transaction } from "firebase-admin/firestore";
 import {
   ActionResult,
   successResult,
@@ -73,7 +73,7 @@ export async function processPaymentAndAddCredits(
     const creditsToAdd = paymentIntent.amount + 1;
 
     // Atomically: record payment + add credits in a transaction
-    await adminDb.runTransaction(async (tx: any) => {
+    await adminDb.runTransaction(async (tx: Transaction) => {
       const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
       const profileSnap = await tx.get(profileRef);
 
