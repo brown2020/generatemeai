@@ -9,6 +9,7 @@ import {
   signOut,
 } from "firebase/auth";
 import toast from "react-hot-toast";
+import { deleteCookie } from "cookies-next";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
 import { isIOSReactNativeWebView } from "@/utils/platform";
@@ -105,8 +106,23 @@ export const useAuthLogic = () => {
 
   const handleSignOut = async () => {
     try {
+      // 1. Delete auth cookie BEFORE Firebase sign-out.
+      //    signOut(auth) triggers onAuthStateChanged which may navigate
+      //    before the useAuthToken effect runs deleteCookie, leaving a
+      //    stale cookie that makes proxy.ts think user is still authed.
+      const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
+      deleteCookie(cookieName, { path: "/" });
+
+      // 2. Sign out of Firebase.
       await signOut(auth);
+
+      // 3. Clear auth store.
       clearAuthDetails();
+
+      // 4. Clear browser storage.
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
     } catch {
       toast.error("An error occurred while signing out.");
     } finally {
