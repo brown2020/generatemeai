@@ -1,11 +1,16 @@
-"use client";
-
-import PaymentSuccessPage from "@/components/PaymentSuccessPage";
-import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import PaymentSuccessWrapper from "./PaymentSuccessWrapper";
 
 export default function PaymentSuccess() {
-  const searchParams = useSearchParams();
-  const payment_intent = searchParams.get("payment_intent") || "";
-
-  return <PaymentSuccessPage payment_intent={payment_intent} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-muted-foreground">Loading payment details...</p>
+        </div>
+      }
+    >
+      <PaymentSuccessWrapper />
+    </Suspense>
+  );
 }
