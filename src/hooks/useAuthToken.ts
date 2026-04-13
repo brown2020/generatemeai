@@ -13,7 +13,6 @@ const DEBOUNCE_DELAY = 1000;
 const useAuthToken = (cookieName = "authToken") => {
   const [user, loading, error] = useAuthState(auth);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
-  const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
 
   const lastTokenRefreshKey = `${STORAGE_KEYS.LAST_TOKEN_REFRESH}${cookieName}`;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);

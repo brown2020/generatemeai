@@ -1,6 +1,7 @@
 import { creditsToMinus } from "@/constants/modelRegistry";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
+import { Transaction } from "firebase-admin/firestore";
 
 /**
  * Result of credit validation.
@@ -80,7 +81,7 @@ export async function deductCreditsServer(
   amount: number
 ): Promise<void> {
   const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
-  await adminDb.runTransaction(async (tx: any) => {
+  await adminDb.runTransaction(async (tx: Transaction) => {
     const snap = await tx.get(profileRef);
     if (!snap.exists) throw new Error("Profile not found");
     const currentCredits = snap.data()?.credits ?? 0;

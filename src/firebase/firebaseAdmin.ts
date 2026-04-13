@@ -1,5 +1,8 @@
 import admin from "firebase-admin";
 import { getApps } from "firebase-admin/app";
+import type { Firestore } from "firebase-admin/firestore";
+import type { Auth } from "firebase-admin/auth";
+import type { Bucket } from "@google-cloud/storage";
 
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
@@ -16,8 +19,9 @@ const adminCredentials = {
   clientCertsUrl: process.env.FIREBASE_CLIENT_CERTS_URL,
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let adminBucket: any, adminDb: any, adminAuth: any;
+let adminBucket: Bucket;
+let adminDb: Firestore;
+let adminAuth: Auth;
 
 try {
   if (!getApps().length) {
@@ -31,9 +35,9 @@ try {
   adminAuth = admin.auth();
 } catch (e) {
   console.warn("Firebase Admin initialization failed (expected in build):", e);
-  adminBucket = {};
-  adminDb = {};
-  adminAuth = {};
+  adminBucket = {} as Bucket;
+  adminDb = {} as Firestore;
+  adminAuth = {} as Auth;
 }
 
 export { adminBucket, adminDb, adminAuth, admin };

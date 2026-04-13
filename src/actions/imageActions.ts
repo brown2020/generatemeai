@@ -2,7 +2,7 @@
 
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
-import { FieldValue } from "firebase-admin/firestore";
+import { Transaction } from "firebase-admin/firestore";
 import {
   ActionResult,
   successResult,
@@ -35,10 +35,11 @@ export async function toggleImageSharable(
     const currentData = coversSnap.data()!;
     const newSharableState = !currentData.isSharable;
 
-    await adminDb.runTransaction(async (tx: any) => {
+    await adminDb.runTransaction(async (tx: Transaction) => {
+      const coverSnap = await tx.get(coversRef);
+      if (!coverSnap.exists) throw new Error("Document not found");
+
       if (newSharableState) {
-        const coverSnap = await tx.get(coversRef);
-        if (!coverSnap.exists) throw new Error("Document not found");
         tx.set(publicRef, {
           ...coverSnap.data(),
           isSharable: true,
@@ -46,8 +47,7 @@ export async function toggleImageSharable(
         });
         tx.update(coversRef, { isSharable: true });
       } else {
-        tx.set(coversRef, {
-          ...currentData,
+        tx.update(coversRef, {
           isSharable: false,
           password: "",
         });

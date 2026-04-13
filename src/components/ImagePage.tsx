@@ -71,7 +71,6 @@ const ImagePage = ({ id }: ImagePageProps) => {
     id,
     uid,
     imageData,
-    isSharable,
     setIsSharable,
     refreshData,
   });
@@ -166,7 +165,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
     } finally {
       setLoading(false);
     }
-  }, [imageData, id, uid, router]);
+  }, [imageData, id, router]);
 
   if (imageData === false) {
     return (
@@ -182,7 +181,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
             Image not found
           </h2>
           <p className="text-gray-500">
-            This image doesn't exist or is private.
+            This image doesn&apos;t exist or is private.
           </p>
         </div>
       </div>
@@ -235,7 +234,6 @@ const ImagePage = ({ id }: ImagePageProps) => {
           imageData={imageData as ImageData}
           tags={tags}
           setTags={setTags}
-          uid={uid}
           imageId={id}
           openAPIKey={profile.openai_api_key}
           useCredits={profile.useCredits}
@@ -248,7 +246,6 @@ const ImagePage = ({ id }: ImagePageProps) => {
         <ImagePageOwnerActions
           imageData={imageData as ImageData}
           isOwner={isOwner}
-          uid={uid}
           hasVideo={hasVideo}
           isGif={isGif}
           loading={loading}

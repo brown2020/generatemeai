@@ -16,7 +16,6 @@ interface UseImagePageActionsParams {
   id: string;
   uid: string;
   imageData: ImageData | null | false;
-  isSharable: boolean;
   setIsSharable: (value: boolean) => void;
   refreshData: () => void;
 }
@@ -25,7 +24,6 @@ export const useImagePageActions = ({
   id,
   uid,
   imageData,
-  isSharable,
   setIsSharable,
   refreshData,
 }: UseImagePageActionsParams) => {

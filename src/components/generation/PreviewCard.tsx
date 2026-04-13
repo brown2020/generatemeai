@@ -12,12 +12,12 @@ export const PreviewCard = ({ type, value }: PreviewCardProps) => {
 
   useEffect(() => {
     if (value === "none" || !value) {
-      setLoadedImages([]);
       return;
     }
 
+    let cancelled = false;
+
     const loadImages = async () => {
-      setLoadedImages([]);
       const possibleImages = Array.from(
         { length: 6 },
         (_, i) => `/previews/${type}s/${value}/${i + 1}.jpg`
@@ -31,10 +31,16 @@ export const PreviewCard = ({ type, value }: PreviewCardProps) => {
         }
       }
 
-      setLoadedImages(existingImages);
+      if (!cancelled) {
+        setLoadedImages(existingImages);
+      }
     };
 
     loadImages();
+
+    return () => {
+      cancelled = true;
+    };
   }, [type, value]);
 
   if (value === "none" || !value) {

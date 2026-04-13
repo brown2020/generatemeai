@@ -7,20 +7,20 @@ interface ImageMetadataProps {
   imageData: ImageData;
 }
 
+const MetadataRow = ({ label, value }: { label: string; value?: string }) => {
+  if (!value) return null;
+  return (
+    <div className="grid grid-cols-[120px_1fr] gap-2">
+      <span className="font-medium text-gray-600">{label}:</span>
+      <span>{value}</span>
+    </div>
+  );
+};
+
 /**
  * Displays metadata information about the image.
  */
 export const ImageMetadata = ({ imageData }: ImageMetadataProps) => {
-  const MetadataRow = ({ label, value }: { label: string; value?: string }) => {
-    if (!value) return null;
-    return (
-      <div className="grid grid-cols-[120px_1fr] gap-2">
-        <span className="font-medium text-gray-600">{label}:</span>
-        <span>{value}</span>
-      </div>
-    );
-  };
-
   const timestampValue = imageData?.timestamp?.seconds
     ? new Date(imageData.timestamp.seconds * 1000).toLocaleString()
     : undefined;
