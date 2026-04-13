@@ -6,6 +6,7 @@
 import { useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { signOut } from "firebase/auth";
+import { deleteCookie } from "cookies-next";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
@@ -91,8 +92,20 @@ export const useSignOut = () => {
 
   return useCallback(async () => {
     try {
+      // 1. Delete auth cookie BEFORE Firebase sign-out.
+      const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
+      deleteCookie(cookieName, { path: "/" });
+
+      // 2. Sign out of Firebase.
       await signOut(auth);
+
+      // 3. Clear auth store.
       clearAuthDetails();
+
+      // 4. Clear browser storage.
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
     } catch {
       toast.error("An error occurred while signing out.");
     }

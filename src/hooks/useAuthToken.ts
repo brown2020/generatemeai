@@ -34,6 +34,7 @@ const useAuthToken = (cookieName = "authToken") => {
       setCookie(cookieName, idTokenResult, {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
+        path: "/",
       });
 
       if (typeof window !== "undefined" && !window.ReactNativeWebView) {
@@ -42,7 +43,7 @@ const useAuthToken = (cookieName = "authToken") => {
     } catch {
       // Only handle error if still mounted
       if (!isMountedRef.current) return;
-      deleteCookie(cookieName);
+      deleteCookie(cookieName, { path: "/" });
     }
   }, [cookieName, lastTokenRefreshKey]);
 
@@ -111,6 +112,7 @@ const useAuthToken = (cookieName = "authToken") => {
           setCookie(cookieName, token, {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
+            path: "/",
           });
           scheduleTokenRefresh();
 
@@ -138,7 +140,7 @@ const useAuthToken = (cookieName = "authToken") => {
         authReady: true,
         authPending: false,
       });
-      deleteCookie(cookieName);
+      deleteCookie(cookieName, { path: "/" });
     }
   }, [
     cookieName,
