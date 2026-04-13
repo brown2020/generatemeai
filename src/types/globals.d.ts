@@ -1,4 +1,3 @@
-
 declare global {
   // Define the Speech Recognition interfaces locally since they are not standard yet
   interface SpeechRecognitionEvent extends Event {

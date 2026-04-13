@@ -4,8 +4,6 @@
  * utils/apiKeyResolver.ts, and strategies/index.ts
  */
 
-import type { GenerationStrategy } from "@/strategies/types";
-
 /**
  * Standard aspect ratio options available across models.
  */

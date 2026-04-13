@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MailIcon, X, LockIcon } from "lucide-react";
 import { PulseLoader } from "react-spinners";
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import googleLogo from "@/app/assets/google.svg";
 
 /**
@@ -306,7 +306,7 @@ function AuthButton({
   onClick,
 }: {
   label: string;
-  logo: string;
+  logo: string | StaticImageData;
   onClick: () => void;
 }) {
   return (

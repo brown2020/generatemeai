@@ -35,16 +35,16 @@ export default function DeleteConfirmModal({
   // Support legacy props
   const visible = isOpen ?? showDeleteModal;
   const handleClose = onClose ?? onHideModal ?? (() => {});
-  const handleConfirmAction = onConfirm ?? onDeleteConfirm ?? (() => {});
 
   const handleConfirm = useCallback(() => {
     if (confirmation === confirmText) {
-      handleConfirmAction();
+      const action = onConfirm ?? onDeleteConfirm ?? (() => {});
+      action();
       setConfirmation("");
     } else {
       toast.error(`Please type '${confirmText}' to confirm.`);
     }
-  }, [confirmation, confirmText, handleConfirmAction]);
+  }, [confirmation, confirmText, onConfirm, onDeleteConfirm]);
 
   if (!visible) return null;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
 import CookieConsent from "react-cookie-consent";
@@ -30,17 +30,14 @@ const getCookieName = (): string => {
  */
 export function ClientProvider({ children }: { children: React.ReactNode }) {
   const { loading } = useAuthToken(getCookieName());
-  const [isWebView, setIsWebView] = useState(false);
+  const isWebView =
+    typeof window !== "undefined" && !!window.ReactNativeWebView;
 
   useInitializeStores();
 
-  // WebView detection + viewport handling
+  // Viewport handling
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    // Check for WebView environment
-    const isRNWebView = !!window.ReactNativeWebView;
-    setIsWebView(isRNWebView);
 
     // Height adjustment for mobile viewports
     const adjustHeight = () => {
@@ -49,6 +46,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Scroll handling for React Native WebView
+    const isRNWebView = !!window.ReactNativeWebView;
     document.body.classList.toggle("noscroll", isRNWebView);
 
     // Set up event listeners

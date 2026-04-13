@@ -19,8 +19,8 @@ export {
 export { creditsToMinus } from "@/constants/modelRegistry";
 
 // Async utilities
-export { pollWithTimeout, pollWithTimeoutSafe, delay } from "./polling";
-export type { PollingOptions, PollingResult } from "./polling";
+export { pollWithTimeout, delay } from "./polling";
+export type { PollingOptions } from "./polling";
 
 // Error handling
 export {
@@ -54,14 +54,12 @@ export { validateServerEnv, validateClientEnv, getEnv } from "./env";
 export {
   imageGenerationSchema,
   tagSuggestionSchema,
-  backgroundRemovalSchema,
   paymentCheckoutSchema,
   parseFormData,
 } from "./validationSchemas";
 export type {
   ImageGenerationInput,
   TagSuggestionInput,
-  BackgroundRemovalInput,
   PaymentCheckoutInput,
 } from "./validationSchemas";
 

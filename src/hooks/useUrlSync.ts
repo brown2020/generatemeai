@@ -1,12 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
-import { colors, findColorByValue, findColorByLabel } from "@/constants/colors";
-import {
-  lightings,
-  findLightingByValue,
-  findLightingByLabel,
-} from "@/constants/lightings";
+import { findColorByValue, findColorByLabel } from "@/constants/colors";
+import { findLightingByValue, findLightingByLabel } from "@/constants/lightings";
 import type { Model } from "@/constants/modelRegistry";
 
 /**

@@ -11,7 +11,6 @@ interface TagManagerProps {
   imageData: ImageData;
   tags: string[];
   setTags: (tags: string[]) => void;
-  uid: string;
   imageId: string;
   openAPIKey: string;
   useCredits: boolean;
@@ -26,7 +25,6 @@ export const TagManager = ({
   imageData,
   tags,
   setTags,
-  uid,
   imageId,
   openAPIKey,
   useCredits,
