@@ -1,67 +1,39 @@
-"use server";
-
-import { generateText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
-import { getErrorMessage } from "./errors";
-
-const SYSTEM_PROMPT = `You are an expert at writing prompts for AI image generation. 
-Optimize the given prompt to produce better results. 
-Keep the core idea but enhance it with better descriptive language and relevant artistic details. 
-Return only the optimized prompt without any explanation or quotation marks.`;
+import { apiPost } from "@/lib/api/client";
 
 /**
- * Optimizes an image generation prompt using GPT-4.
+ * Optimizes an image generation prompt server-side via GPT-4.
  *
  * @param prompt - The original prompt to optimize
- * @param apiKey - OpenAI API key (uses env key if not provided)
+ * @param apiKey - Optional user-supplied OpenAI key (BYOK path)
  * @returns Optimized prompt string
- * @throws Error if optimization fails
- *
- * @example
- * const optimized = await optimizePrompt("a cat sitting", myApiKey);
- * // Returns: "A majestic tabby cat sitting gracefully on a sunlit windowsill..."
+ * @throws Error if the API call fails
  */
-export const optimizePrompt = async (
+export async function optimizePrompt(
   prompt: string,
   apiKey?: string
-): Promise<string> => {
-  try {
-    const resolvedKey = apiKey || process.env.OPENAI_API_KEY;
-
-    if (!resolvedKey) {
-      throw new Error("OpenAI API key is required for prompt optimization");
-    }
-
-    const openai = createOpenAI({ apiKey: resolvedKey });
-
-    const { text } = await generateText({
-      model: openai("gpt-4"),
-      system: SYSTEM_PROMPT,
-      prompt,
-      maxOutputTokens: 200,
-      temperature: 0.7,
-    });
-
-    // Clean up the response
-    return text.trim().replace(/^["']|["']$/g, "");
-  } catch (error) {
-    console.error("Error optimizing prompt:", error);
-    throw new Error(`Failed to optimize prompt: ${getErrorMessage(error)}`);
+): Promise<string> {
+  const result = await apiPost<string>("/api/generate/optimize-prompt", {
+    prompt,
+    apiKey,
+  });
+  if (!result.success) {
+    throw new Error(result.error || "Failed to optimize prompt");
   }
-};
+  return result.data;
+}
 
 /**
- * Optimizes a prompt with a fallback to the original if optimization fails.
- * Use this when you want to gracefully handle failures.
+ * Optimizes a prompt but falls back to the original string if optimization
+ * fails. Use when you'd rather degrade gracefully than surface an error.
  */
-export const optimizePromptSafe = async (
+export async function optimizePromptSafe(
   prompt: string,
   apiKey?: string
-): Promise<{ optimized: string; wasOptimized: boolean }> => {
+): Promise<{ optimized: string; wasOptimized: boolean }> {
   try {
     const optimized = await optimizePrompt(prompt, apiKey);
     return { optimized, wasOptimized: true };
   } catch {
     return { optimized: prompt, wasOptimized: false };
   }
-};
+}

@@ -1,64 +1,10 @@
-"use server";
-
-import { generateText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
-import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
-import {
-  assertSufficientCreditsServer,
-  deductCreditsServer,
-} from "@/utils/creditValidator";
-import {
-  ActionResult,
-  successResult,
-  errorResult,
-  AuthenticationError,
-} from "@/utils/errors";
-import { tagSuggestionSchema } from "@/utils/validationSchemas";
-import { z } from "zod";
-import { authenticateAction } from "@/utils/serverAuth";
-
-interface SuggestTagsParams {
-  freestyle: string;
-  color: string;
-  lighting: string;
-  style: string;
-  imageCategory: string;
-  tags: string[];
-  openAPIKey: string;
-  useCredits: boolean;
-  credits: number;
-}
+import { apiPost } from "@/lib/api/client";
+import type { ActionResult } from "@/utils/errors";
 
 /**
- * Builds the prompt for tag suggestion based on image parameters.
+ * Suggests six tags for an image based on its generation parameters.
  */
-function buildTagSuggestionPrompt(
-  params: Omit<SuggestTagsParams, "openAPIKey" | "useCredits" | "credits">
-): string {
-  const { freestyle, color, lighting, style, imageCategory, tags } = params;
-
-  const parts = [`the prompt: ${freestyle}`];
-
-  if (color && color !== "None") parts.push(`color: ${color}`);
-  if (lighting && lighting !== "None") parts.push(`lighting: ${lighting}`);
-  if (style) parts.push(`style: ${style}`);
-  if (imageCategory) parts.push(`ImageCategory: ${imageCategory}`);
-
-  return `Using this prompt that image created with
-
-${parts.join(", ")}
-
-Suggest tags for the image. It shouldn't be from this list: ${tags.join(", ")}. 
-Please list the tags in this format: separate all tags with commas, that's it, nothing else, and don't use a full stop at the end. Provide only 6 suggestions, no explanation.`;
-}
-
-/**
- * Suggests tags for an image based on its generation parameters.
- * Uses Vercel AI SDK for cleaner API integration.
- *
- * @returns ActionResult with suggested tags string or error
- */
-export const suggestTags = async (
+export function suggestTags(
   freestyle: string,
   color: string,
   lighting: string,
@@ -68,74 +14,16 @@ export const suggestTags = async (
   openAPIKey: string,
   useCredits: boolean,
   credits: number
-): Promise<ActionResult<string>> => {
-  try {
-    const uid = await authenticateAction();
-
-    const validatedInput = tagSuggestionSchema.parse({
-      prompt: freestyle,
-      colorScheme: color,
-      lighting,
-      imageStyle: style,
-      selectedCategory: imageCategory,
-      currentTags: tags,
-      openAPIKey,
-      useCredits,
-      credits,
-    });
-
-    // Server-side credit check
-    const serverCredits = await assertSufficientCreditsServer(uid, "chatgpt");
-
-    const apiKey = resolveApiKey("chatgpt", serverCredits.useCredits, validatedInput.openAPIKey);
-
-    if (!apiKey) {
-      return errorResult("OpenAI API key is required.", "INVALID_API_KEY");
-    }
-
-    // Create OpenAI provider instance
-    const openai = createOpenAI({ apiKey });
-
-    // Build the prompt
-    const prompt = buildTagSuggestionPrompt({
-      freestyle: validatedInput.prompt,
-      color: validatedInput.colorScheme || "",
-      lighting: validatedInput.lighting || "",
-      style: validatedInput.imageStyle || "",
-      imageCategory: validatedInput.selectedCategory || "",
-      tags: validatedInput.currentTags || [],
-    });
-
-    const { text } = await generateText({
-      model: openai("gpt-4"),
-      system:
-        "For all responses, reply with just the answer without giving any description.",
-      prompt,
-      maxOutputTokens: 200,
-      temperature: 0.7,
-    });
-
-    // Deduct credits server-side after successful generation
-    if (serverCredits.useCredits) {
-      await deductCreditsServer(uid, creditsToMinus("chatgpt"));
-    }
-
-    return successResult(text);
-  } catch (error: unknown) {
-    if (error instanceof AuthenticationError) {
-      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
-    }
-    if (error instanceof z.ZodError) {
-      const firstError = error.issues[0];
-      return errorResult(
-        firstError?.message || "Validation failed",
-        "VALIDATION_ERROR"
-      );
-    }
-
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("Error suggesting tags:", errorMessage);
-    return errorResult(errorMessage, "GENERATION_FAILED");
-  }
-};
+): Promise<ActionResult<string>> {
+  return apiPost<string>("/api/generate/tags", {
+    prompt: freestyle,
+    colorScheme: color,
+    lighting,
+    imageStyle: style,
+    selectedCategory: imageCategory,
+    currentTags: tags,
+    openAPIKey,
+    useCredits,
+    credits,
+  });
+}

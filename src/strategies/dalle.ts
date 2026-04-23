@@ -1,8 +1,14 @@
 import { GenerationStrategy } from "./types";
 
+const MODEL = "gpt-image-2";
+
 /**
- * Maps standard aspect ratios to gpt-image-1 size parameter.
- * gpt-image-1 supports: "1024x1024", "1024x1536", "1536x1024", "auto"
+ * Maps standard aspect ratios to a gpt-image-2 `size` value.
+ *
+ * gpt-image-2 accepts thousands of valid resolutions, but we pin to the
+ * three well-tested sizes (square, landscape, portrait) for predictable
+ * cost and latency. "auto" is also valid — pass that via the UI if you
+ * want the model to choose.
  */
 const getSize = (ratio?: string): string => {
   switch (ratio) {
@@ -38,20 +44,20 @@ export const dalleStrategy: GenerationStrategy = async ({
   let requestBody: FormData | string;
 
   if (img) {
-    // Image edit mode
+    // Image edit mode — gpt-image-2 processes all inputs at high fidelity
+    // automatically, so input_fidelity is not sent.
     const formData = new FormData();
-    formData.append("model", "gpt-image-1");
+    formData.append("model", MODEL);
     formData.append("image[]", img);
     formData.append("prompt", message);
     formData.append("size", getSize(aspectRatio));
     apiUrl = "https://api.openai.com/v1/images/edits";
     requestBody = formData;
   } else {
-    // Image generation mode
     apiUrl = "https://api.openai.com/v1/images/generations";
     headers["Content-Type"] = "application/json";
     requestBody = JSON.stringify({
-      model: "gpt-image-1",
+      model: MODEL,
       prompt: message,
       n: imageCount || 1,
       size: getSize(aspectRatio),
@@ -73,7 +79,7 @@ export const dalleStrategy: GenerationStrategy = async ({
 
   const data = (await response.json()) as GptImageResponse;
 
-  // gpt-image-1 returns b64_json by default
+  // gpt-image-2 returns b64_json by default.
   const buffers = data.data.map((item) => {
     if (item.b64_json) {
       return Buffer.from(item.b64_json, "base64");

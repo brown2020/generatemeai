@@ -3,7 +3,7 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
 import useProfileStore from "@/zustand/useProfileStore";
 import { generatePrompt } from "@/utils/promptUtils";
-import { generateImage } from "@/actions/generateImage";
+import { generateImageStream } from "@/actions/generateImage";
 import { saveGenerationHistory } from "@/actions/saveHistory";
 import { createImageGenerationFormData } from "@/utils/formDataBuilder";
 import { colors, getColorFromLabel } from "@/constants/colors";
@@ -14,6 +14,11 @@ import {
 } from "@/utils/platform";
 import toast from "react-hot-toast";
 
+/**
+ * Hook that wires the image-generation UI state to the streaming API route.
+ * Progress events from the server update the toast UX so the user sees
+ * "Generating…" and "Uploading X/Y" during the long wait.
+ */
 export const useImageGenerator = () => {
   const uid = useAuthStore((s) => s.uid);
   const profile = useProfileStore((s) => s.profile);
@@ -61,6 +66,8 @@ export const useImageGenerator = () => {
       return;
     }
 
+    const progressToastId = toast.loading("Starting generation…");
+
     try {
       generationState.updateField("loading", true);
 
@@ -88,22 +95,56 @@ export const useImageGenerator = () => {
         imageCount: generationState.imageCount,
       });
 
-      const result = await generateImage(formData);
+      let result: {
+        imageUrl: string;
+        imageUrls: string[];
+        imageReference?: string;
+      } | null = null;
+      let errorMessage: string | null = null;
 
-      if (!result.success) {
-        toast.error(result.error || "Failed to generate image");
+      for await (const event of generateImageStream(formData)) {
+        switch (event.status) {
+          case "started":
+            toast.loading("Preparing request…", { id: progressToastId });
+            break;
+          case "generating":
+            toast.loading("Generating image…", { id: progressToastId });
+            break;
+          case "uploading":
+            toast.loading(
+              `Uploading ${event.uploaded}/${event.total}…`,
+              { id: progressToastId }
+            );
+            break;
+          case "complete":
+            result = event.data;
+            break;
+          case "error":
+            errorMessage = event.error;
+            break;
+        }
+      }
+
+      if (errorMessage || !result) {
+        toast.error(errorMessage || "Failed to generate image", {
+          id: progressToastId,
+        });
         return;
       }
 
-      const { imageUrl: downloadURL, imageUrls = [], imageReference = "" } = result.data;
+      toast.success("Image ready", { id: progressToastId });
 
-      // Credits are deducted server-side in generateImage — refresh local state
+      const {
+        imageUrl: downloadURL,
+        imageUrls = [],
+        imageReference = "",
+      } = result;
+
       await fetchProfile();
 
       generationState.updateField("generatedImage", downloadURL);
       generationState.updateField("generatedImages", imageUrls);
 
-      // Save history server-side
       if (downloadURL) {
         await saveGenerationHistory({
           freestyle: generationState.imagePrompt,
@@ -126,11 +167,11 @@ export const useImageGenerator = () => {
         });
       }
     } catch (error: unknown) {
-      const errorMessage =
+      const errMsg =
         error instanceof Error
           ? error.message
           : "An unexpected error occurred during image generation";
-      toast.error(errorMessage);
+      toast.error(errMsg, { id: progressToastId });
     } finally {
       generationState.updateField("loading", false);
     }

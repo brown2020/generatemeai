@@ -1,33 +1,10 @@
-"use server";
+import { apiPost } from "@/lib/api/client";
+import type { ActionResult } from "@/utils/errors";
 
-import Stripe from "stripe";
-import {
-  ActionResult,
-  successResult,
-  errorResult,
-  getErrorMessage,
-  AuthenticationError,
-} from "@/utils/errors";
-import { authenticateAction } from "@/utils/serverAuth";
-
-function getStripeClient(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) {
-    throw new Error("STRIPE_SECRET_KEY environment variable is not configured");
-  }
-  return new Stripe(key);
-}
-
-/**
- * Payment intent data returned on successful creation.
- */
 interface PaymentIntentData {
   clientSecret: string;
 }
 
-/**
- * Validated payment data returned on successful validation.
- */
 interface ValidatedPaymentData {
   id: string;
   amount: number;
@@ -39,91 +16,23 @@ interface ValidatedPaymentData {
 }
 
 /**
- * Creates a Stripe payment intent.
+ * Creates a Stripe PaymentIntent for the authenticated user.
  *
  * @param amount - Amount in cents
- * @returns ActionResult with client secret or error
  */
-export async function createPaymentIntent(
+export function createPaymentIntent(
   amount: number
 ): Promise<ActionResult<PaymentIntentData>> {
-  const product = process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME;
-
-  try {
-    // Authenticate server-side
-    await authenticateAction();
-
-    if (!product) {
-      return errorResult("Stripe product name is not defined", "INVALID_INPUT");
-    }
-
-    if (amount <= 0) {
-      return errorResult("Amount must be a positive number", "INVALID_INPUT");
-    }
-
-    const stripe = getStripeClient();
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "usd",
-      metadata: { product },
-      description: `Payment for product ${process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME}`,
-    });
-
-    if (!paymentIntent.client_secret) {
-      return errorResult(
-        "Failed to create payment intent",
-        "GENERATION_FAILED"
-      );
-    }
-
-    return successResult({ clientSecret: paymentIntent.client_secret });
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
-    }
-    console.error("Error creating payment intent:", getErrorMessage(error));
-    return errorResult(getErrorMessage(error), "GENERATION_FAILED");
-  }
+  return apiPost<PaymentIntentData>("/api/payments/intent", { amount });
 }
 
 /**
- * Validates a Stripe payment intent.
- *
- * @param paymentIntentId - The payment intent ID to validate
- * @returns ActionResult with payment data or error
+ * Validates a completed Stripe PaymentIntent without applying credits.
  */
-export async function validatePaymentIntent(
+export function validatePaymentIntent(
   paymentIntentId: string
 ): Promise<ActionResult<ValidatedPaymentData>> {
-  try {
-    // Authenticate server-side
-    await authenticateAction();
-
-    if (!paymentIntentId || !paymentIntentId.startsWith("pi_")) {
-      return errorResult("Invalid payment intent ID", "INVALID_INPUT");
-    }
-
-    const stripe = getStripeClient();
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (paymentIntent.status !== "succeeded") {
-      return errorResult("Payment was not successful", "GENERATION_FAILED");
-    }
-
-    return successResult({
-      id: paymentIntent.id,
-      amount: paymentIntent.amount,
-      created: paymentIntent.created,
-      status: paymentIntent.status,
-      client_secret: paymentIntent.client_secret,
-      currency: paymentIntent.currency,
-      description: paymentIntent.description,
-    });
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
-    }
-    console.error("Error validating payment intent:", getErrorMessage(error));
-    return errorResult(getErrorMessage(error), "GENERATION_FAILED");
-  }
+  return apiPost<ValidatedPaymentData>("/api/payments/validate", {
+    paymentIntentId,
+  });
 }
