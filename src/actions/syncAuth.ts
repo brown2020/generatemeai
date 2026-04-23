@@ -1,13 +1,8 @@
-"use server";
-
-import { adminDb } from "@/firebase/firebaseAdmin";
-import { FirestorePaths } from "@/firebase/paths";
-import { FieldValue } from "firebase-admin/firestore";
-import { authenticateAction } from "@/utils/serverAuth";
+import { apiPost } from "@/lib/api/client";
 
 /**
- * Syncs auth details to the users collection server-side.
- * Called after sign-in to keep user record up-to-date.
+ * Syncs auth details to the users collection. Called after sign-in to keep
+ * the user record up-to-date. Silent-on-failure to avoid breaking auth.
  */
 export async function syncAuthToFirestoreServer(details: {
   email: string;
@@ -16,16 +11,8 @@ export async function syncAuthToFirestoreServer(details: {
   emailVerified: boolean;
 }): Promise<void> {
   try {
-    const uid = await authenticateAction();
-    const userRef = adminDb.doc(FirestorePaths.user(uid));
-    await userRef.set(
-      {
-        ...details,
-        lastSignIn: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+    await apiPost<void>("/api/auth/sync", details);
   } catch {
-    // Fire-and-forget — don't break the auth flow
+    // Fire-and-forget
   }
 }

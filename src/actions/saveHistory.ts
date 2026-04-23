@@ -1,16 +1,5 @@
-"use server";
-
-import { adminDb } from "@/firebase/firebaseAdmin";
-import { FirestorePaths } from "@/firebase/paths";
-import { Timestamp } from "firebase-admin/firestore";
-import { authenticateAction } from "@/utils/serverAuth";
-import {
-  ActionResult,
-  successResult,
-  errorResult,
-  getErrorMessage,
-  AuthenticationError,
-} from "@/utils/errors";
+import { apiPost } from "@/lib/api/client";
+import type { ActionResult } from "@/utils/errors";
 
 interface SaveHistoryParams {
   freestyle: string;
@@ -30,29 +19,10 @@ interface SaveHistoryParams {
 }
 
 /**
- * Saves generation history to Firestore server-side.
+ * Persists a generation record to the user's covers subcollection.
  */
-export async function saveGenerationHistory(
+export function saveGenerationHistory(
   params: SaveHistoryParams
 ): Promise<ActionResult<{ id: string }>> {
-  try {
-    const uid = await authenticateAction();
-
-    const collRef = adminDb.collection(FirestorePaths.profileCovers(uid));
-    const docRef = collRef.doc();
-
-    await docRef.set({
-      ...params,
-      id: docRef.id,
-      timestamp: Timestamp.now(),
-    });
-
-    return successResult({ id: docRef.id });
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      return errorResult(error.message, "AUTHENTICATION_REQUIRED");
-    }
-    console.error("Error saving generation history:", getErrorMessage(error));
-    return errorResult(getErrorMessage(error), "GENERATION_FAILED");
-  }
+  return apiPost<{ id: string }>("/api/history", params);
 }
