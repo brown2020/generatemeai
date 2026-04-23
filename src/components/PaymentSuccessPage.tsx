@@ -12,8 +12,12 @@ type Props = {
 };
 
 export default function PaymentSuccessPage({ payment_intent }: Props) {
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  // Derive the "no payment intent" state from props during initial render so
+  // the effect doesn't have to write state synchronously for that branch.
+  const [message, setMessage] = useState(
+    payment_intent ? "" : "No payment intent found"
+  );
+  const [loading, setLoading] = useState(!!payment_intent);
   const [created, setCreated] = useState(0);
   const [id, setId] = useState("");
   const [amount, setAmount] = useState(0);
@@ -25,13 +29,7 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
   const processedRef = useRef(false);
 
   useEffect(() => {
-    if (!payment_intent) {
-      setMessage("No payment intent found");
-      setLoading(false);
-      return;
-    }
-
-    if (!uid || processedRef.current) return;
+    if (!payment_intent || !uid || processedRef.current) return;
     processedRef.current = true;
 
     const handlePaymentSuccess = async () => {

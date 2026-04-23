@@ -38,7 +38,13 @@ export const useAuthLogic = () => {
   // UI state
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [isEmailLinkLogin, setIsEmailLinkLogin] = useState(false);
-  const [showGoogleSignIn, setShowGoogleSignIn] = useState(true);
+  // Platform is stable for the mount lifetime, so initialize lazily instead
+  // of writing to state inside an effect. SSR defaults to true — the value
+  // reconciles on first client render before any paint that depends on it.
+  const [showGoogleSignIn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return !isIOSReactNativeWebView();
+  });
 
   // Refs
   const formRef = useRef<HTMLFormElement>(null);
@@ -46,10 +52,6 @@ export const useAuthLogic = () => {
 
   const showModal = () => setIsVisible(true);
   const hideModal = () => setIsVisible(false);
-
-  useEffect(() => {
-    setShowGoogleSignIn(!isIOSReactNativeWebView());
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
