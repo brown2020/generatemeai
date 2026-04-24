@@ -59,5 +59,9 @@
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "uuid": ">=14.0.0",
+    "@tootallnate/once": ">=3.0.1"
   }
 }
