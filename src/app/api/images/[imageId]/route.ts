@@ -105,8 +105,16 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const uid = await authenticateAction();
     const { imageId } = await context.params;
 
+    // Verify ownership before touching the global public mirror — otherwise
+    // any authenticated user could delete another user's public image by id.
+    const coverRef = adminDb.doc(FirestorePaths.profileCover(uid, imageId));
+    const coverSnap = await coverRef.get();
+    if (!coverSnap.exists) {
+      return jsonError("Image not found", "NOT_FOUND", 404);
+    }
+
     const batch = adminDb.batch();
-    batch.delete(adminDb.doc(FirestorePaths.profileCover(uid, imageId)));
+    batch.delete(coverRef);
     batch.delete(adminDb.doc(FirestorePaths.publicImage(imageId)));
     await batch.commit();
 

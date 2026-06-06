@@ -104,6 +104,7 @@ npm run build          # production build
 npm start              # serve production build
 npm run lint           # ESLint (flat config)
 npx tsc --noEmit       # typecheck (no dedicated script exists)
+npm test               # Vitest unit tests (run mode, non-interactive)
 ```
 
 ### Canonical validation/check command
@@ -111,7 +112,7 @@ npx tsc --noEmit       # typecheck (no dedicated script exists)
 Run this exact sequence after any change and before committing:
 
 ```bash
-npm run lint && npx tsc --noEmit && npm run build
+npm run lint && npx tsc --noEmit && npm test && npm run build
 ```
 
 - `lint` and `tsc --noEmit` currently pass clean — keep them green.
@@ -119,11 +120,12 @@ npm run lint && npx tsc --noEmit && npm run build
 
 ### Non-interactive testing rules
 
-- There is **no test suite and no CI** in this repo. Do not assume `npm test` exists.
-- Never start watch mode, dev servers, or a headed browser as part of validation.
+- A small **Vitest** unit suite exists (`npm test` → `vitest run`); there is **no CI** wired yet. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`) and profile-update sanitization (`src/utils/profileFields.test.ts`).
+- Always run tests in run mode (`vitest run` / `npm test`), never watch mode.
+- Never start dev servers or a headed browser as part of validation.
 - Never wait for manual login or interactive input.
-- Use only CI-safe, non-interactive commands. Treat `npm run lint && npx tsc --noEmit && npm run build` as the gate.
-- If you add tests, prefer Vitest + React Testing Library, wire a `test` script that runs once (`vitest run`), and update this file and `spec.md`.
+- Use only CI-safe, non-interactive commands. Treat the canonical command above as the gate.
+- Prefer Vitest (+ React Testing Library for components). Keep tests free of network/Firebase/secret dependencies — test pure logic and boundaries. Add tests for new bug-prone or security-sensitive logic and update this file and `spec.md`.
 
 ## Development Conventions
 
@@ -162,7 +164,8 @@ npm run lint && npx tsc --noEmit && npm run build
 
 ### Testing expectations
 
-- No tests today. Don't fabricate a passing test run. For product changes, manually reason through the affected flow and keep the validation gate green.
+- A focused Vitest suite covers route-protection and profile-sanitization logic; extend it when you touch bug-prone or security-sensitive pure logic. Don't fabricate passing runs.
+- For UI/flow changes without unit coverage, manually reason through the affected flow and keep the validation gate green.
 - If a change is risky (payments, credits, auth, storage rules), call it out in the commit/notes and prefer the smallest safe change.
 
 ## Files and Systems Requiring Extra Caution

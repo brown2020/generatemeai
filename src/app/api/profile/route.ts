@@ -7,6 +7,7 @@ import {
   parseJsonBody,
   withAuth,
 } from "@/lib/api/server";
+import { stripServerControlledProfileFields } from "@/utils/profileFields";
 
 export const runtime = "nodejs";
 
@@ -33,8 +34,11 @@ const profileUpdateSchema = z.record(z.string(), z.unknown());
  */
 export const PATCH = withAuth(async (uid, request: NextRequest) => {
   const updates = await parseJsonBody(request, profileUpdateSchema);
+  // Never trust client-supplied credit values — credits are mutated only by
+  // payment processing and server-side deduction.
+  const sanitized = stripServerControlledProfileFields(updates);
   const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
-  await profileRef.set(updates, { merge: true });
+  await profileRef.set(sanitized, { merge: true });
   return jsonOk<void>(undefined);
 });
 

@@ -100,7 +100,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 
 ### Known limitations
 
-- **No automated tests and no CI.** Validation is `lint` + `tsc --noEmit` + `build` only. **(inferred.)**
+- **Minimal automated tests and no CI.** A small Vitest unit suite covers route-protection and profile-sanitization logic; the rest of the app is unverified by tests, and no CI pipeline runs them automatically. Validation is `lint` + `tsc --noEmit` + `npm test` + `build`. **(inferred.)**
 - **Public-image password is stored in plaintext** in the public doc — it deters casual access only and is not a real secret (documented in `README.md` and `firestore.rules`).
 - **Gallery has tag filtering and pagination but no free-text prompt search and no bulk operations.** **(inferred.)**
 - **No cost/credit preview before generating** — users don't see what an action will cost until after. **(inferred.)**
