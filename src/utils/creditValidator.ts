@@ -93,18 +93,3 @@ export async function deductCreditsServer(
     tx.update(profileRef, { credits: currentCredits - amount });
   });
 }
-
-/**
- * Throws an error if credits are insufficient (legacy client-trusted version).
- * @deprecated Use assertSufficientCreditsServer for server actions.
- */
-export const assertSufficientCredits = (
-  useCredits: boolean,
-  credits: number,
-  modelName: string
-): void => {
-  const result = validateCredits(useCredits, credits, modelName);
-  if (!result.valid) {
-    throw new Error(result.error);
-  }
-};

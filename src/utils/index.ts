@@ -11,7 +11,6 @@ export {
 } from "./apiKeyResolver";
 export {
   validateCredits,
-  assertSufficientCredits,
   assertSufficientCreditsServer,
   deductCreditsServer,
   getServerCredits,
