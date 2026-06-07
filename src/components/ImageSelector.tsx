@@ -106,9 +106,13 @@ const ImageListPage = () => {
     [router]
   );
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredImages.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  // Pagination calculations. `currentPage` is clamped to the available range
+  // during render so that shrinking the result set (e.g. via search/tag/type
+  // filters) can never leave a stale page index that slices past the end and
+  // renders an empty list / false "No images yet" state.
+  const totalPages = Math.max(1, Math.ceil(filteredImages.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
   const paginatedImages = filteredImages.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
@@ -140,7 +144,7 @@ const ImageListPage = () => {
           <>
             <ImageGrid images={paginatedImages} onImageClick={navigateToImage} />
             <Pagination
-              currentPage={currentPage}
+              currentPage={safePage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
             />
