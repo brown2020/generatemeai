@@ -88,7 +88,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 - **Next.js 16 App Router**, Node-runtime API routes do all privileged work; `src/proxy.ts` is a soft auth gate (cookie presence only). No `middleware.ts`.
 - **Client → `src/actions/*` (client wrappers) → `src/lib/api/client.ts` → `/api/*` route → Firebase Admin.** Uniform `ActionResult<T>` envelope; image generation streams NDJSON.
 - **Strategy Pattern** for image providers (`src/strategies`), **Model Registry** as single source of truth (`src/constants/modelRegistry.ts`), **Factory Pattern** for option sets.
-- **Server-side credits** (`creditValidator.ts`, transactional deduction); **Zod** validation at every boundary; **typed errors** + `ActionResult`.
+- **Server-side credits** (`creditValidator.ts`, transactional deduction); client profile updates are sanitized server-side (`PATCH /api/profile` strips `credits`) and image mutations are owner-scoped before touching the public mirror; **Zod** validation at every boundary; **typed errors** + `ActionResult`.
 - **Zustand** stores for auth/profile/generation/payments.
 - **Data model (Firestore)**: `users/{uid}` (auth metadata), `users/{uid}/profile/userData` (credits, keys, settings), `users/{uid}/payments/{id}`, `profiles/{uid}/covers/{id}` (gallery), `publicImages/{id}` (shared copies). Media in Storage under `generated/{uid}/*`, `image-references/{uid}/*`, served via signed URLs.
 
@@ -107,7 +107,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 - **No reproducibility controls** (seed) and **no upscaling** — both are table stakes for the category.
 - **`publicImages` exists but there is no community/discovery feed** — sharing is per-link only. **(inferred.)**
 - **Documentation/config drift**: `README.md` lists models/versions that no longer match the registry, and `.env.example` uses `NEXT_PUBLIC_CREDITS_PER_DALL-E_IMAGE` (hyphen) while the registry reads `NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE` (underscore), so the DALL·E credit-cost override is silently ignored. **(inferred.)**
-- **No `runway_ml_api_key` / `RUNWAYML_API_SECRET` and `ideogram` keys in `.env.example`** despite being in the registry/profile. **(inferred.)**
+- **`.env.example` is out of sync with the registry**: it is missing `RUNWAYML_API_SECRET` (Runway provider key) and `NEXT_PUBLIC_CREDITS_PER_FLUX_KONTEXT_PRO`, and still lists credit vars for removed models (`PLAYGROUND_V2`, `PLAYGROUND_V2_5`, `STABLE_DIFFUSION_XL`). `IDEOGRAM_API_KEY` is present. **(inferred.)**
 
 ---
 
@@ -170,5 +170,6 @@ Product-oriented, ordered by impact and dependency. Each item is sized for **one
 
 ## Appendix A — Historical notes
 
-- A prior code-quality hardening pass introduced Zod validation, runtime env validation, standardized error handling, and removed dead code. Those improvements are now part of the baseline architecture described in §2 and in `AGENTS.md`.
+- A prior code-quality pass introduced Zod validation and standardized error handling (now baseline). A later runtime env-validation helper (`utils/env.ts`) was added but never wired up and has since been removed as dead code along with several other orphaned files.
+- A stabilization/hardening pass fixed two verified authorization bugs (client credit-forging via `PATCH /api/profile`, and cross-user deletion of public images) and added a small Vitest suite for route-protection and profile sanitization. These are reflected in §2.
 - A competitive analysis of Leonardo.ai informed this roadmap. Key takeaways carried forward: cost transparency (M1), search/management table stakes (M2, M4), and open-source/BYOK + simplicity as differentiators (reflected in the product goals and M5–M8).

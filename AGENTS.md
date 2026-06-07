@@ -63,7 +63,7 @@ src/
 ├── strategies/          # image provider Strategy Pattern (dalle, stability, replicate, ideogram, fireworksKontext)
 ├── styles/tokens.ts     # design tokens
 ├── types/               # shared TS types
-├── utils/               # errors, validationSchemas, creditValidator, serverAuth, storage, env, promptUtils, polling, ...
+├── utils/               # errors, validationSchemas, creditValidator, profileFields, serverAuth, storage, promptUtils, polling, cn, ...
 └── zustand/             # stores: useAuthStore, useProfileStore, useGenerationStore, usePaymentsStore
 firestore.rules  storage.rules  next.config.mjs  eslint.config.mjs  .env.example
 ```
@@ -172,6 +172,8 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 - `src/proxy.ts` / `src/constants/routes.ts` — auth gating. Don't convert to `middleware.ts`.
 - `src/utils/creditValidator.ts` + `MODEL_REGISTRY` credit config — money/credits. Keep deductions server-side and transactional.
+- `src/app/api/profile/route.ts` + `src/utils/profileFields.ts` — `PATCH /api/profile` merges client-supplied fields, so it strips server-controlled fields (`credits`) via `stripServerControlledProfileFields`. Never let `credits` (or any future money field) be client-writable here.
+- `src/app/api/images/[imageId]/route.ts` — owner-scoped. `DELETE`/`PATCH` must verify the caller owns `profiles/{uid}/covers/{imageId}` **before** touching the global `publicImages/{imageId}` mirror, or any user could mutate another user's public image by id.
 - `src/utils/serverAuth.ts`, `src/app/api/auth/sync/route.ts` — auth/session cookie. Breaking these logs everyone out.
 - `firestore.rules`, `storage.rules` — security boundaries. Public image password is **stored in plaintext in the public doc; it is not a secret** — never treat it as one.
 - `src/app/api/payments/*`, `src/actions/paymentActions.ts`, `src/lib/stripe.ts` — Stripe. Validate `paymentIntentId`; never trust client amounts.
@@ -193,7 +195,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 A change is done when:
 
 1. It is a single, focused, PR-sized unit of work (see below).
-2. `npm run lint && npx tsc --noEmit && npm run build` passes (or any unavailable step is documented with reason).
+2. `npm run lint && npx tsc --noEmit && npm test && npm run build` passes (or any unavailable step is documented with reason).
 3. Server/client boundary, route protection, and credit/auth rules are respected.
 4. No new `any`, no dead code, no single-use abstractions, no narration comments.
 5. Docs touched by the change are updated (`README.md`, `spec.md`, this file).
