@@ -12,6 +12,7 @@ import {
   withAuth,
 } from "@/lib/api/server";
 import { saveGif } from "@/utils/storage";
+import { isAllowedStorageUrl } from "@/utils/storageUrl";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -66,6 +67,12 @@ function convertToGif(videoUrl: string): Promise<Buffer> {
  */
 export const POST = withAuth(async (uid, request: NextRequest) => {
   const { firebaseVideoUrl, id } = await parseJsonBody(request, bodySchema);
+
+  // Restrict ffmpeg's input to the user's own Storage media — blocks SSRF
+  // and file:// local-file reads via a crafted input URL.
+  if (!isAllowedStorageUrl(firebaseVideoUrl)) {
+    return jsonError("Unsupported video URL.", "VALIDATION_ERROR", 400);
+  }
 
   const videoBuffer = await convertToGif(firebaseVideoUrl);
 

@@ -6,6 +6,7 @@ import {
   deductCreditsServer,
 } from "@/utils/creditValidator";
 import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
+import { isAllowedStorageUrl } from "@/utils/storageUrl";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -24,6 +25,11 @@ const bodySchema = z.object({
  */
 export const POST = withAuth(async (uid, request: NextRequest) => {
   const { imageUrl, briaApiKey } = await parseJsonBody(request, bodySchema);
+
+  // Only fetch the user's own Storage media — blocks SSRF to internal hosts.
+  if (!isAllowedStorageUrl(imageUrl)) {
+    return jsonError("Unsupported image URL.", "VALIDATION_ERROR", 400);
+  }
 
   const { useCredits } = await assertSufficientCreditsServer(uid, "bria.ai");
   const apiKey = resolveApiKey("bria.ai", useCredits, briaApiKey);
