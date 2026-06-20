@@ -91,23 +91,25 @@ const useAuthToken = (cookieName = "authToken") => {
     };
   }, [lastTokenRefreshKey, scheduleTokenRefresh]);
 
-  // Sync user state with auth store and set cookie immediately
+  // Sync user state with auth store after the session cookie is ready.
   useEffect(() => {
+    if (loading) {
+      setAuthDetails({ authReady: false, authPending: true });
+      return;
+    }
+
     if (user?.uid) {
+      let isCurrentUser = true;
+
       setAuthDetails({
-        uid: user.uid,
-        authEmail: user.email || "",
-        authDisplayName: user.displayName || "",
-        authPhotoUrl: user.photoURL || "",
-        authEmailVerified: user.emailVerified || false,
-        authReady: true,
-        authPending: false,
+        authReady: false,
+        authPending: true,
       });
 
       (async () => {
         try {
           const token = await getIdToken(user);
-          if (!isMountedRef.current) return;
+          if (!isMountedRef.current || !isCurrentUser) return;
 
           setCookie(cookieName, token, {
             secure: process.env.NODE_ENV === "production",
@@ -115,6 +117,16 @@ const useAuthToken = (cookieName = "authToken") => {
             path: "/",
           });
           scheduleTokenRefresh();
+
+          setAuthDetails({
+            uid: user.uid,
+            authEmail: user.email || "",
+            authDisplayName: user.displayName || "",
+            authPhotoUrl: user.photoURL || "",
+            authEmailVerified: user.emailVerified || false,
+            authReady: true,
+            authPending: false,
+          });
 
           // Sync auth data server-side (fire-and-forget)
           syncAuthToFirestoreServer({
@@ -124,9 +136,24 @@ const useAuthToken = (cookieName = "authToken") => {
             emailVerified: user.emailVerified || false,
           });
         } catch {
-          // Token fetch failed — cookie will be absent so middleware will redirect
+          if (!isMountedRef.current || !isCurrentUser) return;
+          // Token fetch failed - cookie will be absent so protected routes redirect.
+          deleteCookie(cookieName, { path: "/" });
+          setAuthDetails({
+            uid: "",
+            authEmail: "",
+            authDisplayName: "",
+            authPhotoUrl: "",
+            authEmailVerified: false,
+            authReady: true,
+            authPending: false,
+          });
         }
       })();
+
+      return () => {
+        isCurrentUser = false;
+      };
     } else {
       // Important: auth can be "resolved" even when signed out.
       // We keep `authReady=true` so pages can safely decide between owner vs public reads
@@ -144,6 +171,7 @@ const useAuthToken = (cookieName = "authToken") => {
     }
   }, [
     cookieName,
+    loading,
     setAuthDetails,
     user,
     scheduleTokenRefresh,
