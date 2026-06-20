@@ -120,7 +120,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 ### Non-interactive testing rules
 
-- A small **Vitest** unit suite exists (`npm test` → `vitest run`); there is **no CI** wired yet. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`) and profile-update sanitization (`src/utils/profileFields.test.ts`).
+- A small **Vitest** unit suite exists (`npm test` → `vitest run`); there is **no CI** wired yet. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`), profile-update sanitization (`src/utils/profileFields.test.ts`), and storage URL allowlisting (`src/utils/storageUrl.test.ts`).
 - Always run tests in run mode (`vitest run` / `npm test`), never watch mode.
 - Never start dev servers or a headed browser as part of validation.
 - Never wait for manual login or interactive input.
@@ -164,7 +164,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 ### Testing expectations
 
-- A focused Vitest suite covers route-protection and profile-sanitization logic; extend it when you touch bug-prone or security-sensitive pure logic. Don't fabricate passing runs.
+- A focused Vitest suite covers route-protection, profile-sanitization, and storage URL allowlist logic; extend it when you touch bug-prone or security-sensitive pure logic. Don't fabricate passing runs.
 - For UI/flow changes without unit coverage, manually reason through the affected flow and keep the validation gate green.
 - If a change is risky (payments, credits, auth, storage rules), call it out in the commit/notes and prefer the smallest safe change.
 

@@ -100,7 +100,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 
 ### Known limitations
 
-- **Minimal automated tests and no CI.** A small Vitest unit suite covers route-protection and profile-sanitization logic; the rest of the app is unverified by tests, and no CI pipeline runs them automatically. Validation is `lint` + `tsc --noEmit` + `npm test` + `build`. **(inferred.)**
+- **Minimal automated tests and no CI.** A small Vitest unit suite covers route-protection, profile-sanitization, and storage URL allowlisting logic; the rest of the app is unverified by tests, and no CI pipeline runs them automatically. Validation is `lint` + `tsc --noEmit` + `npm test` + `build`. **(inferred.)**
 - **Public-image password is stored in plaintext** in the public doc — it deters casual access only and is not a real secret (documented in `README.md` and `firestore.rules`).
 - **Gallery has tag filtering and pagination but no free-text prompt search and no bulk operations.** **(inferred.)**
 - **No cost/credit preview before generating** — users don't see what an action will cost until after. **(inferred.)**
@@ -171,5 +171,5 @@ Product-oriented, ordered by impact and dependency. Each item is sized for **one
 ## Appendix A — Historical notes
 
 - A prior code-quality pass introduced Zod validation and standardized error handling (now baseline). A later runtime env-validation helper (`utils/env.ts`) was added but never wired up and has since been removed as dead code along with several other orphaned files.
-- A stabilization/hardening pass fixed two verified authorization bugs (client credit-forging via `PATCH /api/profile`, and cross-user deletion of public images) and added a small Vitest suite for route-protection and profile sanitization. These are reflected in §2.
+- A stabilization/hardening pass fixed two verified authorization bugs (client credit-forging via `PATCH /api/profile`, and cross-user deletion of public images) and added a small Vitest suite for route-protection, profile sanitization, and storage URL allowlisting. These are reflected in §2.
 - A competitive analysis of Leonardo.ai informed this roadmap. Key takeaways carried forward: cost transparency (M1), search/management table stakes (M2, M4), and open-source/BYOK + simplicity as differentiators (reflected in the product goals and M5–M8).
