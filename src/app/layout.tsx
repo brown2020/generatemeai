@@ -10,20 +10,20 @@ export const metadata: Metadata = {
     default: "Generate.me - AI Image Generation Platform",
   },
   description:
-    "Generate.me is a cutting-edge platform that turns your ideas into stunning visuals using AI models like DALL-E, Stable Diffusion, and more. Join today and start creating beautiful images effortlessly.",
+    "Generate.me turns your ideas into visuals using AI models like GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and more.",
   keywords: [
     "AI image generation",
     "create images with AI",
-    "DALL-E",
-    "Stable Diffusion",
+    "GPT Image",
+    "Stability SD3.5 Turbo",
     "AI art generator",
     "artistic styles",
     "AI image creation",
     "generate art",
     "creative AI platform",
     "text to image",
-    "Flux",
-    "Playground",
+    "FLUX",
+    "Ideogram",
   ],
   authors: [{ name: "Generate.me" }],
   creator: "Generate.me",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     siteName: "Generate.me",
     title: "Generate.me - AI Image Generation Platform",
     description:
-      "Turn your ideas into stunning visuals using AI models like DALL-E, Stable Diffusion, and more.",
+      "Turn your ideas into visuals using AI models like GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and more.",
     images: [
       {
         url: "/og-image.png",
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Generate.me - AI Image Generation Platform",
     description:
-      "Turn your ideas into stunning visuals using AI models like DALL-E, Stable Diffusion, and more.",
+      "Turn your ideas into visuals using AI models like GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and more.",
     images: ["/og-image.png"],
   },
   robots: {

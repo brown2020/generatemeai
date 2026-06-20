@@ -15,7 +15,7 @@ const features = [
     icon: Palette,
     title: "Multiple AI Models",
     description:
-      "Access DALL-E, Stable Diffusion, Flux, Ideogram, and more. Choose the perfect model for your creative vision.",
+      "Access GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and more. Choose the perfect model for your creative vision.",
   },
   {
     icon: Sparkles,

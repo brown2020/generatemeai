@@ -26,8 +26,7 @@ export default function AboutPage() {
           and watch it materialize as stunning images. With multiple
           state-of-the-art AI engines like{" "}
           <strong>
-            DALL-E, Stable Diffusion, Stability SD3-Turbo, Playground V2, and
-            Vertex Imagen AI
+            GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and FLUX Kontext
           </strong>{" "}
           integrated into the platform, the possibilities are endless.
         </p>
@@ -42,11 +41,11 @@ export default function AboutPage() {
         <p className="mt-4 text-lg text-gray-700">
           <span className="font-bold">Customizable and Shareable:</span> Every
           image you generate is stored on your profile, where you can{" "}
-          <strong>add tags</strong>, <strong>search and filter</strong> your
-          images, and <strong>regenerate</strong> them using the same or edited
-          prompts. You can also make your images <strong>sharable</strong> and
-          easily <strong>download</strong> or <strong>share</strong> them with
-          your friends, community, or social media followers.
+          <strong>add tags</strong>, <strong>filter</strong> your images, and
+          manage image details. You can also make your images{" "}
+          <strong>shareable</strong> and easily <strong>download</strong> or{" "}
+          <strong>share</strong> them with your friends, community, or social
+          media followers.
         </p>
         <p className="mt-4 text-lg text-gray-700">
           Whether you&apos;re experimenting with different styles, refining your
@@ -69,9 +68,9 @@ export default function AboutPage() {
           </li>
           <li>
             <strong>Choose Your Model:</strong> Select from a variety of
-            advanced AI models including DALL-E, Stable Diffusion, Stability
-            SD3-Turbo, Playground V2, or Vertex Imagen AI. Each model has its
-            own strengths in terms of style and detail.
+            advanced AI models including GPT Image, Stability SD3.5 Turbo,
+            FLUX, Ideogram, and FLUX Kontext. Each model has its own strengths
+            in terms of style and detail.
           </li>
           <li>
             <strong>Select Artistic Style:</strong> Add an artistic flair by
@@ -87,9 +86,8 @@ export default function AboutPage() {
           </li>
           <li>
             <strong>Manage Your Images:</strong> All images you generate will be
-            saved to your profile. Here, you can add custom tags, search,
-            filter, and edit or regenerate your images. You can also download
-            your creations and make them sharable.
+            saved to your profile. Here, you can add custom tags, filter your
+            gallery, download your creations, and make them shareable.
           </li>
           <li>
             <strong>Share Your Work:</strong> Share your art with the world! You
@@ -135,7 +133,7 @@ const faqData = [
   {
     question: "1. What is Generate.me?",
     answer:
-      "Generate.me is a powerful AI-based platform that allows users to create images from text descriptions using a variety of cutting-edge AI models like DALL-E, Stable Diffusion, and others.",
+      "Generate.me is a powerful AI-based platform that allows users to create images from text descriptions using models like GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and others.",
   },
   {
     question: "2. How do I generate an image?",
@@ -143,14 +141,14 @@ const faqData = [
       'Simply describe the image you want to create, select an AI model, choose an artistic style, and click "Generate". The AI will then produce an image based on your input.',
   },
   {
-    question: "3. Can I edit the images I’ve generated?",
+    question: "3. Can I manage the images I've generated?",
     answer:
-      "Yes! You can edit your prompt and regenerate an image using the same model, or try out different styles and AI models for new variations.",
+      "Yes. You can update tags, captions, background colors, sharing settings, and downloads from the image detail page.",
   },
   {
     question: "4. What are tags and how do I use them?",
     answer:
-      "Tags help you organize your generated images. You can add custom tags to each image, making it easier to search and filter through your creations later.",
+      "Tags help you organize your generated images. You can add custom tags to each image, making it easier to filter through your creations later.",
   },
   {
     question: "5. How can I share my images?",
@@ -170,7 +168,7 @@ const faqData = [
   {
     question: "8. Is there a limit to the number of images I can generate?",
     answer:
-      "Currently, we offer a set number of free generations per user. Additional image generations may require a subscription or credits, depending on your usage.",
+      "Image and video generation can use platform credits, or you can bring your own provider API keys and pay providers directly.",
   },
   {
     question: "9. Can I use my own API keys instead of buying credits?",
