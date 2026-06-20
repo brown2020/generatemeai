@@ -63,7 +63,7 @@
     "vitest": "^4.1.8"
   },
   "overrides": {
-    "uuid": ">=14.0.0",
+    "uuid": "9.0.1",
     "@tootallnate/once": ">=3.0.1"
   }
 }
