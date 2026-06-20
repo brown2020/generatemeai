@@ -69,7 +69,7 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
           >
             {isLoggedIn
               ? "Ready to create something amazing? Start generating images with our powerful AI models."
-              : "Create beautiful AI-generated images with DALL-E, Stable Diffusion, Flux, and more. No design skills required."}
+              : "Create beautiful AI-generated images with GPT Image, Stability SD3.5 Turbo, FLUX, and more. No design skills required."}
           </motion.p>
 
           {/* CTA Buttons */}

@@ -51,7 +51,7 @@ Built with modern React patterns, this project showcases best practices includin
 
 ### 🎨 Image Generation
 
-- **Multiple AI Models**: Support for DALL-E, Stable Diffusion XL, Flux Schnell, Ideogram, and more
+- **Multiple AI Models**: Support for GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and more
 - **Style Customization**: 20+ artistic styles from Renaissance to Contemporary Art
 - **Advanced Parameters**: Control lighting, color scheme, perspective, composition, medium, and mood
 - **Image-to-Image**: Use reference images to guide generation (supported models)
@@ -70,7 +70,7 @@ Built with modern React patterns, this project showcases best practices includin
 - **Firebase Authentication**: Google Sign-In, email/password, and passwordless email links
 - **Profile Management**: Store and manage multiple API keys securely
 - **Credit System**: Pay-per-use credit system or bring your own API keys
-- **Image History**: Browse, search, and manage all generated content
+- **Image History**: Browse, filter, and manage generated content
 
 ### 💳 Payment Integration
 
@@ -82,7 +82,7 @@ Built with modern React patterns, this project showcases best practices includin
 
 - **Image Sharing**: Share generated images publicly with optional password protection
 - **Social Sharing**: Share to Facebook, Twitter, LinkedIn, and Email
-- **Tags & Categories**: Organize and search generated content
+- **Tags & Categories**: Organize and filter generated content
 
 ---
 
@@ -90,15 +90,13 @@ Built with modern React patterns, this project showcases best practices includin
 
 ### Image Generation
 
-| Model                   | Provider                     | Features                         |
-| ----------------------- | ---------------------------- | -------------------------------- |
-| **DALL-E**              | OpenAI                       | Text-to-image, high quality      |
-| **Stable Diffusion XL** | Fireworks AI                 | Text-to-image, image-to-image    |
-| **SD3-Turbo**           | Stability AI                 | Fast generation, text-to-image   |
-| **Playground V2**       | Fireworks AI                 | Aesthetic-focused generation     |
-| **Playground V2.5**     | Fireworks AI                 | Enhanced 1024px aesthetic output |
-| **Flux Schnell**        | Replicate (Blackforest Labs) | Fast, high-quality generation    |
-| **Ideogram AI**         | Ideogram                     | Text rendering, typography       |
+| Model                         | Provider                     | Features                         |
+| ----------------------------- | ---------------------------- | -------------------------------- |
+| **GPT Image**                 | OpenAI                       | Text-to-image, image-to-image    |
+| **Stability SD3.5 Turbo**     | Stability AI                 | Fast generation, negative prompt |
+| **FLUX.2 Pro**                | Replicate (Black Forest Labs) | High-quality generation          |
+| **Ideogram 3.0**              | Ideogram                     | Text rendering, typography       |
+| **FLUX Kontext Pro**          | Fireworks AI                 | Text-to-image, image-to-image    |
 
 ### Video Generation
 
@@ -195,13 +193,6 @@ Built with modern React patterns, this project showcases best practices includin
 | [React Share](https://github.com/nygardk/react-share)                          | 5.1.0   | Social sharing buttons   |
 | [react-textarea-autosize](https://github.com/Andarist/react-textarea-autosize) | 8.5.3   | Auto-resizing textarea   |
 | [react-cookie-consent](https://github.com/Mastermindzh/react-cookie-consent)   | 10.0.1  | Cookie consent banner    |
-
-### Utilities
-
-| Package                                                     | Version | Description                 |
-| ----------------------------------------------------------- | ------- | --------------------------- |
-| [cookies-next](https://github.com/andreizanik/cookies-next) | 6.1.1   | Cookie handling for Next.js |
-| [formdata-node](https://github.com/octet-stream/form-data)  | 6.0.3   | FormData implementation     |
 
 ### Development
 
@@ -337,6 +328,7 @@ STABILITY_API_KEY=sk-...
 IDEOGRAM_API_KEY=...
 DID_API_KEY=...
 BRIA_AI_API_KEY=...
+RUNWAYML_API_SECRET=...
 ```
 
 ### Stripe Configuration (For payments)
@@ -351,11 +343,9 @@ NEXT_PUBLIC_STRIPE_PRODUCT_NAME=...
 
 ```env
 NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE=4
-NEXT_PUBLIC_CREDITS_PER_STABLE_DIFFUSION_XL_IMAGE=4
 NEXT_PUBLIC_CREDITS_PER_STABILITY_SD3_TURBO_IMAGE=4
-NEXT_PUBLIC_CREDITS_PER_PLAYGROUND_V2_IMAGE=4
-NEXT_PUBLIC_CREDITS_PER_PLAYGROUND_V2_5_IMAGE=4
 NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL=4
+NEXT_PUBLIC_CREDITS_PER_FLUX_KONTEXT_PRO=4
 NEXT_PUBLIC_CREDITS_PER_D_ID=50
 NEXT_PUBLIC_CREDITS_PER_RUNWAY=4
 NEXT_PUBLIC_CREDITS_PER_IDEOGRAM=4
@@ -480,7 +470,6 @@ generatemeai/
 │   │   ├── useAuthLogic.ts          # Auth form state/handlers
 │   │   ├── useAuthToken.ts          # JWT token management
 │   │   ├── useImageGenerator.ts     # Image generation orchestration
-│   │   ├── useGenerationHistory.ts  # Save to Firestore
 │   │   ├── useNavigation.ts         # Navigation utilities
 │   │   ├── usePreviewSaver.ts       # Preview saving logic
 │   │   ├── useSpeechRecognition.ts  # Web Speech API integration
@@ -491,9 +480,9 @@ generatemeai/
 │   ├── strategies/                  # AI provider strategies (Strategy Pattern)
 │   │   ├── types.ts                 # Strategy interface
 │   │   ├── index.ts                 # Strategy registry & lookup
-│   │   ├── dalle.ts                 # OpenAI DALL-E
-│   │   ├── fireworks.ts             # Fireworks AI (SDXL, Playground)
-│   │   ├── replicate.ts             # Replicate (Flux Schnell)
+│   │   ├── dalle.ts                 # OpenAI GPT Image
+│   │   ├── fireworksKontext.ts      # Fireworks AI (FLUX Kontext)
+│   │   ├── replicate.ts             # Replicate (FLUX)
 │   │   ├── stability.ts             # Stability AI (SD3-Turbo)
 │   │   └── ideogram.ts              # Ideogram AI
 │   │
@@ -505,7 +494,6 @@ generatemeai/
 │   │   ├── generation.ts            # Generation types
 │   │   ├── model.ts                 # Model types
 │   │   ├── menu.ts                  # Menu types
-│   │   ├── promptdata.ts            # Prompt data types
 │   │   └── [type declarations]      # .d.ts files
 │   │
 │   ├── utils/                       # Utility functions
@@ -515,15 +503,13 @@ generatemeai/
 │   │   ├── creditValidator.ts       # Credit validation
 │   │   ├── promptUtils.ts           # Prompt building
 │   │   ├── promptOptimizer.ts       # AI prompt enhancement (GPT-4)
-│   │   ├── firestoreValidation.ts   # Runtime Firestore validation
 │   │   ├── validationSchemas.ts     # Zod schemas
-│   │   ├── actionWrapper.ts         # Server action utilities
 │   │   ├── formDataBuilder.ts       # FormData construction
 │   │   ├── imageUtils.ts            # Image utilities
 │   │   ├── storage.ts               # Storage utilities
 │   │   ├── platform.ts              # Platform detection
 │   │   ├── polling.ts               # Async polling utilities
-│   │   └── env.ts                   # Environment variable helpers
+│   │   └── storageUrl.ts            # Storage URL allowlist guard
 │   │
 │   └── zustand/                     # State management stores
 │       ├── useAuthStore.ts          # Authentication state
@@ -557,11 +543,11 @@ export const MODEL_REGISTRY = {
   "dall-e": {
     id: 1,
     value: "dall-e",
-    label: "DALL-E (OpenAI)",
+    label: "GPT Image (OpenAI)",
     type: "image",
     credits: { envKey: "NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE", fallback: 4 },
     apiKey: { envKey: "OPENAI_API_KEY", formDataKey: "openAPIKey" },
-    capabilities: { supportsImageUpload: false, ... },
+    capabilities: { supportsImageUpload: true, ... },
     strategyKey: "dalle",
   },
   // ... other models
@@ -634,7 +620,6 @@ Hooks are organized by domain and responsibility:
 | `useAuthLogic`         | Auth form state and handlers     |
 | `useAuthToken`         | JWT token management and refresh |
 | `useImageGenerator`    | Orchestrates image generation    |
-| `useGenerationHistory` | Saves generation to Firestore    |
 | `useNavigation`        | Shared navigation logic          |
 | `usePreviewSaver`      | Save images as previews          |
 | `useSpeechRecognition` | Web Speech API integration       |
@@ -875,10 +860,10 @@ This project is licensed under the GNU Affero General Public License v3.0. See t
 
 ## Acknowledgments
 
-- [OpenAI](https://openai.com/) for DALL-E and GPT-4
-- [Fireworks AI](https://fireworks.ai/) for Stable Diffusion hosting
-- [Replicate](https://replicate.com/) for Flux Schnell
-- [Stability AI](https://stability.ai/) for SD3-Turbo
+- [OpenAI](https://openai.com/) for GPT Image and GPT prompt/tag features
+- [Fireworks AI](https://fireworks.ai/) for FLUX Kontext
+- [Replicate](https://replicate.com/) for FLUX
+- [Stability AI](https://stability.ai/) for SD3.5 Turbo
 - [D-ID](https://www.d-id.com/) for talking avatar technology
 - [Runway](https://runwayml.com/) for video generation
 - [Vercel](https://vercel.com/) for the AI SDK and hosting platform

@@ -100,14 +100,13 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 
 ### Known limitations
 
-- **Minimal automated tests and no CI.** A small Vitest unit suite covers route-protection, profile-sanitization, and storage URL allowlisting logic; the rest of the app is unverified by tests, and no CI pipeline runs them automatically. Validation is `lint` + `tsc --noEmit` + `npm test` + `build`. **(inferred.)**
+- **Minimal automated tests and no CI.** A small Vitest unit suite covers route-protection, model registry env documentation, profile-sanitization, and storage URL allowlisting logic; the rest of the app is unverified by tests, and no CI pipeline runs them automatically. Validation is `lint` + `tsc --noEmit` + `npm test` + `build`. **(inferred.)**
 - **Public-image password is stored in plaintext** in the public doc — it deters casual access only and is not a real secret (documented in `README.md` and `firestore.rules`).
 - **Gallery has tag filtering and pagination but no free-text prompt search and no bulk operations.** **(inferred.)**
 - **No cost/credit preview before generating** — users don't see what an action will cost until after. **(inferred.)**
 - **No reproducibility controls** (seed) and **no upscaling** — both are table stakes for the category.
 - **`publicImages` exists but there is no community/discovery feed** — sharing is per-link only. **(inferred.)**
-- **Documentation/config drift**: `README.md` lists models/versions that no longer match the registry, and `.env.example` uses `NEXT_PUBLIC_CREDITS_PER_DALL-E_IMAGE` (hyphen) while the registry reads `NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE` (underscore), so the DALL·E credit-cost override is silently ignored. **(inferred.)**
-- **`.env.example` is out of sync with the registry**: it is missing `RUNWAYML_API_SECRET` (Runway provider key) and `NEXT_PUBLIC_CREDITS_PER_FLUX_KONTEXT_PRO`, and still lists credit vars for removed models (`PLAYGROUND_V2`, `PLAYGROUND_V2_5`, `STABLE_DIFFUSION_XL`). `IDEOGRAM_API_KEY` is present. **(inferred.)**
+- **Registry/env drift guard exists.** A unit test verifies `.env.example` lists every provider API key and exactly the public credit env vars declared in `MODEL_REGISTRY`, preventing the DALL·E/GPT Image credit-key typo and removed-model credit vars from returning. **(inferred.)**
 
 ---
 
@@ -117,8 +116,8 @@ Product-oriented, ordered by impact and dependency. Each item is sized for **one
 
 ### M1 — Credit/cost preview before generating
 - **User value**: Removes the #1 frustration in this category (surprise cost). Users see exactly what a generation will cost before committing.
-- **Implementation intent**: In the generate screen, read `creditsToMinus(model)` and `imageCount` (client-safe; credit costs are public env values) to show "This will use N credits" next to the Generate button, plus the resulting balance. When BYOK is active, show "Using your own {provider} key — no credits" instead. Disable/condition the button when credits are insufficient. As part of this PR, fix the `.env.example` `DALL-E` credit key typo so overrides actually apply.
-- **Acceptance criteria**: Cost (or BYOK notice) is visible and updates live with model/imageCount changes; insufficient-credit state is clearly communicated; `.env.example` credit keys match the registry; gate passes.
+- **Implementation intent**: In the generate screen, read `creditsToMinus(model)` and `imageCount` (client-safe; credit costs are public env values) to show "This will use N credits" next to the Generate button, plus the resulting balance. When BYOK is active, show "Using your own {provider} key — no credits" instead. Disable/condition the button when credits are insufficient.
+- **Acceptance criteria**: Cost (or BYOK notice) is visible and updates live with model/imageCount changes; insufficient-credit state is clearly communicated; gate passes.
 
 ### M2 — Gallery prompt search
 - **User value**: Table-stakes findability; users can locate past work by what they typed, not just tags.
@@ -172,4 +171,5 @@ Product-oriented, ordered by impact and dependency. Each item is sized for **one
 
 - A prior code-quality pass introduced Zod validation and standardized error handling (now baseline). A later runtime env-validation helper (`utils/env.ts`) was added but never wired up and has since been removed as dead code along with several other orphaned files.
 - A stabilization/hardening pass fixed two verified authorization bugs (client credit-forging via `PATCH /api/profile`, and cross-user deletion of public images) and added a small Vitest suite for route-protection, profile sanitization, and storage URL allowlisting. These are reflected in §2.
+- A codebase-improvement pass aligned `.env.example`, README model docs, and public model copy with `MODEL_REGISTRY`, and added `src/constants/modelRegistry.test.ts` so removed-model credit vars and missing provider env vars are caught locally.
 - A competitive analysis of Leonardo.ai informed this roadmap. Key takeaways carried forward: cost transparency (M1), search/management table stakes (M2, M4), and open-source/BYOK + simplicity as differentiators (reflected in the product goals and M5–M8).
