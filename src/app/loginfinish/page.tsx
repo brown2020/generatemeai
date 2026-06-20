@@ -1,20 +1,20 @@
 "use client";
 
-import { useAuthStore } from "@/zustand/useAuthStore";
-import { isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
+import {
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  updateProfile as updateFirebaseProfile,
+} from "firebase/auth";
 import { auth } from "@/firebase/firebaseClient";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FirebaseError } from "firebase/app";
-import useProfileStore from "@/zustand/useProfileStore";
 import { STORAGE_KEYS } from "@/constants/storage";
 import { ClipLoader } from "react-spinners";
 import toast from "react-hot-toast";
 
 export default function LoginFinishPage() {
   const router = useRouter();
-  const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
-  const updateProfile = useProfileStore((s) => s.updateProfile);
   const [status, setStatus] = useState<"loading" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -50,12 +50,10 @@ export default function LoginFinishPage() {
           throw new Error("No user found");
         }
 
-        setAuthDetails({
-          uid,
-          authEmail,
-          authDisplayName: selectedName,
-        });
-        updateProfile({ displayName: selectedName });
+        if (selectedName && user.displayName !== selectedName) {
+          await updateFirebaseProfile(user, { displayName: selectedName });
+        }
+
         toast.success("Successfully signed in!");
         router.replace("/generate");
       } catch (error) {
@@ -77,7 +75,7 @@ export default function LoginFinishPage() {
     }
 
     attemptSignIn();
-  }, [router, setAuthDetails, updateProfile]);
+  }, [router]);
 
   if (status === "error") {
     return (
