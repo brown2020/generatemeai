@@ -1,5 +1,7 @@
 # Generate.me AI
 
+<!-- Deploy test marker: 2026-06-20 -->
+
 <p align="center">
   <img src="public/favicon.ico" alt="Generate.me Logo" width="80" height="80">
 </p>
