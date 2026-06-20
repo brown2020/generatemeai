@@ -11,28 +11,29 @@
 
 ## Current State
 
-- Phase: Preflight and Repo Docs
-- Task: T-001/T-002
+- Phase: Baseline Validation
+- Task: T-003
 - Status: In progress
 - Last command: git diff --check
 - Last result: passed
-- Last pushed commit: b07e7e5908553840aced545d279a43695046066e
-- Branch sync: dev matched origin/dev before run-report edits; dry-run push returned "Everything up-to-date"
-- Working tree: dirty with safe in-scope preflight docs/report updates
-- Next action: Commit and push preflight docs/report
+- Last pushed commit: 9c0f29e78993533ce1456041cece5d2394ecd6e1
+- Branch sync: dev matched origin/dev before baseline report edits
+- Working tree: dirty with safe in-scope baseline report updates
+- Next action: Inspect diff, commit and push baseline report
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| AGENTS.md | Safe-to-commit | Current-state test documentation update |
-| spec.md | Safe-to-commit | Current-state test documentation update |
-| agent-runs/2026-06-20-codebase-pass/ | Safe-to-commit | Required codebase-improvement run reports |
+| agent-runs/2026-06-20-codebase-pass/01-preflight-and-repo-docs.md | Safe-to-commit | Baseline addendum for transient build rerun |
+| agent-runs/2026-06-20-codebase-pass/02-baseline-validation.md | Safe-to-commit | Baseline validation report |
+| agent-runs/2026-06-20-codebase-pass/run-state.md | Safe-to-commit | Current phase ledger |
+| agent-runs/2026-06-20-codebase-pass/task-queue.md | Safe-to-commit | Baseline status and package findings |
 
 ## Blockers
 
-- Build cannot complete in the current sandbox because Turbopack attempts to bind a local port during CSS processing and receives "Operation not permitted". Lint, typecheck, and tests passed; record build as environment-blocked for this checkpoint.
+- None.
 
 ## Deferred Items
 
-- None.
+- Package vulnerabilities and outdated dependencies are queued for findings/package cleanup review.
