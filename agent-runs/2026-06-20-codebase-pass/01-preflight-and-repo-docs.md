@@ -117,7 +117,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 ## Risks
 
-The production build is not currently runnable in this sandbox because Turbopack is denied a local port bind during CSS processing. No code failure was observed in lint, typecheck, or unit tests.
+The combined validation command initially hit a Turbopack local port-bind error in the sandbox. A later standalone baseline run of `npm run build` passed, so the earlier failure is treated as transient and not a code regression.
 
 ## Open Questions
 

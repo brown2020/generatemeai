@@ -2,7 +2,7 @@
 
 | ID | Trigger | What Happened | Skill Root Cause | Proposed Change | Classification | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| SI-001 | None yet | N/A | N/A | N/A | N/A | Pending |
+| SI-001 | Turbopack build sandbox port-bind failure | Canonical validation failed until temporary network permission allowed the Next/Turbopack build worker to bind a local port. | Low-interruption guidance does not mention local build tools that need loopback/network permission. | Consider adding a note to request temporary network permission when a local build fails with a sandbox port-bind error, then rerun the exact gate before classifying the build as unavailable. | Propose | Recorded; not applied because one repo/run is limited evidence |
 
 ## Applied Updates
 
@@ -17,4 +17,4 @@
 
 ## Proposed Future Updates
 
-- None.
+- Consider updating the codebase-improvement low-interruption or validation guidance with a small sandbox note for Turbopack/Next builds that fail on local port binding under restricted network permissions.
