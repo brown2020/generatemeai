@@ -6,13 +6,13 @@ import { PulseLoader } from "react-spinners";
 import { artStyles } from "@/constants/artStyles";
 import {
   ASPECT_RATIOS,
-  creditsToMinus,
   getImageModels,
   getMaxImages,
   supportsAspectRatio,
   supportsNegativePrompt,
   type Model,
 } from "@/constants/modelRegistry";
+import { generationCreditCost } from "@/utils/creditCost";
 import { PaginatedGrid } from "@/components/common/PaginatedGrid";
 import { ModelCard, StyleCard } from "@/components/generation/SelectableCard";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
@@ -81,7 +81,7 @@ export function GenerationOptions({
   const showNegativePrompt = supportsNegativePrompt(formState.model);
   const maxImages = getMaxImages(formState.model);
   const creditCost = useMemo(
-    () => creditsToMinus(formState.model) * formState.imageCount,
+    () => generationCreditCost(formState.model, formState.imageCount),
     [formState.model, formState.imageCount]
   );
 

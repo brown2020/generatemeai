@@ -25,16 +25,13 @@ export interface ProfileType {
   ideogram_api_key: string;
 }
 
-const DEFAULT_CREDITS = 1000;
-const MIN_CREDITS_THRESHOLD = 100;
-
 const defaultProfile: ProfileType = {
   email: "",
   contactEmail: "",
   displayName: "",
   photoUrl: "",
   emailVerified: false,
-  credits: DEFAULT_CREDITS,
+  credits: 0,
   fireworks_api_key: "",
   openai_api_key: "",
   stability_api_key: "",
@@ -67,10 +64,7 @@ const createProfileFromAuth = (
     ? { ...defaultProfile, ...serverData }
     : { ...defaultProfile };
 
-  const credits =
-    typeof baseProfile.credits === "number" && baseProfile.credits >= MIN_CREDITS_THRESHOLD
-      ? baseProfile.credits
-      : DEFAULT_CREDITS;
+  const credits = typeof baseProfile.credits === "number" ? baseProfile.credits : 0;
 
   return {
     ...defaultProfile,

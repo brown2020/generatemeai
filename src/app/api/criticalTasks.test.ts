@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextRequest as NextRequestCtor } from "next/server";
 import { memory } from "@/test/memoryFirestore";
 import { CREDIT_PACK } from "@/constants/creditPack";
+import { generationCreditCost, STARTING_CREDITS } from "@/utils/creditCost";
 import { FirestorePaths } from "@/firebase/paths";
 
 const testAuth = vi.hoisted(() => ({ uid: "user-a" }));
@@ -449,5 +450,34 @@ describe("critical routes", () => {
     expect(failed.status).toBe(500);
     expect(memory.docs.get(profilePath)?.credits).toBe(50);
     expect(memory.docs.has(FirestorePaths.userPayment("user-a", "pi_pack"))).toBe(false);
+  });
+
+  it("grants a pack on top of the starting balance when no profile exists yet", async () => {
+    stripeMock.retrieve.mockResolvedValue(succeededIntent());
+    const response = await processPayment(
+      jsonPost("http://localhost/api/payments/process", { paymentIntentId: "pi_pack" })
+    );
+    expect(response.status).toBe(200);
+    expect(memory.docs.get(profilePath)?.credits).toBe(STARTING_CREDITS + CREDIT_PACK.credits);
+  });
+
+  it("writes the starting balance once and then returns the stored balance, including a low one", async () => {
+    const created = await getProfile();
+    expect((await created.json()).data.credits).toBe(STARTING_CREDITS);
+    expect(memory.docs.get(profilePath)?.credits).toBe(STARTING_CREDITS);
+
+    const again = await getProfile();
+    expect((await again.json()).data.credits).toBe(STARTING_CREDITS);
+
+    memory.docs.set(profilePath, { credits: 40, useCredits: true });
+    const low = await getProfile();
+    expect((await low.json()).data.credits).toBe(40);
+
+    memory.reset();
+    const events = await readEvents(await generateImage(imageForm("dall-e", 1)));
+    expect(events.some((event) => event.status === "complete")).toBe(true);
+    expect(memory.docs.get(profilePath)?.credits).toBe(
+      STARTING_CREDITS - generationCreditCost("dall-e", 1)
+    );
   });
 });

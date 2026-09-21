@@ -28,7 +28,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 - **Styling**: Tailwind CSS 4 (`@tailwindcss/postcss`, no `tailwind.config.ts` — config is CSS-first in `globals.css`), Framer Motion
 - **State**: Zustand 5
 - **Backend**: Firebase 12 client SDK + Firebase Admin 13 (Auth, Firestore, Storage)
-- **AI**: Vercel AI SDK 6 (`ai`, `@ai-sdk/openai`, `@ai-sdk/rsc`), Replicate SDK, plus direct REST calls (Stability, Ideogram, Fireworks, D-ID, RunwayML, Bria)
+- **AI**: Vercel AI SDK 6 (`ai`, `@ai-sdk/openai`), Replicate SDK, plus direct REST calls (Stability, Ideogram, Fireworks, D-ID, RunwayML, Bria)
 - **Payments**: Stripe 22 (`stripe`, `@stripe/react-stripe-js`, `@stripe/stripe-js`)
 - **Validation**: Zod 4
 - **Media**: `sharp`, `fluent-ffmpeg` + `ffmpeg-static` (GIF), `dom-to-image`

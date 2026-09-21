@@ -9,6 +9,7 @@ const providers = vi.hoisted(() => ({
   tagsFail: false,
   sourceFails: false,
   briaFails: false,
+  calls: 0,
 }));
 
 vi.mock("@/firebase/firebaseAdmin", async () => {
@@ -32,6 +33,7 @@ vi.mock("@/utils/storage", () => ({
 
 vi.mock("ai", () => ({
   generateText: async () => {
+    providers.calls += 1;
     if (providers.tagsFail) throw new Error("tag provider failed");
     return { text: "red, boat, water, sky, calm, dusk" };
   },
@@ -43,7 +45,9 @@ vi.mock("@ai-sdk/openai", () => ({
 
 import { POST as generateVideo } from "@/app/api/generate/video/route";
 import { POST as generateTags } from "@/app/api/generate/tags/route";
+import { POST as optimizePrompt } from "@/app/api/generate/optimize-prompt/route";
 import { POST as removeBackground } from "@/app/api/generate/background-removal/route";
+import { generationCreditCost } from "@/utils/creditCost";
 
 const profilePath = FirestorePaths.userProfile("user-a");
 const sourceUrl = "https://storage.googleapis.com/bucket/source.png";
@@ -70,6 +74,16 @@ function videoRequest() {
   body.set("audio", "Matthew");
   return asRequest(
     new Request("http://localhost/api/generate/video", { method: "POST", body })
+  );
+}
+
+function optimizeRequest(apiKey?: string) {
+  return asRequest(
+    new Request("http://localhost/api/generate/optimize-prompt", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt: "a red boat", apiKey }),
+    })
   );
 }
 
@@ -105,6 +119,7 @@ describe("credit reservation", () => {
     providers.tagsFail = false;
     providers.sourceFails = false;
     providers.briaFails = false;
+    providers.calls = 0;
     process.env.DID_API_KEY = "test-did";
     process.env.OPENAI_API_KEY = "test-openai";
     process.env.BRIA_AI_API_KEY = "test-bria";
@@ -154,6 +169,27 @@ describe("credit reservation", () => {
     const statuses = [first.status, second.status].sort();
     expect(statuses).toEqual([200, 500]);
     expect(credits()).toBe(0);
+  });
+
+  it("charges prompt optimization and does not call the platform key without a debit or a user key", async () => {
+    seedProfile(10);
+    const success = await optimizePrompt(optimizeRequest());
+    expect(success.status).toBe(200);
+    expect(credits()).toBe(10 - generationCreditCost("chatgpt", 1));
+    expect(providers.calls).toBe(1);
+
+    providers.tagsFail = true;
+    const failure = await optimizePrompt(optimizeRequest());
+    expect(failure.status).toBe(500);
+    expect(credits()).toBe(10 - generationCreditCost("chatgpt", 1));
+
+    providers.tagsFail = false;
+    providers.calls = 0;
+    seedProfile(10, false);
+    const byok = await optimizePrompt(optimizeRequest());
+    expect(byok.status).toBe(400);
+    expect(credits()).toBe(10);
+    expect(providers.calls).toBe(0);
   });
 
   it("charges finished tags and refunds when the provider fails", async () => {

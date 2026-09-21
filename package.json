@@ -11,9 +11,6 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.53",
-    "@ai-sdk/rsc": "^2.0.168",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.3.0",
     "@types/dom-to-image": "^2.6.7",
