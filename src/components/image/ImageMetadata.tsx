@@ -22,7 +22,9 @@ const MetadataRow = ({ label, value }: { label: string; value?: string }) => {
  */
 export const ImageMetadata = ({ imageData }: ImageMetadataProps) => {
   const timestampValue = imageData?.timestamp?.seconds
-    ? new Date(imageData.timestamp.seconds * 1000).toLocaleString()
+    ? new Date(imageData.timestamp.seconds * 1000).toLocaleString("en-US", {
+        timeZone: "UTC",
+      })
     : undefined;
 
   return (
@@ -60,7 +62,7 @@ export const ImageMetadata = ({ imageData }: ImageMetadataProps) => {
             <img
               className="w-32 h-32 object-cover rounded-md border-2 border-black-600"
               src={imageData?.imageReference || imageData?.downloadUrl}
-              alt="image reference used"
+              alt={imageData?.freestyle || "Reference used for this generation"}
             />
           </div>
         )}

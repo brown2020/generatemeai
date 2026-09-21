@@ -70,7 +70,8 @@ export const GeneratedImagePreview = ({
         <div className="grid grid-cols-4 gap-2">
           {imageUrls.map((url, i) => (
             <button
-              key={i}
+              key={url}
+              type="button"
               onClick={() => {
                 setSelectedIndex(i);
                 onSelectImage?.(url);

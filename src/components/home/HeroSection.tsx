@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui";
 import AuthComponent from "@/components/AuthComponent";
 
@@ -17,6 +17,7 @@ interface HeroSectionProps {
  */
 export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
   return (
+    <LazyMotion features={domAnimation}>
     <section className="relative overflow-hidden bg-white">
       {/* Subtle gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-gray-50" />
@@ -28,7 +29,7 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 lg:py-40">
         <div className="text-center max-w-4xl mx-auto">
           {/* Badge */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -36,10 +37,10 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
           >
             <Sparkles className="h-4 w-4" />
             <span>AI-Powered Image Generation</span>
-          </motion.div>
+          </m.div>
 
           {/* Heading */}
-          <motion.h1
+          <m.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -58,10 +59,10 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
                 <span className="text-blue-600">stunning visuals</span>
               </>
             )}
-          </motion.h1>
+          </m.h1>
 
           {/* Subheading */}
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -70,10 +71,10 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
             {isLoggedIn
               ? "Ready to create something amazing? Start generating images with our powerful AI models."
               : "Create beautiful AI-generated images with GPT Image, Stability SD3.5 Turbo, FLUX, and more. No design skills required."}
-          </motion.p>
+          </m.p>
 
           {/* CTA Buttons */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
@@ -96,22 +97,23 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
                 </Link>
               </>
             )}
-          </motion.div>
+          </m.div>
 
           {/* Trust indicators */}
           {!isLoggedIn && (
-            <motion.p
+            <m.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
               className="mt-8 text-sm text-gray-500"
             >
               No credit card required. 1000 free credits to start.
-            </motion.p>
+            </m.p>
           )}
         </div>
       </div>
     </section>
+    </LazyMotion>
   );
 }
 

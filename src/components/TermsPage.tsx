@@ -5,14 +5,12 @@ type Props = {
   updatedAt: string;
 };
 
-export default function Terms({
+function TermsIntro({
   companyName,
-  companyEmail,
   privacyLink,
-  updatedAt,
-}: Props) {
+}: Pick<Props, "companyName" | "privacyLink">) {
   return (
-    <div className="text-wrapper">
+    <>
       <h3>Terms of Service</h3>
 
       <p>
@@ -212,6 +210,17 @@ export default function Terms({
         interest that may have already accrued on an amount that is later
         refunded.
       </p>
+    </>
+  );
+}
+
+function TermsBilling({
+  companyName,
+  companyEmail,
+  privacyLink,
+}: Pick<Props, "companyName" | "companyEmail" | "privacyLink">) {
+  return (
+    <>
       <h4>Subscriptions</h4>
       <p>
         Certain Paid Services are subscription-based purchases, to which the
@@ -459,6 +468,17 @@ export default function Terms({
         FOR ANY CLAIM, WHETHER IN CONTRACT, TORT, OR UNDER ANY OTHER THEORY OF
         LIABILITY, IN EXCESS OF $100.
       </p>
+    </>
+  );
+}
+
+function TermsLegal({
+  companyName,
+  companyEmail,
+  updatedAt,
+}: Pick<Props, "companyName" | "companyEmail" | "updatedAt">) {
+  return (
+    <>
       <h4>Precautions</h4>
       <p className="uppercase">
         THE SERVICES ARE NOT A MEDICAL DEVICE AND YOU EXPRESSLY AGREE THAT THE
@@ -708,6 +728,29 @@ export default function Terms({
         modification, suspension, or discontinuance of the Services.
       </p>
       <h5>Last Updated: {updatedAt}</h5>
+    </>
+  );
+}
+
+export default function Terms({
+  companyName,
+  companyEmail,
+  privacyLink,
+  updatedAt,
+}: Props) {
+  return (
+    <div className="text-wrapper">
+      <TermsIntro companyName={companyName} privacyLink={privacyLink} />
+      <TermsBilling
+        companyName={companyName}
+        companyEmail={companyEmail}
+        privacyLink={privacyLink}
+      />
+      <TermsLegal
+        companyName={companyName}
+        companyEmail={companyEmail}
+        updatedAt={updatedAt}
+      />
     </div>
   );
 }

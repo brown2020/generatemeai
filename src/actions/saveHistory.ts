@@ -2,6 +2,7 @@ import { apiPost } from "@/lib/api/client";
 import type { ActionResult } from "@/utils/errors";
 
 interface SaveHistoryParams {
+  id?: string;
   freestyle: string;
   style: string;
   downloadUrl: string;

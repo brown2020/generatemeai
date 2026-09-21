@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import TextareaAutosize from "react-textarea-autosize";
 import Select, { SingleValue } from "react-select";
@@ -72,15 +72,20 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
     return defaultValue;
   };
 
-  const [mode, setMode] = useState<VideoMode>(getInitialMode());
-  const [scriptPrompt, setScriptPrompt] = useState(
+  const [mode, setMode] = useState<VideoMode>(() => getInitialMode());
+  const [scriptPrompt, setScriptPrompt] = useState(() =>
     getInitialValue("scriptPrompt", "")
   );
   const [videoModel, setVideoModel] = useState<Model>(
-    getInitialValue("videoModel", "d-id") as Model
+    () => getInitialValue("videoModel", "d-id") as Model
   );
-  const [audio, setAudio] = useState(getInitialValue("audio", "Matthew"));
-  const [animation, setAnimation] = useState(
+  const audioRef = useRef("Matthew");
+  useEffect(() => {
+    if (initialData && typeof initialData !== "boolean" && initialData.audio) {
+      audioRef.current = initialData.audio;
+    }
+  }, [initialData]);
+  const [animation, setAnimation] = useState(() =>
     getInitialValue("animation", "nostalgia")
   );
   const [loading, setLoading] = useState(false);
@@ -100,7 +105,7 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
       formData.append("credits", credits.toString());
       formData.append("scriptPrompt", scriptPrompt);
       formData.append("videoModel", videoModel);
-      formData.append("audio", audio);
+      formData.append("audio", audioRef.current);
       formData.append("imageUrl", downloadUrl);
       formData.append("animationType", animation);
 
@@ -218,10 +223,11 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
               />
             )}
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-900">
+              <label htmlFor="video-model" className="block mb-2 text-sm font-medium text-gray-900">
                 Models
               </label>
               <Select<ModelConfig>
+                inputId="video-model"
                 isClearable={true}
                 isSearchable={true}
                 name="videoModel"
@@ -237,16 +243,19 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
             </div>
             {mode === "video" && currentModelConfig?.capabilities.hasAudio && (
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-900">
+                <label htmlFor="video-audio" className="block mb-2 text-sm font-medium text-gray-900">
                   Audio
                 </label>
                 <Select
+                  inputId="video-audio"
                   isClearable
                   isSearchable
                   name="audio"
                   onChange={(
                     v: SingleValue<{ label: string; value: string }>
-                  ) => setAudio(v ? v.value : "Matthew")}
+                  ) => {
+                    audioRef.current = v ? v.value : "Matthew";
+                  }}
                   defaultValue={{ label: "Matthew", value: "Matthew" }}
                   options={audios.map((audio) => ({
                     label: audio.label,
@@ -259,10 +268,11 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
             {mode === "animation" &&
               currentModelConfig?.capabilities.hasAnimationType && (
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                  <label htmlFor="video-animation" className="block mb-2 text-sm font-medium text-gray-900">
                     Animation
                   </label>
                   <Select
+                    inputId="video-animation"
                     isClearable
                     isSearchable
                     name="animation"

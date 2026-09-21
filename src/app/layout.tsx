@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://www.generate.me",
+    url: "/",
     siteName: "Generate.me",
     title: "Generate.me - AI Image Generation Platform",
     description:

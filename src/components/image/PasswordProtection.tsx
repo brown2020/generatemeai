@@ -30,7 +30,11 @@ export const PasswordProtection = ({
       <h2 className="text-xl mb-4">
         This image is password-protected. Please enter the password to view:
       </h2>
+      <label htmlFor="view-password" className="block text-sm font-medium text-gray-700 mb-1">
+        Password
+      </label>
       <input
+        id="view-password"
         type="password"
         value={enteredPassword}
         onChange={(e) => setEnteredPassword(e.target.value)}

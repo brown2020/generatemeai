@@ -14,9 +14,9 @@ export const useUrlSync = () => {
   const hasInitialized = useRef(false);
 
   useEffect(() => {
-    // Only run once on mount to prevent re-syncing on every render
     if (hasInitialized.current) return;
     hasInitialized.current = true;
+    const controller = new AbortController();
 
     // Get stable action reference from the store
     const { updateField } = useGenerationStore.getState();
@@ -66,27 +66,26 @@ export const useUrlSync = () => {
     if (params.mood) updateField("mood", params.mood);
 
     // Load image reference asynchronously
-    if (params.imageReference) {
-      loadImageFromUrl(params.imageReference, (file) =>
-        updateField("uploadedImage", file)
-      );
+    const imageReference = params.imageReference;
+    if (imageReference) {
+      void (async () => {
+        try {
+          const response = await fetch(imageReference, {
+            signal: controller.signal,
+          });
+          if (!response.ok) return;
+          const blob = await response.blob();
+          const file = new File([blob], "reference-image.jpg", {
+            type: blob.type,
+          });
+          updateField("uploadedImage", file);
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          console.error("Failed to load image from URL:", error);
+        }
+      })();
     }
+
+    return () => controller.abort();
   }, [searchParams]);
 };
-
-/**
- * Loads an image from a URL and sets it as the uploaded image.
- */
-async function loadImageFromUrl(
-  url: string,
-  setUploadedImage: (file: File | null) => void
-): Promise<void> {
-  try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const file = new File([blob], "reference-image.jpg", { type: blob.type });
-    setUploadedImage(file);
-  } catch (error) {
-    console.error("Failed to load image from URL:", error);
-  }
-}

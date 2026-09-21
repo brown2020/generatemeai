@@ -3,14 +3,34 @@
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { usePaymentsStore } from "@/zustand/usePaymentsStore";
 import useProfileStore from "@/zustand/useProfileStore";
-import { useEffect } from "react";
-import { isIOSReactNativeWebView } from "@/utils/platform";
+import { useEffect, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+
+function subscribeToWebView() {
+  return () => {};
+}
+
+function readNativeWebView() {
+  return typeof window.ReactNativeWebView !== "undefined";
+}
+
+function formatPaymentDate(createdAt: unknown): string {
+  let date: Date | null = null;
+  if (createdAt && typeof createdAt === "object" && "toDate" in createdAt) {
+    date = (createdAt as { toDate: () => Date }).toDate();
+  } else if (createdAt && typeof createdAt === "object" && "_seconds" in createdAt) {
+    date = new Date((createdAt as { _seconds: number })._seconds * 1000);
+  }
+  if (!date) return "N/A";
+  return date.toLocaleDateString("en-US", { timeZone: "UTC" });
+}
 
 export default function PaymentsPage() {
   const uid = useAuthStore((state) => state.uid);
   const { payments, paymentsLoading, paymentsError, fetchPayments } =
     usePaymentsStore();
   const profile = useProfileStore((state) => state.profile);
+  const router = useRouter();
 
   useEffect(() => {
     if (uid) {
@@ -19,10 +39,16 @@ export default function PaymentsPage() {
   }, [uid, fetchPayments]);
 
   const handleBuyCredits = () => {
-    window.location.href = "/payment-attempt";
+    router.push("/payment-attempt");
   };
 
-  if (isIOSReactNativeWebView()) {
+  const isNativeApp = useSyncExternalStore(
+    subscribeToWebView,
+    readNativeWebView,
+    () => false
+  );
+
+  if (isNativeApp) {
     return null;
   }
 
@@ -73,13 +99,7 @@ export default function PaymentsPage() {
                 {payments.map((payment) => (
                   <tr key={payment.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {payment.createdAt
-                        ? typeof payment.createdAt === "object" && "toDate" in payment.createdAt
-                          ? (payment.createdAt as { toDate: () => Date }).toDate().toLocaleDateString()
-                          : typeof payment.createdAt === "object" && "_seconds" in payment.createdAt
-                            ? new Date((payment.createdAt as { _seconds: number })._seconds * 1000).toLocaleDateString()
-                            : "N/A"
-                        : "N/A"}
+                      {formatPaymentDate(payment.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {payment.currency || '$'}{(payment.amount / 100).toFixed(2)}

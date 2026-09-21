@@ -99,6 +99,7 @@ export const useImageGenerator = () => {
         imageUrl: string;
         imageUrls: string[];
         imageReference?: string;
+        coverId?: string;
       } | null = null;
       let errorMessage: string | null = null;
 
@@ -147,6 +148,7 @@ export const useImageGenerator = () => {
 
       if (downloadURL) {
         await saveGenerationHistory({
+          ...(result.coverId ? { id: result.coverId } : {}),
           freestyle: generationState.imagePrompt,
           style: generationState.imageStyle,
           downloadUrl: downloadURL,

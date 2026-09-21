@@ -47,9 +47,10 @@ const ImageCard = memo(function ImageCard({ image, onClick }: ImageCardProps) {
   const hasVideo = !!image.videoDownloadUrl;
 
   return (
-    <div
+    <button
+      type="button"
       className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden 
-        hover:shadow-md transition-shadow cursor-pointer"
+        hover:shadow-md transition-shadow cursor-pointer text-left w-full"
       onClick={onClick}
     >
       <div className="aspect-square relative">
@@ -91,9 +92,9 @@ const ImageCard = memo(function ImageCard({ image, onClick }: ImageCardProps) {
             className="mt-2 flex gap-1.5 flex-wrap max-h-20 overflow-y-auto 
             scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
           >
-            {image.tags.map((tag: string, index: number) => (
+            {image.tags.map((tag: string) => (
               <span
-                key={index}
+                key={tag}
                 className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs"
               >
                 {tag}
@@ -102,6 +103,6 @@ const ImageCard = memo(function ImageCard({ image, onClick }: ImageCardProps) {
           </div>
         )}
       </div>
-    </div>
+    </button>
   );
 });

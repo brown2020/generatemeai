@@ -6,6 +6,7 @@ import {
   updateProfile as updateFirebaseProfile,
 } from "firebase/auth";
 import { auth } from "@/firebase/firebaseClient";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FirebaseError } from "firebase/app";
@@ -15,10 +16,12 @@ import toast from "react-hot-toast";
 
 export default function LoginFinishPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<"loading" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "error" | "success">("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
+    let ignore = false;
+
     async function attemptSignIn() {
       try {
         if (!isSignInWithEmailLink(auth, window.location.href)) {
@@ -40,6 +43,7 @@ export default function LoginFinishPage() {
           email,
           window.location.href
         );
+        if (ignore) return;
 
         const user = userCredential.user;
         const authEmail = user?.email;
@@ -53,10 +57,12 @@ export default function LoginFinishPage() {
         if (selectedName && user.displayName !== selectedName) {
           await updateFirebaseProfile(user, { displayName: selectedName });
         }
+        if (ignore) return;
 
         toast.success("Successfully signed in!");
-        router.replace("/generate");
+        setStatus("success");
       } catch (error) {
+        if (ignore) return;
         let message = "Unknown error signing in";
         if (error instanceof FirebaseError) {
           message = error.message;
@@ -68,14 +74,17 @@ export default function LoginFinishPage() {
         setErrorMessage(message);
         toast.error(message);
       } finally {
-        // Clean up localStorage
         window.localStorage.removeItem(STORAGE_KEYS.EMAIL);
         window.localStorage.removeItem(STORAGE_KEYS.NAME);
       }
     }
 
     attemptSignIn();
-  }, [router]);
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   if (status === "error") {
     return (
@@ -83,11 +92,26 @@ export default function LoginFinishPage() {
         <div className="text-red-500 text-lg font-medium">Sign in failed</div>
         <p className="text-gray-600 text-center max-w-md">{errorMessage}</p>
         <button
+          type="button"
           onClick={() => router.push("/")}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           Return to Home
         </button>
+      </div>
+    );
+  }
+
+  if (status === "success") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
+        <p className="text-gray-700 text-lg">You are signed in.</p>
+        <Link
+          href="/generate"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Continue
+        </Link>
       </div>
     );
   }

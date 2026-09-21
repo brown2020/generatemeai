@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui";
 
 interface CTASectionProps {
@@ -14,9 +14,10 @@ interface CTASectionProps {
  */
 export function CTASection({ isLoggedIn }: CTASectionProps) {
   return (
+    <LazyMotion features={domAnimation}>
     <section className="py-24 bg-gray-900">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <motion.h2
+        <m.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -24,9 +25,9 @@ export function CTASection({ isLoggedIn }: CTASectionProps) {
           className="text-3xl md:text-4xl font-bold text-white"
         >
           Ready to start creating?
-        </motion.h2>
+        </m.h2>
 
-        <motion.p
+        <m.p
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -36,9 +37,9 @@ export function CTASection({ isLoggedIn }: CTASectionProps) {
           {isLoggedIn
             ? "Jump back into your creative flow and generate something amazing."
             : "Join thousands of creators using AI to bring their ideas to life. Start for free today."}
-        </motion.p>
+        </m.p>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -54,10 +55,10 @@ export function CTASection({ isLoggedIn }: CTASectionProps) {
               {isLoggedIn ? "Go to Studio" : "Get Started Free"}
             </Button>
           </Link>
-        </motion.div>
+        </m.div>
 
         {!isLoggedIn && (
-          <motion.p
+          <m.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -65,10 +66,11 @@ export function CTASection({ isLoggedIn }: CTASectionProps) {
             className="mt-6 text-sm text-gray-500"
           >
             No credit card required. Cancel anytime.
-          </motion.p>
+          </m.p>
         )}
       </div>
     </section>
+    </LazyMotion>
   );
 }
 

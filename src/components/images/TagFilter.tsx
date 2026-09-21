@@ -25,13 +25,14 @@ export const TagFilter = ({
         Tags
       </div>
       <div className="flex gap-2 flex-wrap max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-        {allTags.map((tag, index) => (
+        {allTags.map((tag) => (
           <button
-            key={index}
+            key={tag}
+            type="button"
             onClick={() => onToggleTag(tag)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
               ${
-                selectedTags.includes(tag)
+                new Set(selectedTags).has(tag)
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}

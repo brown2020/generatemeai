@@ -4,6 +4,7 @@ interface ImageGenerationData {
   imageUrl: string;
   imageUrls: string[];
   imageReference?: string;
+  coverId?: string;
 }
 
 /**

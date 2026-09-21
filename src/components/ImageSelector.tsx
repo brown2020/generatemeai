@@ -29,40 +29,49 @@ const ImageListPage = () => {
   const authPending = useAuthStore((s) => s.authPending);
 
   useEffect(() => {
+    let ignore = false;
+
     const fetchImages = async () => {
-      if (uid && !authPending) {
-        try {
-          setIsLoading(true);
-          const q = query(
-            collection(db, "profiles", uid, "covers"),
-            orderBy("timestamp", "desc")
-          );
-          const querySnapshot = await getDocs(q);
-          const fetchedImages: ImageListItem[] = [];
-          const tagsSet = new Set<string>();
+      if (!uid || authPending) {
+        setIsLoading(false);
+        return;
+      }
 
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            fetchedImages.push({ id: doc.id, ...data } as ImageListItem);
+      try {
+        setIsLoading(true);
+        const q = query(
+          collection(db, "profiles", uid, "covers"),
+          orderBy("timestamp", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        if (ignore) return;
 
-            if (Array.isArray(data.tags)) {
-              data.tags.forEach((tag: string) => {
-                tagsSet.add(tag.trim().toLowerCase());
-              });
-            }
-          });
+        const fetchedImages: ImageListItem[] = [];
+        const tagsSet = new Set<string>();
 
-          setImages(fetchedImages);
-          setAllTags(Array.from(tagsSet));
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          fetchedImages.push({ id: doc.id, ...data } as ImageListItem);
+
+          if (Array.isArray(data.tags)) {
+            data.tags.forEach((tag: string) => {
+              tagsSet.add(tag.trim().toLowerCase());
+            });
+          }
+        });
+
+        setImages(fetchedImages);
+        setAllTags(Array.from(tagsSet));
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchImages();
+
+    return () => {
+      ignore = true;
+    };
   }, [uid, authPending]);
 
   // Memoized filtered images to prevent recalculation on every render

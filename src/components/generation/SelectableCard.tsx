@@ -33,8 +33,9 @@ export const SelectableCard = memo(function SelectableCard({
   const handleImgError = useCallback(() => setImgError(true), []);
 
   return (
-    <div
-      className={`relative flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition-all
+    <button
+      type="button"
+      className={`relative flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition-colors
         ${
           isSelected
             ? "border-blue-600 bg-blue-50"
@@ -83,7 +84,7 @@ export const SelectableCard = memo(function SelectableCard({
           </svg>
         </div>
       )}
-    </div>
+    </button>
   );
 });
 

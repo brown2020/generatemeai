@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useRef, useMemo, useEffect } from "react";
+import { ChangeEvent, useRef, useState, useEffect } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import {
   Mic,
@@ -40,21 +40,19 @@ export const PromptInput = ({
   uploadedImage,
 }: PromptInputProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Create object URL for preview and clean up on unmount or file change
-  const previewUrl = useMemo(() => {
-    if (!uploadedImage) return null;
-    return URL.createObjectURL(uploadedImage);
-  }, [uploadedImage]);
-
-  // Clean up object URL when it changes or component unmounts
   useEffect(() => {
+    if (!uploadedImage) return;
+    const url = URL.createObjectURL(uploadedImage);
+    const showPreview = () => setPreviewUrl(url);
+    const frame = requestAnimationFrame(showPreview);
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      cancelAnimationFrame(frame);
+      URL.revokeObjectURL(url);
+      setPreviewUrl(null);
     };
-  }, [previewUrl]);
+  }, [uploadedImage]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -82,7 +80,7 @@ export const PromptInput = ({
           onChange={onChange}
           className="block w-full px-4 py-3 pr-32 text-lg border-2 border-blue-200 
             rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 
-            transition-all duration-200 ease-in-out"
+            transition-colors duration-200 ease-in-out"
         />
 
         <div className="absolute bottom-3 right-3 flex items-center gap-2">
@@ -92,7 +90,7 @@ export const PromptInput = ({
               onClick={handleUploadClick}
               className="group relative inline-flex items-center justify-center w-9 h-9 
                 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 
-                transition-all duration-200 hover:shadow-md"
+                transition-colors duration-200 hover:shadow-md"
               title="Upload reference image"
             >
               <ImagePlus className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
@@ -103,7 +101,7 @@ export const PromptInput = ({
             type="button"
             onClick={onToggleRecording}
             className={`group relative inline-flex items-center justify-center w-9 h-9 
-              rounded-lg transition-all duration-200 hover:shadow-md
+              rounded-lg transition-colors duration-200 hover:shadow-md
               ${
                 isRecording
                   ? "bg-red-50 hover:bg-red-100 border border-red-200"
@@ -123,7 +121,7 @@ export const PromptInput = ({
             onClick={onOptimize}
             disabled={!value || isOptimizing}
             className={`group relative inline-flex items-center justify-center w-9 h-9 
-              rounded-lg transition-all duration-200 hover:shadow-md
+              rounded-lg transition-colors duration-200 hover:shadow-md
               ${
                 !value || isOptimizing
                   ? "bg-gray-100 cursor-not-allowed"

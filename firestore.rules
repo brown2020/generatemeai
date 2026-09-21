@@ -2,6 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Client reads:
+    // - profiles/{uid}/covers (owner list, ordered by timestamp)
+    // - profiles/{uid}/covers/{id} and publicImages/{id} (single gets)
+    // Credits, payments, covers, and the public mirror are written with the
+    // Admin SDK, which bypasses these rules. The client SDK is in the bundle,
+    // so a client write allow is a real write path.
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -10,79 +17,26 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    /**
-     * Returns true if the currently authenticated user owns the "cover" doc with the same id.
-     * This is how we securely authorize writes to `publicImages/{imageId}` even though that path
-     * does not include a uid segment.
-     */
-    function hasCoverWithId(imageId) {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/profiles/$(request.auth.uid)/covers/$(imageId));
-    }
-
-    // -----------------------------------------------------------------------
-    // Users: auth state + profile + payments (private to the authenticated user)
-    // -----------------------------------------------------------------------
-
+    // users/{uid} plus profile/userData and payments/{id}. Owner read only.
     match /users/{uid} {
       allow get: if isOwner(uid);
-
-      // Users can create/update their own base user doc, but cannot set privilege flags from the client.
-      allow create, update: if isOwner(uid)
-        && !(
-          // Block client-side privilege escalation / entitlement fields.
-          request.resource.data.keys().hasAny(['isAdmin', 'isAllowed', 'isInvited', 'premium'])
-        );
-
-      allow delete: if isOwner(uid);
     }
 
-    // Any subcollections under the user's document are private to that user.
     match /users/{uid}/{document=**} {
-      allow read, write: if isOwner(uid);
+      allow read: if isOwner(uid);
     }
 
-    // -----------------------------------------------------------------------
-    // Generated content (private by default): profiles/{uid}/covers/{id}
-    // -----------------------------------------------------------------------
-
+    // profiles/{uid}/covers/{id}. Owner read only. A client-created cover
+    // would also satisfy any future public-image ownership check.
     match /profiles/{uid}/{document=**} {
-      allow read, write: if isOwner(uid);
+      allow read: if isOwner(uid);
     }
 
-    // -----------------------------------------------------------------------
-    // Public share: publicImages/{imageId}
-    // - Anyone can read a sharable image doc.
-    // - Only the owner (who has the matching cover doc) can create/update/delete it.
-    // -----------------------------------------------------------------------
+    // publicImages are read through GET /api/images/:id (Admin SDK).
+    // The client SDK must not read or list them.
 
-    match /publicImages/{imageId} {
-      // Allow direct fetch of a single public image doc.
-      //
-      // Why unconditional? When a doc doesn't exist (private/unshared), Firestore returns
-      // PERMISSION_DENIED if `get` isn't allowed, which surfaces as a noisy console error.
-      // We enforce the invariant that docs in `publicImages/*` are only created/updated with
-      // `isSharable == true`, so allowing `get` does not expose private content.
-      allow get: if true;
-
-      // Block public collection browsing by default (you can loosen this if you add a public gallery).
-      allow list: if false;
-
-      allow create, update: if hasCoverWithId(imageId)
-        && request.resource.data.isSharable == true
-        && request.resource.data.id == imageId;
-
-      // Allow owner to unpublish.
-      allow delete: if hasCoverWithId(imageId);
-    }
-
-    // -----------------------------------------------------------------------
-    // Default deny
-    // -----------------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
-
-

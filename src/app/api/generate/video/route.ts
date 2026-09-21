@@ -5,6 +5,7 @@ import { videoGenerationSchema, parseFormData } from "@/utils/validationSchemas"
 import {
   assertSufficientCreditsServer,
   deductCreditsServer,
+  refundCreditsServer,
 } from "@/utils/creditValidator";
 import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
 import { pollWithTimeout } from "@/utils/polling";
@@ -72,7 +73,12 @@ async function generateDIdVideo(
     body: JSON.stringify(body),
   });
 
-  const result: DIdResponse = await response.json();
+  if (!response.ok) {
+    const errorBody = (await response.json()) as DIdResponse;
+    throw new Error(errorBody.description || "D-ID API Token is invalid.");
+  }
+
+  const result = (await response.json()) as DIdResponse;
   if (!result.id) {
     throw new Error(result.description || "D-ID API Token is invalid.");
   }
@@ -86,6 +92,9 @@ async function generateDIdVideo(
           authorization: `Basic ${apiKey}`,
         },
       });
+      if (!res.ok) {
+        return (await res.json()) as DIdResponse;
+      }
       return res.json();
     },
     (r) => !!r.result_url || !!r.error,
@@ -123,7 +132,12 @@ async function generateRunwayVideo(
     }
   );
 
-  const result: RunwayResponse = await response.json();
+  if (!response.ok) {
+    const errorBody = (await response.json()) as RunwayResponse;
+    throw new Error(errorBody.error?.description || "Failed to start RunwayML generation");
+  }
+
+  const result = (await response.json()) as RunwayResponse;
   if (!result.id) throw new Error("Failed to start RunwayML generation");
 
   const finalResult = await pollWithTimeout<RunwayResponse>(
@@ -137,6 +151,9 @@ async function generateRunwayVideo(
           },
         }
       );
+      if (!res.ok) {
+        return (await res.json()) as RunwayResponse;
+      }
       return res.json();
     },
     (r) => r.status === "SUCCEEDED" || !!r.error,
@@ -199,30 +216,41 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
     );
   }
 
-  let videoUrl: string;
-  if (videoModel === "d-id") {
-    videoUrl = await generateDIdVideo(
-      imageUrl,
-      scriptPrompt ?? null,
-      audio ?? null,
-      animationType ?? null,
-      apiKey
-    );
-  } else if (videoModel === "runway-ml") {
-    videoUrl = await generateRunwayVideo(imageUrl, apiKey);
-  } else {
-    return jsonError(
-      `Unsupported video model: ${videoModel}`,
-      "INVALID_INPUT",
-      400
-    );
+  let chargedAmount = 0;
+  try {
+    // Reserve before the provider so overlapping requests cannot spend the same balance.
+    if (useCredits) {
+      const cost = creditsToMinus(videoModel);
+      await deductCreditsServer(uid, cost);
+      chargedAmount = cost;
+    }
+
+    let videoUrl: string;
+    if (videoModel === "d-id") {
+      videoUrl = await generateDIdVideo(
+        imageUrl,
+        scriptPrompt ?? null,
+        audio ?? null,
+        animationType ?? null,
+        apiKey
+      );
+    } else if (videoModel === "runway-ml") {
+      videoUrl = await generateRunwayVideo(imageUrl, apiKey);
+    } else {
+      throw new ValidationError(`Unsupported video model: ${videoModel}`);
+    }
+
+    const savedVideoUrl = await saveVideoFromUrl(videoUrl);
+    chargedAmount = 0;
+    return jsonOk({ videoUrl: savedVideoUrl });
+  } catch (error) {
+    if (chargedAmount > 0) {
+      try {
+        await refundCreditsServer(uid, chargedAmount);
+      } catch (refundError) {
+        console.error("[api] credit refund failed", refundError);
+      }
+    }
+    return errorToResponse(error);
   }
-
-  const savedVideoUrl = await saveVideoFromUrl(videoUrl);
-
-  if (useCredits) {
-    await deductCreditsServer(uid, creditsToMinus(videoModel));
-  }
-
-  return jsonOk({ videoUrl: savedVideoUrl });
 });

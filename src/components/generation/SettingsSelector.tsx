@@ -48,7 +48,7 @@ export const SettingsSelector = memo(function SettingsSelector({
 
   return (
     <div className="space-y-2 relative">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <p className="text-sm font-medium text-gray-700">{label}</p>
       <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
         {options.map((option) => {
           const isSelected = currentValue === option.label;

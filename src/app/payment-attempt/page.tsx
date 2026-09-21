@@ -1,6 +1,7 @@
 "use client";
 
 import PaymentCheckoutPage from "@/components/PaymentCheckoutPage";
+import { CREDIT_PACK } from "@/constants/creditPack";
 import convertToSubcurrency from "@/utils/convertToSubcurrency";
 
 import { Elements } from "@stripe/react-stripe-js";
@@ -13,7 +14,7 @@ if (process.env.NEXT_PUBLIC_STRIPE_KEY === undefined) {
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY);
 
 export default function PaymentAttempt() {
-  const amount = 99.99;
+  const amount = CREDIT_PACK.displayDollars;
 
   return (
     <Elements

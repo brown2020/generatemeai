@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { MessageSquare, Wand2, Image } from "lucide-react";
 
 const steps = [
@@ -32,11 +32,12 @@ const steps = [
  */
 export function HowItWorks() {
   return (
+    <LazyMotion features={domAnimation}>
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2
+          <m.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -44,8 +45,8 @@ export function HowItWorks() {
             className="text-3xl md:text-4xl font-bold text-gray-900"
           >
             How it works
-          </motion.h2>
-          <motion.p
+          </m.h2>
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -53,13 +54,13 @@ export function HowItWorks() {
             className="mt-4 text-lg text-gray-600"
           >
             Create stunning images in three simple steps
-          </motion.p>
+          </m.p>
         </div>
 
         {/* Steps */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
           {steps.map((step, index) => (
-            <motion.div
+            <m.div
               key={step.number}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -93,11 +94,12 @@ export function HowItWorks() {
                   {step.description}
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </div>
     </section>
+    </LazyMotion>
   );
 }
 

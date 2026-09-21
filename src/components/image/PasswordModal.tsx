@@ -22,7 +22,11 @@ export const PasswordModal = ({
         <h2 className="text-xl font-semibold mb-4">
           Make Sharable with Password (Optional)
         </h2>
+        <label htmlFor="share-password" className="block text-sm font-medium text-gray-700 mb-1">
+          Password
+        </label>
         <input
+          id="share-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

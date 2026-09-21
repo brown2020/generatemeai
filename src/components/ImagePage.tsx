@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useSyncExternalStore } from "react";
 import { processVideoToGIF } from "@/actions/generateGif";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import toast from "react-hot-toast";
@@ -197,41 +197,132 @@ const ImagePage = ({ id }: ImagePageProps) => {
     );
   }
 
-  const currentPageUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/images/${id}`
-      : "";
   const hasVideo = !!imageData?.videoDownloadUrl;
   const isGif = getFileTypeFromUrl(imageData?.videoDownloadUrl || "") === "gif";
 
   return (
+    <ImagePageContent
+      id={id}
+      uid={uid}
+      profile={profile}
+      fetchProfile={fetchProfile}
+      imageData={imageData}
+      isOwner={isOwner}
+      isSharable={isSharable}
+      tags={tags}
+      caption={caption}
+      backgroundColor={backgroundColor}
+      setTags={setTags}
+      hasVideo={hasVideo}
+      isGif={isGif}
+      loading={loading}
+      password={password}
+      setPassword={setPassword}
+      modalState={modalState}
+      setActiveModal={setActiveModal}
+      closeModal={closeModal}
+      handleToggleSharable={handleToggleSharable}
+      handleDelete={handleDelete}
+      onCaptionChange={onCaptionChange}
+      onChangeBackground={onChangeBackground}
+      handleBackgroundRemove={handleBackgroundRemove}
+      handleTryAgain={handleTryAgain}
+      handleCreateGif={handleCreateGif}
+    />
+  );
+};
+
+interface ImagePageContentProps {
+  id: string;
+  uid: string;
+  profile: ReturnType<typeof useProfileStore.getState>["profile"];
+  fetchProfile: () => Promise<void>;
+  imageData: ImageData | null | false;
+  isOwner: boolean;
+  isSharable: boolean;
+  tags: string[];
+  caption: string;
+  backgroundColor: string;
+  setTags: (tags: string[]) => void;
+  hasVideo: boolean;
+  isGif: boolean;
+  loading: boolean;
+  password: string;
+  setPassword: (password: string) => void;
+  modalState: {
+    showPasswordModal: boolean;
+    showColorPicker: boolean;
+    isVideoModalOpen: boolean;
+  };
+  setActiveModal: (modal: ModalType) => void;
+  closeModal: () => void;
+  handleToggleSharable: () => void;
+  handleDelete: () => void;
+  onCaptionChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onChangeBackground: (color: string) => void;
+  handleBackgroundRemove: () => void;
+  handleTryAgain: () => void;
+  handleCreateGif: () => void;
+}
+
+function ImagePageContent({
+  id,
+  uid,
+  profile,
+  fetchProfile,
+  imageData,
+  isOwner,
+  isSharable,
+  tags,
+  caption,
+  backgroundColor,
+  setTags,
+  hasVideo,
+  isGif,
+  loading,
+  password,
+  setPassword,
+  modalState,
+  setActiveModal,
+  closeModal,
+  handleToggleSharable,
+  handleDelete,
+  onCaptionChange,
+  onChangeBackground,
+  handleBackgroundRemove,
+  handleTryAgain,
+  handleCreateGif,
+}: ImagePageContentProps) {
+  const origin = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => "https://www.generate.me"
+  );
+  const pageUrl = `${origin}/images/${id}`;
+
+  if (!imageData || typeof imageData === "boolean") return null;
+
+  return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
-      {imageData && (
-        <ImageViewer
-          imageData={imageData as ImageData}
-          backgroundColor={backgroundColor}
-        />
-      )}
+      <ImageViewer imageData={imageData} backgroundColor={backgroundColor} />
 
-      {imageData && isSharable && <SocialShare url={currentPageUrl} />}
+      {isSharable && <SocialShare url={pageUrl} />}
 
-      {imageData && (
-        <ImageActions
-          imageData={imageData as ImageData}
-          isOwner={isOwner}
-          isSharable={isSharable}
-          uid={uid}
-          onToggleSharable={handleToggleSharable}
-          onDelete={handleDelete}
-          onShowPasswordModal={() => setActiveModal("password")}
-        />
-      )}
+      <ImageActions
+        imageData={imageData}
+        isOwner={isOwner}
+        isSharable={isSharable}
+        uid={uid}
+        onToggleSharable={handleToggleSharable}
+        onDelete={handleDelete}
+        onShowPasswordModal={() => setActiveModal("password")}
+      />
 
-      {imageData && <ImageMetadata imageData={imageData as ImageData} />}
+      <ImageMetadata imageData={imageData} />
 
-      {uid && isOwner && imageData && (
+      {uid && isOwner && (
         <TagManager
-          imageData={imageData as ImageData}
+          imageData={imageData}
           tags={tags}
           setTags={setTags}
           imageId={id}
@@ -242,9 +333,9 @@ const ImagePage = ({ id }: ImagePageProps) => {
         />
       )}
 
-      {imageData && uid && (
+      {uid && (
         <ImagePageOwnerActions
-          imageData={imageData as ImageData}
+          imageData={imageData}
           isOwner={isOwner}
           hasVideo={hasVideo}
           isGif={isGif}
@@ -276,6 +367,6 @@ const ImagePage = ({ id }: ImagePageProps) => {
       />
     </div>
   );
-};
+}
 
 export default ImagePage;

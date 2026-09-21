@@ -75,9 +75,9 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 ### Current user flows
 
 - **Auth flow**: `AuthModal` → Firebase sign-in → ID token stored in cookie via `/api/auth/sync` → `proxy.ts` allows protected routes → API routes verify the token with Admin SDK.
-- **Generate flow**: `useImageGenerator` builds a prompt + FormData → streams `/api/generate/image` → on `complete`, refreshes profile (credits) and saves a history record to Firestore.
+- **Generate flow**: `useImageGenerator` builds a prompt + FormData → streams `/api/generate/image`. The route reserves `creditsToMinus(model) × bounded imageCount` before the provider call, refunds that reserve if generation or upload fails, stores the media, and writes the gallery cover before `complete`. The client then refreshes profile credits and fills style metadata on that same cover. Video, tag suggestions, and background removal reserve their model cost before the provider call and refund it if that work fails.
 - **Image detail flow**: `useImagePageData` loads owner data (falls back to public copy) → owner actions (share/delete/tags/caption/background/video) call `/api/images/[id]*`.
-- **Payment flow**: create PaymentIntent → Stripe Elements → process/validate → credits updated server-side.
+- **Payment flow**: create a PaymentIntent for the published pack only (`9999` cents → `10000` credits), bound to the signed-in uid → Stripe Elements → process/validate. Process grants credits once, inside a transaction keyed by the PaymentIntent id.
 
 ### Existing integrations
 
@@ -88,7 +88,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 - **Next.js 16 App Router**, Node-runtime API routes do all privileged work; `src/proxy.ts` is a soft auth gate (cookie presence only). No `middleware.ts`.
 - **Client → `src/actions/*` (client wrappers) → `src/lib/api/client.ts` → `/api/*` route → Firebase Admin.** Uniform `ActionResult<T>` envelope; image generation streams NDJSON.
 - **Strategy Pattern** for image providers (`src/strategies`), **Model Registry** as single source of truth (`src/constants/modelRegistry.ts`), **Factory Pattern** for option sets.
-- **Server-side credits** (`creditValidator.ts`, transactional deduction); client profile updates are sanitized server-side (`PATCH /api/profile` strips `credits`) and image mutations are owner-scoped before touching the public mirror; **Zod** validation at every boundary; **typed errors** + `ActionResult`.
+- **Server-side credits** (`creditValidator.ts`, transactional deduction of per-image cost times bounded image count, refunded if the provider call fails); client profile updates are sanitized server-side (`PATCH /api/profile` strips `credits`) and image mutations are owner-scoped before touching the public mirror; credit purchases accept only the published pack and grant it once per PaymentIntent; **Zod** validation at every boundary; **typed errors** + `ActionResult`.
 - **Zustand** stores for auth/profile/generation/payments.
 - **Data model (Firestore)**: `users/{uid}` (auth metadata), `users/{uid}/profile/userData` (credits, keys, settings), `users/{uid}/payments/{id}`, `profiles/{uid}/covers/{id}` (gallery), `publicImages/{id}` (shared copies). Media in Storage under `generated/{uid}/*`, `image-references/{uid}/*`, served via signed URLs.
 

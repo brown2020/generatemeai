@@ -1,4 +1,4 @@
-import { creditsToMinus } from "@/constants/modelRegistry";
+import { creditsToMinus, getMaxImages } from "@/constants/modelRegistry";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
 import { Transaction } from "firebase-admin/firestore";
@@ -18,14 +18,37 @@ export type CreditValidationResult =
  * @param modelName - The model being used
  * @returns Validation result with error details if invalid
  */
+/**
+ * Caps a requested image count at the model's published maximum.
+ */
+export function boundedImageCount(
+  modelName: string,
+  imageCount: number | undefined
+): number {
+  const requested = Number.isFinite(imageCount) ? Math.floor(imageCount as number) : 1;
+  const max = getMaxImages(modelName);
+  return Math.min(Math.max(requested, 1), max);
+}
+
+/**
+ * Credits required for one generation: per-image price times the bounded count.
+ */
+export function generationCreditCost(
+  modelName: string,
+  imageCount: number | undefined
+): number {
+  return creditsToMinus(modelName) * boundedImageCount(modelName, imageCount);
+}
+
 export const validateCredits = (
   useCredits: boolean,
   credits: number,
-  modelName: string
+  modelName: string,
+  imageCount?: number
 ): CreditValidationResult => {
   if (!useCredits) return { valid: true };
 
-  const required = creditsToMinus(modelName);
+  const required = generationCreditCost(modelName, imageCount);
   if (credits < required) {
     return {
       valid: false,
@@ -62,14 +85,17 @@ export async function getServerCredits(
  */
 export const assertSufficientCreditsServer = async (
   uid: string,
-  modelName: string
-): Promise<{ useCredits: boolean; credits: number }> => {
+  modelName: string,
+  imageCount?: number
+): Promise<{ useCredits: boolean; credits: number; imageCount: number; required: number }> => {
   const { useCredits, credits } = await getServerCredits(uid);
-  const result = validateCredits(useCredits, credits, modelName);
+  const boundedCount = boundedImageCount(modelName, imageCount);
+  const required = generationCreditCost(modelName, imageCount);
+  const result = validateCredits(useCredits, credits, modelName, imageCount);
   if (!result.valid) {
     throw new Error(result.error);
   }
-  return { useCredits, credits };
+  return { useCredits, credits, imageCount: boundedCount, required };
 };
 
 /**
@@ -91,5 +117,23 @@ export async function deductCreditsServer(
       );
     }
     tx.update(profileRef, { credits: currentCredits - amount });
+  });
+}
+
+/**
+ * Returns credits after a provider or upload failure. The deduction has
+ * already committed, so this is a separate transaction.
+ */
+export async function refundCreditsServer(
+  uid: string,
+  amount: number
+): Promise<void> {
+  if (amount <= 0) return;
+  const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
+  await adminDb.runTransaction(async (tx: Transaction) => {
+    const snap = await tx.get(profileRef);
+    if (!snap.exists) throw new Error("Profile not found");
+    const currentCredits = snap.data()?.credits ?? 0;
+    tx.update(profileRef, { credits: currentCredits + amount });
   });
 }

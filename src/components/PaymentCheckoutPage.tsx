@@ -21,17 +21,20 @@ export default function PaymentCheckoutPage({ amount }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let ignore = false;
+
     async function initializePayment() {
       try {
         const result = await createPaymentIntent(convertToSubcurrency(amount));
+        if (ignore) return;
 
-        // Handle ActionResult response
         if (result.success) {
           setClientSecret(result.data.clientSecret);
         } else {
           setErrorMessage(result.error);
         }
       } catch (error: unknown) {
+        if (ignore) return;
         if (error instanceof Error) {
           setErrorMessage(
             error.message || "Failed to initialize payment. Please try again."
@@ -43,6 +46,10 @@ export default function PaymentCheckoutPage({ amount }: Props) {
     }
 
     initializePayment();
+
+    return () => {
+      ignore = true;
+    };
   }, [amount]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -58,7 +65,6 @@ export default function PaymentCheckoutPage({ amount }: Props) {
       const { error: submitError } = await elements.submit();
       if (submitError) {
         setErrorMessage(submitError.message || "Payment failed");
-        setLoading(false);
         return;
       }
 
@@ -83,9 +89,9 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         setErrorMessage("An unknown error occurred.");
         console.error("Unknown error occurred during payment validation.");
       }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (!clientSecret || !stripe || !elements) {
@@ -110,6 +116,7 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         {errorMessage && <p className="text-red-500">{errorMessage}</p>}
 
         <button
+          type="submit"
           disabled={!stripe || loading}
           className="text-white w-full p-5 bg-black mt-2 rounded-md font-bold disabled:opacity-50 disabled:animate-pulse"
         >

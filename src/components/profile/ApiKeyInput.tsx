@@ -33,11 +33,12 @@ export const ApiKeyInput = ({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label htmlFor={`api-key-${label}`} className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
       <div className="relative group">
         <input
+          id={`api-key-${label}`}
           type={showKey ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
