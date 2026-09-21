@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import {
   Palette,
   Zap,
@@ -54,11 +54,12 @@ const features = [
  */
 export function FeaturesGrid() {
   return (
+    <LazyMotion features={domAnimation}>
     <section className="py-24 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2
+          <m.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -66,8 +67,8 @@ export function FeaturesGrid() {
             className="text-3xl md:text-4xl font-bold text-gray-900"
           >
             Everything you need to create
-          </motion.h2>
-          <motion.p
+          </m.h2>
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -75,13 +76,13 @@ export function FeaturesGrid() {
             className="mt-4 text-lg text-gray-600"
           >
             Powerful tools and flexible options to bring your imagination to life
-          </motion.p>
+          </m.p>
         </div>
 
         {/* Features grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <motion.div
+            <m.div
               key={feature.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -98,11 +99,12 @@ export function FeaturesGrid() {
               <p className="text-gray-600 leading-relaxed">
                 {feature.description}
               </p>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </div>
     </section>
+    </LazyMotion>
   );
 }
 

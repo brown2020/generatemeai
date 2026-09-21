@@ -9,9 +9,9 @@ export default function BottomBar() {
 
   return (
     <div className="flex items-center z-20 h-16 justify-between md:hidden bg-blue-800 overflow-hidden">
-      {navItems.map((item, index) => (
+      {navItems.map((item) => (
         <NavItem
-          key={index}
+          key={item.path}
           item={item}
           variant="bottom"
           isActive={isActive(item.path)}

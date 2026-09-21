@@ -63,10 +63,11 @@ export default function DeleteConfirmModal({
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="delete-confirm" className="block text-sm font-medium text-gray-700 mb-1.5">
               Type <span className="font-mono font-bold">{confirmText}</span> to confirm
             </label>
             <input
+              id="delete-confirm"
               type="text"
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}

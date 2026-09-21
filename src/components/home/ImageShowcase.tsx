@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
 
 interface ShowcaseImage {
@@ -25,11 +25,12 @@ export function ImageShowcase({ images }: ImageShowcaseProps) {
   const showcaseImages = images.slice(0, 8);
 
   return (
+    <LazyMotion features={domAnimation}>
     <section className="py-24 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2
+          <m.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -37,8 +38,8 @@ export function ImageShowcase({ images }: ImageShowcaseProps) {
             className="text-3xl md:text-4xl font-bold text-gray-900"
           >
             Created with Generate.me
-          </motion.h2>
-          <motion.p
+          </m.h2>
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -46,13 +47,13 @@ export function ImageShowcase({ images }: ImageShowcaseProps) {
             className="mt-4 text-lg text-gray-600"
           >
             Explore what our community has created
-          </motion.p>
+          </m.p>
         </div>
 
         {/* Image grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {showcaseImages.map((image, index) => (
-            <motion.div
+            <m.div
               key={image.id}
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -69,11 +70,12 @@ export function ImageShowcase({ images }: ImageShowcaseProps) {
               />
               {/* Hover overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </div>
     </section>
+    </LazyMotion>
   );
 }
 

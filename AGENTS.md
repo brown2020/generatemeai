@@ -120,7 +120,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 ### Non-interactive testing rules
 
-- A small **Vitest** unit suite exists (`npm test` → `vitest run`); there is **no CI** wired yet. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`), model registry env documentation (`src/constants/modelRegistry.test.ts`), profile-update sanitization (`src/utils/profileFields.test.ts`), and storage URL allowlisting (`src/utils/storageUrl.test.ts`).
+- A small **Vitest** unit suite exists (`npm test` → `vitest run`); there is **no CI** wired yet. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`), model registry env documentation (`src/constants/modelRegistry.test.ts`), profile-update sanitization (`src/utils/profileFields.test.ts`), storage URL allowlisting (`src/utils/storageUrl.test.ts`), the critical generate/gallery/share/payment route handlers (`src/app/api/criticalTasks.test.ts`), credit reservation for video, tags, and background removal (`src/app/api/generate/creditReserve.test.ts`), and Firestore rules in the emulator (`src/firebase/firestore.rules.test.ts`, skipped unless `FIRESTORE_EMULATOR_HOST` is set).
 - Always run tests in run mode (`vitest run` / `npm test`), never watch mode.
 - Never start dev servers or a headed browser as part of validation.
 - Never wait for manual login or interactive input.

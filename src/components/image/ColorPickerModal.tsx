@@ -24,8 +24,13 @@ export const ColorPickerModal = ({
         <h2 className="text-xl font-semibold mb-4">
           Select a Background Color
         </h2>
+        <label htmlFor="background-color" className="block text-sm font-medium text-gray-700 mb-1">
+          Background color
+        </label>
         <input
+          id="background-color"
           type="color"
+          aria-label="Background color"
           value={selectedColor}
           onChange={(e) => setSelectedColor(e.target.value)}
           className="w-full mb-4 h-10"

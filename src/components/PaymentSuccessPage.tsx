@@ -31,10 +31,12 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
   useEffect(() => {
     if (!payment_intent || !uid || processedRef.current) return;
     processedRef.current = true;
+    let ignore = false;
 
     const handlePaymentSuccess = async () => {
       try {
         const result = await processPaymentAndAddCredits(payment_intent);
+        if (ignore) return;
 
         if (!result.success) {
           setMessage(result.error);
@@ -55,17 +57,22 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
           setMessage("Payment successful!");
         }
 
-        // Refresh profile to pick up new credit balance
         await fetchProfile();
       } catch (error) {
         console.error("Error handling payment success:", error);
+        if (ignore) return;
         setMessage("Error handling payment success");
       } finally {
+        if (ignore) return;
         setLoading(false);
       }
     };
 
     handlePaymentSuccess();
+
+    return () => {
+      ignore = true;
+    };
   }, [payment_intent, uid, fetchProfile]);
 
   return (

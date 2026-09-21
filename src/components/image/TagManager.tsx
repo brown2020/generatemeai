@@ -122,14 +122,16 @@ export const TagManager = ({
 
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {tags.map((tag, index) => (
+          {tags.map((tag) => (
             <div
-              key={index}
+              key={tag}
               className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg 
                 text-gray-700 hover:bg-gray-200 transition-colors group"
             >
               <span>{tag}</span>
               <button
+                type="button"
+                aria-label={`Remove ${tag}`}
                 onClick={() => handleRemoveTag(tag)}
                 className="text-gray-400 group-hover:text-red-500 transition-colors"
               >
@@ -141,7 +143,11 @@ export const TagManager = ({
 
         <div className="flex gap-2">
           <div className="relative flex-1">
+            <label htmlFor="new-tag" className="block text-sm font-medium text-gray-700 mb-1">
+              New tag
+            </label>
             <input
+              id="new-tag"
               type="text"
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}

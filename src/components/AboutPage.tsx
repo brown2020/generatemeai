@@ -4,10 +4,10 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 export default function AboutPage() {
-  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [openFAQ, setOpenFAQ] = useState<string | null>(null);
 
-  const toggleFAQ = (index: number) => {
-    setOpenFAQ((prevIndex) => (prevIndex === index ? null : index));
+  const toggleFAQ = (question: string) => {
+    setOpenFAQ((prev) => (prev === question ? null : question));
   };
 
   return (
@@ -103,22 +103,24 @@ export default function AboutPage() {
           Frequently Asked Questions
         </div>
         <div className="space-y-4">
-          {faqData.map((faq, index) => (
-            <div key={index} className="border-b border-gray-300 pb-4">
-              <div
-                className="flex justify-between items-center cursor-pointer"
-                onClick={() => toggleFAQ(index)}
+          {faqData.map((faq) => (
+            <div key={faq.question} className="border-b border-gray-300 pb-4">
+              <button
+                type="button"
+                className="flex w-full justify-between items-center cursor-pointer text-left"
+                onClick={() => toggleFAQ(faq.question)}
+                aria-expanded={openFAQ === faq.question}
               >
                 <span className="font-medium text-lg text-gray-800">
                   {faq.question}
                 </span>
-                {openFAQ === index ? (
+                {openFAQ === faq.question ? (
                   <ChevronUp className="text-gray-500" />
                 ) : (
                   <ChevronDown className="text-gray-500" />
                 )}
-              </div>
-              {openFAQ === index && (
+              </button>
+              {openFAQ === faq.question && (
                 <div className="mt-3 text-gray-600 text-lg">{faq.answer}</div>
               )}
             </div>

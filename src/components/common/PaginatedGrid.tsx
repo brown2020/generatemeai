@@ -31,6 +31,8 @@ export const PaginatedGrid = <T,>({
       {totalPages > 1 && (
         <div className="flex justify-center items-center mt-2 space-x-2">
           <button
+            type="button"
+            aria-label="Previous page"
             onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
             disabled={currentPage === 0}
             className={`p-1 rounded-full ${
@@ -47,6 +49,8 @@ export const PaginatedGrid = <T,>({
           </span>
 
           <button
+            type="button"
+            aria-label="Next page"
             onClick={() =>
               setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
             }

@@ -1,11 +1,12 @@
 import type { NextRequest } from "next/server";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { jsonError, jsonOk, parseJsonBody, withAuth } from "@/lib/api/server";
+import { errorToResponse, jsonError, jsonOk, parseJsonBody, withAuth } from "@/lib/api/server";
 import { tagSuggestionSchema } from "@/utils/validationSchemas";
 import {
   assertSufficientCreditsServer,
   deductCreditsServer,
+  refundCreditsServer,
 } from "@/utils/creditValidator";
 import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
 
@@ -46,37 +47,54 @@ Please list the tags in this format: separate all tags with commas, that's it, n
  * Suggests six image tags based on a prompt and current options.
  */
 export const POST = withAuth(async (uid, request: NextRequest) => {
-  const input = await parseJsonBody(request, tagSuggestionSchema);
-
-  const { useCredits } = await assertSufficientCreditsServer(uid, "chatgpt");
+  const [input, creditCheck] = await Promise.all([
+    parseJsonBody(request, tagSuggestionSchema),
+    assertSufficientCreditsServer(uid, "chatgpt"),
+  ]);
+  const { useCredits } = creditCheck;
   const apiKey = resolveApiKey("chatgpt", useCredits, input.openAPIKey);
 
   if (!apiKey) {
     return jsonError("OpenAI API key is required.", "INVALID_API_KEY", 400);
   }
 
-  const openai = createOpenAI({ apiKey });
-  const prompt = buildTagSuggestionPrompt({
-    prompt: input.prompt,
-    colorScheme: input.colorScheme,
-    lighting: input.lighting,
-    imageStyle: input.imageStyle,
-    selectedCategory: input.selectedCategory,
-    currentTags: input.currentTags,
-  });
+  let chargedAmount = 0;
+  try {
+    if (useCredits) {
+      const cost = creditsToMinus("chatgpt");
+      await deductCreditsServer(uid, cost);
+      chargedAmount = cost;
+    }
 
-  const { text } = await generateText({
-    model: openai("gpt-4"),
-    system:
-      "For all responses, reply with just the answer without giving any description.",
-    prompt,
-    maxOutputTokens: 200,
-    temperature: 0.7,
-  });
+    const openai = createOpenAI({ apiKey });
+    const prompt = buildTagSuggestionPrompt({
+      prompt: input.prompt,
+      colorScheme: input.colorScheme,
+      lighting: input.lighting,
+      imageStyle: input.imageStyle,
+      selectedCategory: input.selectedCategory,
+      currentTags: input.currentTags,
+    });
 
-  if (useCredits) {
-    await deductCreditsServer(uid, creditsToMinus("chatgpt"));
+    const { text } = await generateText({
+      model: openai("gpt-4"),
+      system:
+        "For all responses, reply with just the answer without giving any description.",
+      prompt,
+      maxOutputTokens: 200,
+      temperature: 0.7,
+    });
+
+    chargedAmount = 0;
+    return jsonOk(text);
+  } catch (error) {
+    if (chargedAmount > 0) {
+      try {
+        await refundCreditsServer(uid, chargedAmount);
+      } catch (refundError) {
+        console.error("[api] credit refund failed", refundError);
+      }
+    }
+    return errorToResponse(error);
   }
-
-  return jsonOk(text);
 });

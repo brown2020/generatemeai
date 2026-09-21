@@ -10,7 +10,6 @@ interface ValidatedPaymentData {
   amount: number;
   created: number;
   status: string;
-  client_secret: string | null;
   currency: string;
   description: string | null;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Toaster } from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
 import CookieConsent from "react-cookie-consent";
@@ -9,9 +9,6 @@ import useAuthToken from "@/hooks/useAuthToken";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import ErrorBoundary from "./ErrorBoundary";
 
-/**
- * Get validated cookie name from environment.
- */
 const getCookieName = (): string => {
   const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME;
   if (!cookieName) {
@@ -28,10 +25,21 @@ const getCookieName = (): string => {
  *
  * Note: Route protection is handled by proxy.ts at the edge.
  */
+function subscribeToWebView() {
+  return () => {};
+}
+
+function readWebView() {
+  return !!window.ReactNativeWebView;
+}
+
 export function ClientProvider({ children }: { children: React.ReactNode }) {
   const { loading } = useAuthToken(getCookieName());
-  const isWebView =
-    typeof window !== "undefined" && !!window.ReactNativeWebView;
+  const isWebView = useSyncExternalStore(
+    subscribeToWebView,
+    readWebView,
+    () => false
+  );
 
   useInitializeStores();
 

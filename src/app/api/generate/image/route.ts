@@ -4,11 +4,16 @@ import {
   imageGenerationSchema,
   parseFormData,
 } from "@/utils/validationSchemas";
+import { Timestamp } from "firebase-admin/firestore";
 import {
   assertSufficientCreditsServer,
   deductCreditsServer,
+  generationCreditCost,
+  refundCreditsServer,
 } from "@/utils/creditValidator";
 import { creditsToMinus, resolveApiKeyFromForm } from "@/constants/modelRegistry";
+import { adminDb } from "@/firebase/firebaseAdmin";
+import { FirestorePaths } from "@/firebase/paths";
 import { getStrategy } from "@/strategies";
 import {
   saveToStorage,
@@ -38,7 +43,12 @@ type ProgressEvent =
   | { status: "uploading"; uploaded: number; total: number }
   | {
       status: "complete";
-      data: { imageUrl: string; imageUrls: string[]; imageReference?: string };
+      data: {
+        imageUrl: string;
+        imageUrls: string[];
+        imageReference?: string;
+        coverId: string;
+      };
     }
   | { status: "error"; error: string; code?: ErrorCode };
 
@@ -65,9 +75,12 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const emit = (event: ProgressEvent) => controller.enqueue(line(event));
+      let actorId = "";
+      let chargedAmount = 0;
 
       try {
         const uid = await authenticateAction();
+        actorId = uid;
         emit({ status: "started" });
 
         let formData: FormData;
@@ -99,10 +112,9 @@ export async function POST(request: NextRequest) {
         } = validatedInput;
         const img = imageField ?? null;
 
-        const { useCredits } = await assertSufficientCreditsServer(
-          uid,
-          modelName
-        );
+        const { useCredits, imageCount: boundedCount } =
+          await assertSufficientCreditsServer(uid, modelName, imageCount);
+        const creditCost = generationCreditCost(modelName, imageCount);
 
         const strategy = getStrategy(modelName);
         if (!strategy) {
@@ -120,6 +132,13 @@ export async function POST(request: NextRequest) {
           return;
         }
 
+        // Charge before the provider call so a parallel request cannot
+        // spend the same balance, and refund if generation does not finish.
+        if (useCredits) {
+          await deductCreditsServer(uid, creditCost);
+          chargedAmount = creditCost;
+        }
+
         emit({ status: "generating" });
         const imageData = await strategy({
           message,
@@ -128,7 +147,7 @@ export async function POST(request: NextRequest) {
           useCredits,
           aspectRatio: aspectRatio || "1:1",
           negativePrompt: negativePrompt || undefined,
-          imageCount: imageCount || 1,
+          imageCount: boundedCount,
         });
 
         if (!imageData) {
@@ -154,14 +173,15 @@ export async function POST(request: NextRequest) {
           })
         );
 
-        const imageUrls: string[] = [];
         let uploaded = 0;
-        for (const uploadPromise of uploads) {
-          const url = await uploadPromise;
-          imageUrls.push(url);
-          uploaded += 1;
-          emit({ status: "uploading", uploaded, total });
-        }
+        const imageUrls = await Promise.all(
+          uploads.map(async (uploadPromise) => {
+            const url = await uploadPromise;
+            uploaded += 1;
+            emit({ status: "uploading", uploaded, total });
+            return url;
+          })
+        );
 
         let imageReference: string | undefined;
         if (img) {
@@ -173,15 +193,51 @@ export async function POST(request: NextRequest) {
           emit({ status: "uploading", uploaded, total });
         }
 
-        if (useCredits) {
-          await deductCreditsServer(uid, creditsToMinus(modelName));
+        if (useCredits && dataArray.length < boundedCount) {
+          const unused = creditsToMinus(modelName) * (boundedCount - dataArray.length);
+          await refundCreditsServer(uid, unused);
+          chargedAmount -= unused;
         }
 
+        const coverRef = adminDb.collection(FirestorePaths.profileCovers(uid)).doc();
+        await coverRef.set({
+          id: coverRef.id,
+          freestyle: message,
+          style: "",
+          downloadUrl: imageUrls[0],
+          model: modelName,
+          prompt: message,
+          tags: [],
+          imageCategory: "",
+          lighting: "",
+          colorScheme: "",
+          imageReference: imageReference ?? "",
+          perspective: "",
+          composition: "",
+          medium: "",
+          mood: "",
+          isSharable: false,
+          timestamp: Timestamp.now(),
+        });
+
+        chargedAmount = 0;
         emit({
           status: "complete",
-          data: { imageUrl: imageUrls[0], imageUrls, imageReference },
+          data: {
+            imageUrl: imageUrls[0],
+            imageUrls,
+            imageReference,
+            coverId: coverRef.id,
+          },
         });
       } catch (error) {
+        if (chargedAmount > 0) {
+          try {
+            await refundCreditsServer(actorId, chargedAmount);
+          } catch (refundError) {
+            console.error("[api] credit refund failed", refundError);
+          }
+        }
         if (error instanceof AuthenticationError) {
           emit({
             status: "error",

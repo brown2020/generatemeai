@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { apiGet } from "@/lib/api/client";
 import { db } from "@/firebase/firebaseClient";
 import { doc, getDoc } from "firebase/firestore";
 import { FirestorePaths } from "@/firebase/paths";
@@ -76,20 +77,18 @@ export const useImagePageData = ({
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
-    let isMounted = true;
+    let ignore = false;
 
     const fetchImageData = async () => {
       try {
-        // Wait until auth has resolved (prevents a brief "uid==''" phase that can
-        // cause permission-denied reads against `publicImages/{id}` for private images).
         if (!authReady) return;
 
-        // Try to fetch as owner first (if authenticated)
         if (uid && !authPending) {
           const ownerDocRef = doc(db, FirestorePaths.profileCover(uid, id));
           const ownerDocSnap = await getDoc(ownerDocRef);
+          if (ignore) return;
 
-          if (isMounted && ownerDocSnap.exists()) {
+          if (ownerDocSnap.exists()) {
             const data = ownerDocSnap.data() as ImageData;
             applyImageData(data, id, {
               setImageData,
@@ -103,15 +102,13 @@ export const useImagePageData = ({
           }
         }
 
-        // Fetch as public image (either not owner or not authenticated)
-        const publicDocRef = doc(db, FirestorePaths.publicImage(id));
-        const publicDocSnap = await getDoc(publicDocRef);
+        const result = await apiGet<{ data: ImageData; isOwner: boolean }>(
+          `/api/images/${id}`
+        );
+        if (ignore) return;
 
-        if (!isMounted) return;
-
-        if (publicDocSnap.exists()) {
-          const data = publicDocSnap.data() as ImageData;
-          applyImageData(data, id, {
+        if (result.success && result.data?.data) {
+          applyImageData(result.data.data, id, {
             setImageData,
             setIsSharable,
             setTags,
@@ -119,22 +116,21 @@ export const useImagePageData = ({
             setBackgroundColor,
             setIsPasswordProtected,
           });
-          setIsOwner(false);
+          setIsOwner(result.data.isOwner);
         } else {
           setImageData(false);
         }
       } catch (error) {
         console.error("Error fetching image data:", error);
-        if (isMounted) {
-          setImageData(false);
-        }
+        if (ignore) return;
+        setImageData(false);
       }
     };
 
     if (id) fetchImageData();
 
     return () => {
-      isMounted = false;
+      ignore = true;
     };
   }, [id, uid, authPending, authReady, refreshCounter]);
 

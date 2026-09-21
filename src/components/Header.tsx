@@ -17,9 +17,9 @@ export default function Header() {
         </span>
       </button>
       <div className="flex h-full gap-2 opacity-0 md:opacity-100 items-center">
-        {navItems.map((item, index) => (
+        {navItems.map((item) => (
           <NavItem
-            key={index}
+            key={item.path}
             item={item}
             variant="header"
             isActive={isActive(item.path)}

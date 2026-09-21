@@ -235,8 +235,8 @@ export const getModelsArray = (): ModelConfig[] => {
 export const getModelsByType = (
   type: ModelConfig["type"] | ModelConfig["type"][]
 ): ModelConfig[] => {
-  const types = Array.isArray(type) ? type : [type];
-  return getModelsArray().filter((m) => types.includes(m.type));
+  const types = new Set(Array.isArray(type) ? type : [type]);
+  return getModelsArray().filter((m) => types.has(m.type));
 };
 
 /**

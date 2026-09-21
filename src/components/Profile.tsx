@@ -79,14 +79,16 @@ export default function Profile() {
             </h2>
             <div className="grid gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-2">
+                <p className="block text-sm font-medium text-gray-500 mb-2">
                   User ID
-                </label>
+                </p>
                 <div className="group relative">
                   <div className="mt-1 text-sm font-mono bg-gray-50 p-3 rounded-lg border border-gray-200 break-all">
                     {uid || "Not available"}
                   </div>
                   <button
+                    type="button"
+                    aria-label="Copy user ID"
                     onClick={() => copy(uid || "", "uid")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
@@ -100,18 +102,18 @@ export default function Profile() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-2">
+                <p className="block text-sm font-medium text-gray-500 mb-2">
                   Email Address
-                </label>
+                </p>
                 <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
                   {authEmail || "Not set"}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-500 mb-2">
+                <p className="block text-sm font-medium text-gray-500 mb-2">
                   Account Type
-                </label>
+                </p>
                 <div className="mt-1">
                   <span
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
@@ -171,10 +173,11 @@ export default function Profile() {
             </h2>
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="payment-method" className="block text-sm font-medium text-gray-700 mb-2">
                   Payment Method
                 </label>
                 <select
+                  id="payment-method"
                   value={profile.useCredits ? "credits" : "apikeys"}
                   onChange={(e) =>
                     updateProfile({ useCredits: e.target.value === "credits" })

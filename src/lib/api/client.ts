@@ -36,6 +36,18 @@ export async function apiFetch<T>(
       },
     });
 
+    if (!response.ok) {
+      const errorBody = (await response.json().catch(() => null)) as ActionResult<T> | null;
+      if (errorBody && typeof errorBody === "object" && "success" in errorBody) {
+        return errorBody;
+      }
+      return {
+        success: false,
+        error: `Request failed (${response.status} ${response.statusText})`,
+        code: "GENERATION_FAILED",
+      };
+    }
+
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       return {

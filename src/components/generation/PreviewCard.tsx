@@ -23,13 +23,12 @@ export const PreviewCard = ({ type, value }: PreviewCardProps) => {
         (_, i) => `/previews/${type}s/${value}/${i + 1}.jpg`
       );
 
-      const existingImages = [];
-      for (const img of possibleImages) {
-        const exists = await checkImageExists(img);
-        if (exists) {
-          existingImages.push(img);
-        }
-      }
+      const checks = await Promise.all(
+        possibleImages.map(async (img) =>
+          (await checkImageExists(img)) ? img : null
+        )
+      );
+      const existingImages = checks.filter((img): img is string => img !== null);
 
       if (!cancelled) {
         setLoadedImages(existingImages);
@@ -65,7 +64,7 @@ export const PreviewCard = ({ type, value }: PreviewCardProps) => {
       <div className="grid grid-cols-2 gap-2">
         {loadedImages.map((src, index) => (
           <div
-            key={index}
+            key={src}
             className="relative aspect-square rounded-md overflow-hidden"
           >
             <img

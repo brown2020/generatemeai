@@ -75,6 +75,8 @@ export function AuthModal({
         className="relative bg-white text-black p-4 rounded-lg shadow-lg w-full max-w-md mx-auto"
       >
         <button
+          type="button"
+          aria-label="Close sign in"
           onClick={onClose}
           className="absolute top-0 right-0 p-2 hover:bg-gray-400 bg-gray-200 rounded-full m-2"
         >
@@ -207,16 +209,24 @@ function SignInForm({
       )}
 
       {isEmailLinkLogin && (
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter your name"
-          className="input-primary mb-2"
-        />
+        <>
+          <label htmlFor="name" className="text-sm font-medium text-gray-700">
+            Name
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+            className="input-primary mb-2"
+          />
+        </>
       )}
 
+      <label htmlFor="email" className="text-sm font-medium text-gray-700">
+        Email
+      </label>
       <input
         id="email"
         type="email"
@@ -227,13 +237,19 @@ function SignInForm({
       />
 
       {!isEmailLinkLogin && (
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter your password"
-          className="input-primary mt-2"
-        />
+        <>
+          <label htmlFor="password" className="text-sm font-medium text-gray-700 mt-2">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            className="input-primary"
+          />
+        </>
       )}
 
       {!isEmailLinkLogin && (
@@ -318,8 +334,9 @@ function AuthButton({
       <div className="w-6 h-6 relative">
         <Image
           src={logo}
-          alt={`${label} logo`}
+          alt=""
           fill
+          sizes="24px"
           className="object-contain"
         />
       </div>
