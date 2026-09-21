@@ -1,7 +1,9 @@
-import { creditsToMinus, getMaxImages } from "@/constants/modelRegistry";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
 import { Transaction } from "firebase-admin/firestore";
+import { boundedImageCount, generationCreditCost, STARTING_CREDITS } from "@/utils/creditCost";
+
+export { boundedImageCount, generationCreditCost };
 
 /**
  * Result of credit validation.
@@ -12,34 +14,7 @@ export type CreditValidationResult =
 
 /**
  * Validates if user has enough credits for an operation.
- *
- * @param useCredits - Whether the user is paying with credits
- * @param credits - Current credit balance
- * @param modelName - The model being used
- * @returns Validation result with error details if invalid
  */
-/**
- * Caps a requested image count at the model's published maximum.
- */
-export function boundedImageCount(
-  modelName: string,
-  imageCount: number | undefined
-): number {
-  const requested = Number.isFinite(imageCount) ? Math.floor(imageCount as number) : 1;
-  const max = getMaxImages(modelName);
-  return Math.min(Math.max(requested, 1), max);
-}
-
-/**
- * Credits required for one generation: per-image price times the bounded count.
- */
-export function generationCreditCost(
-  modelName: string,
-  imageCount: number | undefined
-): number {
-  return creditsToMinus(modelName) * boundedImageCount(modelName, imageCount);
-}
-
 export const validateCredits = (
   useCredits: boolean,
   credits: number,
@@ -64,17 +39,29 @@ export const validateCredits = (
  * Reads the user's credit balance and useCredits flag from Firestore (server-side).
  * This prevents clients from forging credit values in FormData.
  */
+/**
+ * Creates the profile with the starting balance when it is missing.
+ * Later reads return the stored balance, including zero.
+ */
+export async function ensureUserProfile(
+  uid: string
+): Promise<Record<string, unknown>> {
+  const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
+  return adminDb.runTransaction(async (tx: Transaction) => {
+    const snap = await tx.get(profileRef);
+    if (snap.exists) return snap.data() ?? {};
+    const created = { credits: STARTING_CREDITS, useCredits: true };
+    tx.set(profileRef, created);
+    return created;
+  });
+}
+
 export async function getServerCredits(
   uid: string
 ): Promise<{ useCredits: boolean; credits: number }> {
-  const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
-  const snap = await profileRef.get();
-  if (!snap.exists) {
-    return { useCredits: true, credits: 0 };
-  }
-  const data = snap.data()!;
+  const data = await ensureUserProfile(uid);
   return {
-    useCredits: data.useCredits ?? true,
+    useCredits: data.useCredits !== false,
     credits: typeof data.credits === "number" ? data.credits : 0,
   };
 }

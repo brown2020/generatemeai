@@ -69,7 +69,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 
 **Accounts, profile & payments**
 - Firebase auth: Google, email/password, passwordless email link; auth cookie synced via `/api/auth/sync`.
-- Profile: store per-provider API keys, toggle credits vs BYOK, view credit balance. New profiles seed a default credit balance. **(inferred: default seed is 1000 credits with a 100-credit floor in `useProfileStore`.)**
+- Profile: store per-provider API keys, toggle credits vs BYOK, view credit balance. The first server read creates the profile with `STARTING_CREDITS` (1000). Later reads return the stored balance, including zero. The client displays that number.
 - Stripe credit purchases (PaymentIntent) and a payment-history view.
 
 ### Current user flows

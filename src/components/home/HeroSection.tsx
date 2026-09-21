@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui";
 import AuthComponent from "@/components/AuthComponent";
+import { STARTING_CREDITS } from "@/utils/creditCost";
 
 interface HeroSectionProps {
   isLoggedIn: boolean;
@@ -107,7 +108,7 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="mt-8 text-sm text-gray-500"
             >
-              No credit card required. 1000 free credits to start.
+              No credit card required. {STARTING_CREDITS} free credits to start.
             </m.p>
           )}
         </div>

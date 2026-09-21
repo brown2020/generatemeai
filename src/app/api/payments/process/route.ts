@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { FieldValue, type Transaction } from "firebase-admin/firestore";
 import { creditsForCatalogAmount } from "@/constants/creditPack";
+import { STARTING_CREDITS } from "@/utils/creditCost";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
 import { jsonError, jsonOk, parseJsonBody, withAuth } from "@/lib/api/server";
@@ -65,7 +66,10 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
     if (profileSnap.exists) {
       tx.update(profileRef, { credits: currentCredits + creditsToAdd });
     } else {
-      tx.set(profileRef, { credits: creditsToAdd, useCredits: true });
+      tx.set(profileRef, {
+        credits: STARTING_CREDITS + creditsToAdd,
+        useCredits: true,
+      });
     }
 
     tx.set(paymentRef, {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { MailIcon, X, LockIcon } from "lucide-react";
 import { PulseLoader } from "react-spinners";
@@ -64,6 +65,64 @@ export function AuthModal({
   formRef,
   modalRef,
 }: AuthModalProps) {
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    const root = modalRef.current;
+    if (!root) return;
+
+    const previouslyFocused = document.activeElement;
+    const focusableSelector = [
+      "a[href]",
+      "button:not([disabled])",
+      "input:not([disabled])",
+      "textarea:not([disabled])",
+      "select:not([disabled])",
+    ].join(", ");
+    const focusable = () =>
+      Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+        (element) => element.tabIndex !== -1
+      );
+
+    const items = focusable();
+    (items[0] ?? root).focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const current = focusable();
+      if (current.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = current[0];
+      const last = current[current.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !root.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !root.contains(active))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
+  }, [isVisible, modalRef]);
+
   if (!isVisible) return null;
 
   const { uid, authEmail, authDisplayName, authPending } = authState;
@@ -72,6 +131,10 @@ export function AuthModal({
     <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Sign in"
+        tabIndex={-1}
         className="relative bg-white text-black p-4 rounded-lg shadow-lg w-full max-w-md mx-auto"
       >
         <button

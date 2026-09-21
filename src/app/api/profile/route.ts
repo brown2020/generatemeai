@@ -7,6 +7,7 @@ import {
   parseJsonBody,
   withAuth,
 } from "@/lib/api/server";
+import { ensureUserProfile } from "@/utils/creditValidator";
 import { stripServerControlledProfileFields } from "@/utils/profileFields";
 
 export const runtime = "nodejs";
@@ -16,13 +17,7 @@ export const runtime = "nodejs";
  * Fetches (or returns defaults for) the authenticated user's profile.
  */
 export const GET = withAuth(async (uid) => {
-  const profileRef = adminDb.doc(FirestorePaths.userProfile(uid));
-  const snap = await profileRef.get();
-
-  const data = snap.exists
-    ? (snap.data() as Record<string, unknown>)
-    : { credits: 1000, useCredits: true };
-
+  const data = await ensureUserProfile(uid);
   return jsonOk(data);
 });
 

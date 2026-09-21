@@ -2,7 +2,13 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { jsonError, jsonOk, parseJsonBody, withAuth } from "@/lib/api/server";
+import { errorToResponse, jsonError, jsonOk, parseJsonBody, withAuth } from "@/lib/api/server";
+import {
+  assertSufficientCreditsServer,
+  deductCreditsServer,
+  refundCreditsServer,
+} from "@/utils/creditValidator";
+import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -19,30 +25,45 @@ Return only the optimized prompt without any explanation or quotation marks.`;
 
 /**
  * POST /api/generate/optimize-prompt
- * Rewrites a user's free-form image prompt into a richer, more descriptive
- * version via GPT-4. Uses the user's provided key (BYOK) or falls back to
- * the server-side OPENAI_API_KEY.
+ * Rewrites a prompt via GPT-4. Platform credits reserve the platform key.
+ * Bring-your-own-key calls require the caller's key and do not touch that key.
  */
-export const POST = withAuth(async (_uid, request: NextRequest) => {
-  const { prompt, apiKey } = await parseJsonBody(request, bodySchema);
+export const POST = withAuth(async (uid, request: NextRequest) => {
+  const { prompt, apiKey: userApiKey } = await parseJsonBody(request, bodySchema);
+  const { useCredits } = await assertSufficientCreditsServer(uid, "chatgpt");
+  const apiKey = resolveApiKey("chatgpt", useCredits, userApiKey);
 
-  const resolvedKey = apiKey || process.env.OPENAI_API_KEY;
-  if (!resolvedKey) {
-    return jsonError(
-      "OpenAI API key is required for prompt optimization",
-      "INVALID_API_KEY",
-      400
-    );
+  if (!apiKey) {
+    return jsonError("OpenAI API key is required.", "INVALID_API_KEY", 400);
   }
 
-  const openai = createOpenAI({ apiKey: resolvedKey });
-  const { text } = await generateText({
-    model: openai("gpt-4"),
-    system: SYSTEM_PROMPT,
-    prompt,
-    maxOutputTokens: 200,
-    temperature: 0.7,
-  });
+  let chargedAmount = 0;
+  try {
+    if (useCredits) {
+      const cost = creditsToMinus("chatgpt");
+      await deductCreditsServer(uid, cost);
+      chargedAmount = cost;
+    }
 
-  return jsonOk(text.trim().replace(/^["']|["']$/g, ""));
+    const openai = createOpenAI({ apiKey });
+    const { text } = await generateText({
+      model: openai("gpt-4"),
+      system: SYSTEM_PROMPT,
+      prompt,
+      maxOutputTokens: 200,
+      temperature: 0.7,
+    });
+
+    chargedAmount = 0;
+    return jsonOk(text.trim().replace(/^["']|["']$/g, ""));
+  } catch (error) {
+    if (chargedAmount > 0) {
+      try {
+        await refundCreditsServer(uid, chargedAmount);
+      } catch (refundError) {
+        console.error("[api] credit refund failed", refundError);
+      }
+    }
+    return errorToResponse(error);
+  }
 });

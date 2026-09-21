@@ -45,7 +45,7 @@ const features = [
     icon: Shield,
     title: "Secure & Private",
     description:
-      "Your images are private by default. Control sharing settings and protect with passwords.",
+      "Your images are private by default. A share link is optional, and its password is only a casual gate, not account security.",
   },
 ];
 

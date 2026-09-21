@@ -65,7 +65,7 @@ export function CTASection({ isLoggedIn }: CTASectionProps) {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-6 text-sm text-gray-500"
           >
-            No credit card required. Cancel anytime.
+            No credit card required. Extra credits are a one-time purchase.
           </m.p>
         )}
       </div>

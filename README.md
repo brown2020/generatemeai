@@ -158,7 +158,6 @@ Built with modern React patterns, this project showcases best practices includin
 | ------------------------------------------------------------------------- | ------- | ------------------------------- |
 | [Vercel AI SDK](https://sdk.vercel.ai/)                                   | 6.0.67  | AI SDK core                     |
 | [@ai-sdk/openai](https://sdk.vercel.ai/providers/ai-sdk-providers/openai) | 3.0.25  | OpenAI provider                 |
-| [@ai-sdk/rsc](https://sdk.vercel.ai/docs/api-reference/ai-sdk-rsc)        | 2.0.67  | React Server Components support |
 | [Replicate](https://replicate.com/)                                       | 1.4.0   | Replicate API client            |
 
 ### Payments
