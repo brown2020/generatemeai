@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  # Gate jobs must tolerate missing Actions secrets (soft-skip Firebase init).
+  # Never inline NEXT_PUBLIC_* / API keys — ${{ secrets.* }} only.
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      # Install without lifecycle scripts and without CI secrets in scope
+      # (react-doctor build-pipeline-secret-boundary).
+      - run: npm ci --ignore-scripts
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: React Doctor
+        run: npm run doctor
+      - name: Production build
+        env:
+          NEXT_PUBLIC_COOKIE_NAME: ${{ secrets.NEXT_PUBLIC_COOKIE_NAME }}
+          NEXT_PUBLIC_FIREBASE_APIKEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_APIKEY }}
+          NEXT_PUBLIC_FIREBASE_AUTHDOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTHDOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECTID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECTID }}
+          NEXT_PUBLIC_FIREBASE_STORAGEBUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGEBUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID }}
+          NEXT_PUBLIC_FIREBASE_APPID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APPID }}
+          NEXT_PUBLIC_FIREBASE_MEASUREMENTID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENTID }}
+          NEXT_PUBLIC_STRIPE_PRODUCT_NAME: ${{ secrets.NEXT_PUBLIC_STRIPE_PRODUCT_NAME }}
+          NEXT_PUBLIC_CREDITS_PER_IMAGE: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_IMAGE }}
+          NEXT_PUBLIC_CREDITS_PER_CHATGPT: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_CHATGPT }}
+          NEXT_PUBLIC_CREDITS_PER_D_ID: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_D_ID }}
+          NEXT_PUBLIC_CREDITS_PER_RUNWAY: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_RUNWAY }}
+          NEXT_PUBLIC_CREDITS_PER_BRIA_IMAGE: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_BRIA_IMAGE }}
+          NEXT_PUBLIC_CREDITS_PER_STABILITY_SD3_TURBO_IMAGE: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_STABILITY_SD3_TURBO_IMAGE }}
+          NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL }}
+        # Soft-skip Firebase client init when secrets are unset — do not re-inline values.
+        run: npm run build
+
+  malware-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run IOC scan
+        run: |
+          chmod +x scripts/malware-scan.sh
+          ./scripts/malware-scan.sh

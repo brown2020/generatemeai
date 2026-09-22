@@ -95,6 +95,18 @@ firestore.rules  storage.rules  next.config.mjs  eslint.config.mjs  .env.example
 - **Payments**: Stripe credit purchase (PaymentIntent) and payment history.
 - **Auth**: Firebase Google, email/password, and passwordless email-link sign-in.
 
+## CI secrets (Actions)
+
+Wire client env via repository **Actions secrets** only — never literals in `.github/workflows/*`.
+Gate jobs (lint / typecheck / unit / Doctor / build) soft-skip Firebase client init when
+`NEXT_PUBLIC_FIREBASE_*` are unset. Required secret **names** for a full production build:
+
+- `NEXT_PUBLIC_COOKIE_NAME`
+- `NEXT_PUBLIC_FIREBASE_APIKEY`, `NEXT_PUBLIC_FIREBASE_AUTHDOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECTID`
+- `NEXT_PUBLIC_FIREBASE_STORAGEBUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID`
+- `NEXT_PUBLIC_FIREBASE_APPID`, `NEXT_PUBLIC_FIREBASE_MEASUREMENTID`
+- Optional credit/Stripe display: `NEXT_PUBLIC_STRIPE_PRODUCT_NAME`, `NEXT_PUBLIC_CREDITS_PER_*`
+
 ## Important Commands
 
 ```bash

@@ -64,3 +64,13 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/profile")).toBe(false);
   });
 });
+
+describe("public auth routes", () => {
+  it("exposes login, signup, and forgot-password as public", () => {
+    expect(isPublicRoute("/login")).toBe(true);
+    expect(isPublicRoute("/signup")).toBe(true);
+    expect(isPublicRoute("/forgot-password")).toBe(true);
+    expect(isProtectedRoute("/login")).toBe(false);
+  });
+});
+

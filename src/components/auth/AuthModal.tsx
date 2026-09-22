@@ -2,14 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { MailIcon, X, LockIcon } from "lucide-react";
+import { X } from "lucide-react";
 import { PulseLoader } from "react-spinners";
-import Image, { StaticImageData } from "next/image";
-import googleLogo from "@/app/assets/google.svg";
 
-/**
- * Auth state props - current authentication status.
- */
 interface AuthStateProps {
   uid: string;
   authEmail: string;
@@ -17,53 +12,30 @@ interface AuthStateProps {
   authPending: boolean;
 }
 
-/**
- * Form state props - form field values and setters.
- */
-interface FormStateProps {
-  email: string;
-  setEmail: (email: string) => void;
-  password: string;
-  setPassword: (password: string) => void;
-  name: string;
-  setName: (name: string) => void;
-  acceptTerms: boolean;
-  setAcceptTerms: (accept: boolean) => void;
-  isEmailLinkLogin: boolean;
-  setIsEmailLinkLogin: (value: boolean) => void;
-}
-
-/**
- * Auth handlers - authentication action callbacks.
- */
 interface AuthHandlers {
-  signInWithGoogle: () => void;
   handleSignOut: () => void;
-  handlePasswordSignup: (e: React.FormEvent<HTMLFormElement>) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  handlePasswordReset: () => void;
 }
 
 interface AuthModalProps {
   isVisible: boolean;
   onClose: () => void;
   authState: AuthStateProps;
-  formState: FormStateProps;
   handlers: AuthHandlers;
-  showGoogleSignIn: boolean;
-  formRef: React.RefObject<HTMLFormElement | null>;
-  modalRef: React.RefObject<HTMLDivElement | null>;
+  modalRef: React.RefObject<HTMLDialogElement | null>;
+  email?: string;
 }
 
+/**
+ * Lightweight account dialog. Email/password flows live on /login, /signup,
+ * and /forgot-password (first-class Auth UX routes).
+ */
 export function AuthModal({
   isVisible,
   onClose,
   authState,
-  formState,
   handlers,
-  showGoogleSignIn,
-  formRef,
   modalRef,
+  email = "",
 }: AuthModalProps) {
   const onCloseRef = useRef(onClose);
 
@@ -72,338 +44,85 @@ export function AuthModal({
   }, [onClose]);
 
   useEffect(() => {
-    if (!isVisible) return;
-    const root = modalRef.current;
-    if (!root) return;
-
-    const previouslyFocused = document.activeElement;
-    const focusableSelector = [
-      "a[href]",
-      "button:not([disabled])",
-      "input:not([disabled])",
-      "textarea:not([disabled])",
-      "select:not([disabled])",
-    ].join(", ");
-    const focusable = () =>
-      Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(
-        (element) => element.tabIndex !== -1
-      );
-
-    const items = focusable();
-    (items[0] ?? root).focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const current = focusable();
-      if (current.length === 0) {
-        event.preventDefault();
-        return;
-      }
-      const first = current[0];
-      const last = current[current.length - 1];
-      const active = document.activeElement;
-      if (event.shiftKey && (active === first || !root.contains(active))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && (active === last || !root.contains(active))) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
-    };
+    const dialog = modalRef.current;
+    if (!dialog) return;
+    if (isVisible) {
+      if (!dialog.open) dialog.showModal();
+      return;
+    }
+    if (dialog.open) dialog.close();
   }, [isVisible, modalRef]);
-
-  if (!isVisible) return null;
 
   const { uid, authEmail, authDisplayName, authPending } = authState;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Sign in"
-        tabIndex={-1}
-        className="relative bg-white text-black p-4 rounded-lg shadow-lg w-full max-w-md mx-auto"
-      >
-        <button
-          type="button"
-          aria-label="Close sign in"
-          onClick={onClose}
-          className="absolute top-0 right-0 p-2 hover:bg-gray-400 bg-gray-200 rounded-full m-2"
-        >
-          <X size={24} className="text-gray-800" />
-        </button>
-
-        {uid ? (
-          <SignedInContent
-            authDisplayName={authDisplayName}
-            authEmail={authEmail}
-            handleSignOut={handlers.handleSignOut}
-          />
-        ) : authPending ? (
-          <PendingContent
-            email={formState.email}
-            handleSignOut={handlers.handleSignOut}
-          />
-        ) : (
-          <SignInForm
-            formState={formState}
-            handlers={handlers}
-            showGoogleSignIn={showGoogleSignIn}
-            formRef={formRef}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Sub-components for better organization
-function SignedInContent({
-  authDisplayName,
-  authEmail,
-  handleSignOut,
-}: {
-  authDisplayName: string;
-  authEmail: string;
-  handleSignOut: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="text-2xl text-center">You are signed in</div>
-      <div className="input-disabled">{authDisplayName}</div>
-      <div className="input-disabled">{authEmail}</div>
-      <button onClick={handleSignOut} className="btn-danger">
-        Sign Out
-      </button>
-    </div>
-  );
-}
-
-function PendingContent({
-  email,
-  handleSignOut,
-}: {
-  email: string;
-  handleSignOut: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="text-2xl text-center">Signing you in</div>
-      <div className="flex flex-col gap-3 border rounded-md px-3 py-2">
-        <div>{`Check your email at ${email} for a message from Generate.me`}</div>
-        <div>{`If you don't see the message, check your spam folder. Mark it "not spam" or move it to your inbox.`}</div>
-        <div>
-          Click the sign-in link in the message to complete the sign-in process.
-        </div>
-        <div>
-          Waiting for you to click the sign-in link.{" "}
-          <span>
-            <PulseLoader color="#000000" size={6} />
-          </span>
-        </div>
-      </div>
-      <button onClick={handleSignOut} className="btn-danger">
-        Start Over
-      </button>
-    </div>
-  );
-}
-
-function SignInForm({
-  formState,
-  handlers,
-  showGoogleSignIn,
-  formRef,
-}: {
-  formState: FormStateProps;
-  handlers: AuthHandlers;
-  showGoogleSignIn: boolean;
-  formRef: React.RefObject<HTMLFormElement | null>;
-}) {
-  const {
-    email,
-    setEmail,
-    password,
-    setPassword,
-    name,
-    setName,
-    acceptTerms,
-    setAcceptTerms,
-    isEmailLinkLogin,
-    setIsEmailLinkLogin,
-  } = formState;
-
-  return (
-    <form
-      onSubmit={
-        isEmailLinkLogin ? handlers.handleSubmit : handlers.handlePasswordSignup
-      }
-      ref={formRef}
-      className="flex flex-col gap-2"
+    <dialog
+      ref={modalRef}
+      aria-label="Account"
+      className="fixed inset-0 z-50 m-auto w-full max-w-md rounded-lg border-0 bg-white p-4 text-black shadow-lg backdrop:bg-black/60 open:flex open:flex-col"
+      onClose={onClose}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
     >
-      <div className="text-3xl text-center pb-3">Sign In</div>
+      <button
+        type="button"
+        aria-label="Close account dialog"
+        onClick={onClose}
+        className="absolute top-0 right-0 m-2 rounded-full bg-gray-200 p-2 hover:bg-gray-400"
+      >
+        <X size={24} className="text-gray-800" />
+      </button>
 
-      {showGoogleSignIn && (
-        <>
-          <AuthButton
-            label="Continue with Google"
-            logo={googleLogo}
-            onClick={handlers.signInWithGoogle}
-          />
-          <div className="flex items-center justify-center w-full h-12">
-            <hr className="grow h-px bg-gray-400 border-0" />
-            <span className="px-3">or</span>
-            <hr className="grow h-px bg-gray-400 border-0" />
-          </div>
-        </>
-      )}
-
-      {isEmailLinkLogin && (
-        <>
-          <label htmlFor="name" className="text-sm font-medium text-gray-700">
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your name"
-            className="input-primary mb-2"
-          />
-        </>
-      )}
-
-      <label htmlFor="email" className="text-sm font-medium text-gray-700">
-        Email
-      </label>
-      <input
-        id="email"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Enter your email"
-        className="input-primary"
-      />
-
-      {!isEmailLinkLogin && (
-        <>
-          <label htmlFor="password" className="text-sm font-medium text-gray-700 mt-2">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            className="input-primary"
-          />
-        </>
-      )}
-
-      {!isEmailLinkLogin && (
-        <div className="text-right mt-2">
-          <button
-            type="button"
-            onClick={handlers.handlePasswordReset}
-            className="underline text-sm text-blue-600 hover:text-blue-800"
-          >
-            Forgot Password?
+      {uid ? (
+        <div className="flex flex-col gap-2">
+          <div className="text-center text-2xl">You are signed in</div>
+          <div className="input-disabled">{authDisplayName}</div>
+          <div className="input-disabled">{authEmail}</div>
+          <button type="button" onClick={handlers.handleSignOut} className="btn-danger">
+            Sign Out
           </button>
         </div>
+      ) : authPending ? (
+        <div className="flex flex-col gap-2">
+          <div className="text-center text-2xl">Signing you in</div>
+          <div className="flex flex-col gap-3 rounded-md border px-3 py-2 text-sm">
+            <div>{`Check your email at ${email} for a message from Generate.me`}</div>
+            <div>
+              Waiting for you to click the sign-in link.{" "}
+              <PulseLoader color="#000000" size={6} />
+            </div>
+          </div>
+          <button type="button" onClick={handlers.handleSignOut} className="btn-danger">
+            Start Over
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 py-2">
+          <div className="pb-1 text-center text-2xl">Welcome</div>
+          <p className="text-center text-sm text-gray-600">
+            Sign in or create an account to generate images and manage your gallery.
+          </p>
+          <Link href="/login" className="btn-primary text-center" onClick={onClose}>
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
+            className="rounded-md border border-gray-300 px-4 py-2 text-center hover:bg-gray-50"
+            onClick={onClose}
+          >
+            Create account
+          </Link>
+          <Link
+            href="/forgot-password"
+            className="text-center text-sm text-blue-600 underline"
+            onClick={onClose}
+          >
+            Forgot password?
+          </Link>
+        </div>
       )}
-
-      <button
-        type="submit"
-        className="btn-primary"
-        disabled={!email || (!isEmailLinkLogin && !password)}
-      >
-        {isEmailLinkLogin ? (
-          <div className="flex items-center gap-2 h-8">
-            <MailIcon size={20} />
-            <span>Continue with Email Link</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 h-8">
-            <LockIcon size={20} />
-            <span>Continue with Password</span>
-          </div>
-        )}
-      </button>
-
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={() => setIsEmailLinkLogin(!isEmailLinkLogin)}
-          className="underline"
-        >
-          {isEmailLinkLogin ? "Use Email/Password" : "Use Email Link"}
-        </button>
-      </div>
-
-      <label className="flex items-center space-x-2 pl-1">
-        <input
-          type="checkbox"
-          checked={acceptTerms}
-          onChange={(e) => setAcceptTerms(e.target.checked)}
-          className="h-full"
-          required
-        />
-        <span>
-          I accept the{" "}
-          <Link href={"/terms"} className="underline">
-            terms
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline">
-            privacy
-          </Link>{" "}
-          policy.
-        </span>
-      </label>
-    </form>
-  );
-}
-
-function AuthButton({
-  label,
-  logo,
-  onClick,
-}: {
-  label: string;
-  logo: string | StaticImageData;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="flex items-center gap-2 w-full px-4 py-2 border rounded-md hover:bg-gray-100"
-      onClick={onClick}
-    >
-      <div className="w-6 h-6 relative">
-        <Image
-          src={logo}
-          alt=""
-          fill
-          sizes="24px"
-          className="object-contain"
-        />
-      </div>
-      <span className="grow text-center">{label}</span>
-    </button>
+    </dialog>
   );
 }
