@@ -7,21 +7,13 @@ import CookieConsent from "react-cookie-consent";
 
 import useAuthToken from "@/hooks/useAuthToken";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
+import { hasClientConfig } from "@/firebase/firebaseClient";
 import ErrorBoundary from "./ErrorBoundary";
 
 const getCookieName = (): string => {
-  // Soft-default for CI gate/SSG when Actions secrets are unset.
   return process.env.NEXT_PUBLIC_COOKIE_NAME?.trim() || "generateAuthToken";
 };
 
-/**
- * Client-side provider that handles:
- * - Auth token management and store initialization
- * - WebView detection and viewport handling
- * - Cookie consent and toast notifications
- *
- * Note: Route protection is handled by proxy.ts at the edge.
- */
 function subscribeToWebView() {
   return () => {};
 }
@@ -30,8 +22,13 @@ function readWebView() {
   return !!window.ReactNativeWebView;
 }
 
-export function ClientProvider({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuthToken(getCookieName());
+function ClientShell({
+  loading,
+  children,
+}: {
+  loading: boolean;
+  children: React.ReactNode;
+}) {
   const isWebView = useSyncExternalStore(
     subscribeToWebView,
     readWebView,
@@ -40,26 +37,17 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
 
   useInitializeStores();
 
-  // Viewport handling
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    // Height adjustment for mobile viewports
     const adjustHeight = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty("--vh", `${vh}px`);
     };
-
-    // Scroll handling for React Native WebView
     const isRNWebView = !!window.ReactNativeWebView;
     document.body.classList.toggle("noscroll", isRNWebView);
-
-    // Set up event listeners
     window.addEventListener("resize", adjustHeight);
     window.addEventListener("orientationchange", adjustHeight);
     adjustHeight();
-
-    // Cleanup
     return () => {
       window.removeEventListener("resize", adjustHeight);
       window.removeEventListener("orientationchange", adjustHeight);
@@ -70,7 +58,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <ErrorBoundary>
-        <div className="flex flex-col items-center justify-center h-full bg-[#333b51]">
+        <div className="flex h-full flex-col items-center justify-center bg-[#333b51]">
           <ClipLoader color="#fff" size={80} />
         </div>
       </ErrorBoundary>
@@ -79,7 +67,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-full">
+      <div className="flex h-full flex-col">
         {children}
         {!isWebView && (
           <CookieConsent>
@@ -90,4 +78,26 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       </div>
     </ErrorBoundary>
   );
+}
+
+function AuthReadyProvider({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuthToken(getCookieName());
+  return <ClientShell loading={loading}>{children}</ClientShell>;
+}
+
+function AuthSkippedProvider({ children }: { children: React.ReactNode }) {
+  // Soft-skip path: no Firebase Auth listener during CI without secrets.
+  return <ClientShell loading={false}>{children}</ClientShell>;
+}
+
+/**
+ * Client-side provider that handles auth token management, WebView detection,
+ * cookie consent, and toasts. Soft-skips Firebase Auth when public config is
+ * missing so CI/SSG does not hang or throw.
+ */
+export function ClientProvider({ children }: { children: React.ReactNode }) {
+  if (!hasClientConfig) {
+    return <AuthSkippedProvider>{children}</AuthSkippedProvider>;
+  }
+  return <AuthReadyProvider>{children}</AuthReadyProvider>;
 }
