@@ -29,8 +29,10 @@ Return only the optimized prompt without any explanation or quotation marks.`;
  * Bring-your-own-key calls require the caller's key and do not touch that key.
  */
 export const POST = withAuth(async (uid, request: NextRequest) => {
-  const { prompt, apiKey: userApiKey } = await parseJsonBody(request, bodySchema);
-  const { useCredits } = await assertSufficientCreditsServer(uid, "chatgpt");
+  const [{ prompt, apiKey: userApiKey }, { useCredits }] = await Promise.all([
+    parseJsonBody(request, bodySchema),
+    assertSufficientCreditsServer(uid, "chatgpt"),
+  ]);
   const apiKey = resolveApiKey("chatgpt", useCredits, userApiKey);
 
   if (!apiKey) {

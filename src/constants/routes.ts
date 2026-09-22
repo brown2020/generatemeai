@@ -24,6 +24,10 @@ export const PUBLIC_ROUTES = [
   "/terms",
   "/privacy",
   "/support",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/loginfinish",
 ] as const;
 
 /**
