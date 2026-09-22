@@ -3,10 +3,6 @@
 import React from "react";
 import { cn } from "@/utils/cn";
 
-/**
- * Navigation item data structure.
- * Matches NavItemData in types/menu.d.ts for global usage.
- */
 export interface NavItemData {
   label: string;
   icon: React.ElementType;
@@ -23,20 +19,21 @@ export interface NavItemProps {
 const variantStyles = {
   header: {
     container:
-      "flex items-center gap-1 px-3 h-full transition duration-300 cursor-pointer text-white hover:opacity-100",
+      "flex items-center gap-1 px-3 h-full transition duration-300 cursor-pointer hover:bg-white/20",
     iconWrapper: "h-9 aspect-square",
     label: "text-lx font-bold",
   },
   bottom: {
     container:
-      "flex flex-col items-center px-3 py-2 grow cursor-pointer text-white hover:text-white hover:opacity-100 transition-colors duration-300",
+      "flex flex-col items-center px-3 py-2 grow cursor-pointer hover:bg-white/20 transition-colors duration-300",
     iconWrapper: "h-9 aspect-square",
-    label: "text-xs",
+    label: "text-xs font-medium",
   },
 };
 
 /**
- * Reusable navigation item component for Header and BottomBar.
+ * Reusable navigation item for Header and BottomBar.
+ * Active/inactive colors keep WCAG contrast on blue-800.
  */
 export const NavItem: React.FC<NavItemProps> = ({
   item,
@@ -51,11 +48,12 @@ export const NavItem: React.FC<NavItemProps> = ({
     <div
       className={cn(
         styles.container,
-        isActive ? "opacity-100 bg-white/30" : "opacity-50"
+        isActive ? "bg-white/25 text-white" : "text-blue-50"
       )}
       onClick={onClick}
       role="button"
       tabIndex={0}
+      aria-current={isActive ? "page" : undefined}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -64,7 +62,7 @@ export const NavItem: React.FC<NavItemProps> = ({
       }}
     >
       <div className={styles.iconWrapper}>
-        <Icon size={30} className="h-full w-full object-cover" />
+        <Icon size={30} className="h-full w-full object-cover" aria-hidden />
       </div>
       <div className={styles.label}>{item.label}</div>
     </div>
