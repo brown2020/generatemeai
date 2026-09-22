@@ -70,9 +70,11 @@ function ClientShell({
       <div className="flex h-full flex-col">
         {children}
         {!isWebView && (
-          <CookieConsent>
-            This app uses cookies to enhance the user experience.
-          </CookieConsent>
+          <aside aria-label="Cookie consent">
+            <CookieConsent>
+              This app uses cookies to enhance the user experience.
+            </CookieConsent>
+          </aside>
         )}
         <Toaster position="bottom-center" />
       </div>

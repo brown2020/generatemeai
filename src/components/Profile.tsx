@@ -61,11 +61,13 @@ export default function Profile() {
             </p>
           </div>
           <button
+            type="button"
             onClick={onSignOut}
+            aria-label="Sign Out"
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium 
               hover:bg-gray-200 transition-colors active:bg-gray-300 flex items-center gap-2"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4" aria-hidden />
             <span className="hidden sm:inline">Sign Out</span>
           </button>
         </div>

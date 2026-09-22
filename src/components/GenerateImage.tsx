@@ -191,6 +191,7 @@ function GenerateImage() {
 
   return (
     <div className="flex flex-col items-center w-full p-3 bg-white">
+      <h1 className="sr-only">Generate images</h1>
       <div className="flex flex-col w-full max-w-4xl space-y-4 relative">
         <div className="flex justify-end">
           <button

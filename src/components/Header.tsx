@@ -14,30 +14,32 @@ export default function Header() {
   return (
     <div className="z-10 flex h-16 items-center justify-between bg-blue-800 px-4">
       <button className="flex cursor-pointer items-center" onClick={navigateHome}>
-        <CogIcon size={30} className="text-white" />
+        <CogIcon size={30} className="text-white" aria-hidden />
         <span className="whitespace-nowrap text-2xl uppercase text-white">Generate.me</span>
       </button>
-      <div className="flex h-full items-center gap-2 opacity-0 md:opacity-100">
-        {navItems.map((item) => (
-          <NavItem
-            key={item.path}
-            item={item}
-            variant="header"
-            isActive={isActive(item.path)}
-            onClick={() => navigate(item.path)}
-          />
-        ))}
+      <div className="flex h-full items-center gap-2">
+        <div className="hidden h-full items-center gap-2 md:flex">
+          {navItems.map((item) => (
+            <NavItem
+              key={item.path}
+              item={item}
+              variant="header"
+              isActive={isActive(item.path)}
+              onClick={() => navigate(item.path)}
+            />
+          ))}
+        </div>
         {!uid && (
-          <div className="ml-2 flex items-center gap-2 text-sm text-white">
+          <div className="ml-2 flex items-center gap-2 text-sm">
             <Link
               href="/login"
-              className="rounded px-2 py-1 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white"
+              className="rounded px-2 py-1 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white"
             >
               Sign in
             </Link>
             <Link
               href="/signup"
-              className="rounded bg-white px-2 py-1 font-medium text-blue-800 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white"
+              className="rounded bg-white px-2 py-1 font-medium text-blue-900 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white"
             >
               Create account
             </Link>
