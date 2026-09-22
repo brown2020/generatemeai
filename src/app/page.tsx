@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import HomePage from "@/components/HomePage";
 import { PageWithFooter } from "@/components/layouts/PageWithFooter";
-import { adminDb } from "@/firebase/firebaseAdmin";
+import { adminDb, hasAdminConfig } from "@/firebase/firebaseAdmin";
 
 /**
  * Fetches public images with caching for better performance.
@@ -10,6 +10,9 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 const getPublicImages = unstable_cache(
   async () => {
     try {
+      if (!hasAdminConfig || typeof (adminDb as { collection?: unknown }).collection !== "function") {
+        return [];
+      }
       const snapshot = await adminDb
         .collection("publicImages")
         .orderBy("timestamp", "desc")
