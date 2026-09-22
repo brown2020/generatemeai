@@ -3,123 +3,86 @@ import { getIdToken } from "firebase/auth";
 import { deleteCookie, setCookie } from "cookies-next";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { auth, hasClientConfig } from "@/firebase/firebaseClient";
+import { auth } from "@/firebase/firebaseClient";
 import { STORAGE_KEYS } from "@/constants/storage";
 import { syncAuthToFirestoreServer } from "@/actions/syncAuth";
 
-const REFRESH_INTERVAL = 50 * 60 * 1000; // 50 minutes
+const REFRESH_INTERVAL = 50 * 60 * 1000;
 const DEBOUNCE_DELAY = 1000;
 
+/**
+ * Auth cookie + store sync. Only mount when Firebase client config is present
+ * (see ClientProvider AuthReadyProvider).
+ */
 const useAuthToken = (cookieName = "authToken") => {
-  const [user, loading, error] = useAuthState(
-    hasClientConfig ? auth : (undefined as unknown as typeof auth)
-  );
+  const [user, loading, error] = useAuthState(auth);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
 
   const lastTokenRefreshKey = `${STORAGE_KEYS.LAST_TOKEN_REFRESH}${cookieName}`;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Track if component is mounted to prevent state updates after unmount
   const isMountedRef = useRef(true);
 
   const refreshAuthToken = useCallback(async () => {
-    // Don't refresh if component is unmounted
     if (!isMountedRef.current) return;
-
     try {
       if (!auth.currentUser) throw new Error("No user found");
       const idTokenResult = await getIdToken(auth.currentUser, true);
-
-      // Check mount status again after async operation
       if (!isMountedRef.current) return;
-
       setCookie(cookieName, idTokenResult, {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
       });
-
       if (typeof window !== "undefined" && !window.ReactNativeWebView) {
         window.localStorage.setItem(lastTokenRefreshKey, Date.now().toString());
       }
     } catch {
-      // Only handle error if still mounted
       if (!isMountedRef.current) return;
       deleteCookie(cookieName, { path: "/" });
     }
   }, [cookieName, lastTokenRefreshKey]);
 
   const scheduleTokenRefresh = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    if (
-      typeof document !== "undefined" &&
-      document.visibilityState === "visible"
-    ) {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (typeof document !== "undefined" && document.visibilityState === "visible") {
       timeoutRef.current = setTimeout(refreshAuthToken, REFRESH_INTERVAL);
     }
   }, [refreshAuthToken]);
 
-  // Handle storage changes with debouncing
   useEffect(() => {
-    if (typeof window === "undefined" || window.ReactNativeWebView) {
-      return;
-    }
-
+    if (typeof window === "undefined" || window.ReactNativeWebView) return;
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key !== lastTokenRefreshKey) return;
-
-      // Debounce the refresh scheduling
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-      debounceTimeoutRef.current = setTimeout(
-        scheduleTokenRefresh,
-        DEBOUNCE_DELAY
-      );
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = setTimeout(scheduleTokenRefresh, DEBOUNCE_DELAY);
     };
-
     window.addEventListener("storage", handleStorageChange);
-
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
     };
   }, [lastTokenRefreshKey, scheduleTokenRefresh]);
 
-  // Sync user state with auth store after the session cookie is ready.
   useEffect(() => {
     if (loading) {
       setAuthDetails({ authReady: false, authPending: true });
       return;
     }
-
     if (user?.uid) {
       let isCurrentUser = true;
-
-      setAuthDetails({
-        authReady: false,
-        authPending: true,
-      });
-
+      setAuthDetails({ authReady: false, authPending: true });
       (async () => {
         try {
           const token = await getIdToken(user);
           if (!isMountedRef.current || !isCurrentUser) return;
-
           setCookie(cookieName, token, {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
           });
           scheduleTokenRefresh();
-
           setAuthDetails({
             uid: user.uid,
             authEmail: user.email || "",
@@ -129,8 +92,6 @@ const useAuthToken = (cookieName = "authToken") => {
             authReady: true,
             authPending: false,
           });
-
-          // Sync auth data server-side (fire-and-forget)
           syncAuthToFirestoreServer({
             email: user.email || "",
             displayName: user.displayName || "",
@@ -139,7 +100,6 @@ const useAuthToken = (cookieName = "authToken") => {
           });
         } catch {
           if (!isMountedRef.current || !isCurrentUser) return;
-          // Token fetch failed - cookie will be absent so protected routes redirect.
           deleteCookie(cookieName, { path: "/" });
           setAuthDetails({
             uid: "",
@@ -152,34 +112,22 @@ const useAuthToken = (cookieName = "authToken") => {
           });
         }
       })();
-
       return () => {
         isCurrentUser = false;
       };
-    } else {
-      // Important: auth can be "resolved" even when signed out.
-      // We keep `authReady=true` so pages can safely decide between owner vs public reads
-      // without a transient "unauthenticated" phase causing permission-denied errors.
-      setAuthDetails({
-        uid: "",
-        authEmail: "",
-        authDisplayName: "",
-        authPhotoUrl: "",
-        authEmailVerified: false,
-        authReady: true,
-        authPending: false,
-      });
-      deleteCookie(cookieName, { path: "/" });
     }
-  }, [
-    cookieName,
-    loading,
-    setAuthDetails,
-    user,
-    scheduleTokenRefresh,
-  ]);
+    setAuthDetails({
+      uid: "",
+      authEmail: "",
+      authDisplayName: "",
+      authPhotoUrl: "",
+      authEmailVerified: false,
+      authReady: true,
+      authPending: false,
+    });
+    deleteCookie(cookieName, { path: "/" });
+  }, [cookieName, loading, setAuthDetails, user, scheduleTokenRefresh]);
 
-  // Cleanup on unmount - mark as unmounted to prevent stale updates
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
