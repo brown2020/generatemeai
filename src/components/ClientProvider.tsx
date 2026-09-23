@@ -19,7 +19,7 @@ function subscribeToWebView() {
 }
 
 function readWebView() {
-  return !!window.ReactNativeWebView;
+  return typeof window !== "undefined" && !!window.ReactNativeWebView;
 }
 
 function ClientShell({
