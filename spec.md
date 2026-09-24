@@ -68,14 +68,14 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 - Public sharing: copy an image into `publicImages/{id}` with optional password and social-share buttons.
 
 **Accounts, profile & payments**
-- Firebase auth: Google, email/password, passwordless email link; auth cookie synced via `/api/auth/sync`.
+- Firebase auth: Google, email/password on dedicated `/login` and `/signup` pages, `/forgot-password`, and passwordless email link, with mapped inline errors and a show/hide password control. A signed-out visit to a protected page goes to `/login` and returns there after sign-in.
 - Profile: store per-provider API keys, toggle credits vs BYOK, view credit balance. The first server read creates the profile with `STARTING_CREDITS` (1000). Later reads return the stored balance, including zero. The client displays that number.
 - Stripe credit purchases (PaymentIntent) and a payment-history view.
 
 ### Current user flows
 
-- **Auth flow**: `AuthModal` → Firebase sign-in → ID token stored in cookie via `/api/auth/sync` → `proxy.ts` allows protected routes → API routes verify the token with Admin SDK.
-- **Generate flow**: `useImageGenerator` builds a prompt + FormData → streams `/api/generate/image`. The route reserves `creditsToMinus(model) × bounded imageCount` before the provider call, refunds that reserve if generation or upload fails, stores the media, and writes the gallery cover before `complete`. The client then refreshes profile credits and fills style metadata on that same cover. Video, tag suggestions, and background removal reserve their model cost before the provider call and refund it if that work fails.
+- **Auth flow**: `/login`, `/signup`, and `/forgot-password` (`AuthPageForm`) → Firebase sign-in → the form writes the ID-token cookie before navigating → returns to the `?redirect=` page the proxy set, or `/generate` → `proxy.ts` allows protected routes → API routes verify the token with Admin SDK. `/api/auth/sync` stores sign-in metadata only.
+- **Generate flow**: `useImageGenerator` builds a prompt + FormData → streams `/api/generate/image`. The route reserves `creditsToMinus(model) × bounded imageCount` before the provider call, refunds that reserve if generation or upload fails, stores the media, and writes the gallery cover before `complete`. The client then refreshes profile credits and fills style metadata on that same cover. Video, tag suggestions, and background removal reserve their model cost before the provider call and refund it if that work fails. A refunded image failure ends with "Your credits were refunded." in the error event, and an unaffordable request fails as `INSUFFICIENT_CREDITS` (402 on JSON routes) before any charge.
 - **Image detail flow**: `useImagePageData` loads owner data (falls back to public copy) → owner actions (share/delete/tags/caption/background/video) call `/api/images/[id]*`.
 - **Payment flow**: create a PaymentIntent for the published pack only (`9999` cents → `10000` credits), bound to the signed-in uid → Stripe Elements → process/validate. Process grants credits once, inside a transaction keyed by the PaymentIntent id.
 

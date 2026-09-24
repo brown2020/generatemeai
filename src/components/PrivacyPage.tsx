@@ -15,7 +15,7 @@ export default function Privacy({
 }: Props) {
   return (
     <div className="text-wrapper">
-      <h3>Privacy Policy</h3>
+      <h1>Privacy Policy</h1>
       <p>
         Protecting your private information is our priority. This Statement of
         Privacy applies to {companyName} pages and apps developed by
@@ -26,7 +26,7 @@ export default function Privacy({
         website and applications, you consent to the data practices described in
         this statement.
       </p>
-      <h4>Collection of your Personal Information</h4>
+      <h2>Collection of your Personal Information</h2>
       <p>
         In order to better provide you with products and services offered,
         {companyName} may collect personally identifiable information, such as
@@ -50,7 +50,7 @@ export default function Privacy({
         requested from us. We also may gather additional personal or
         non-personal information in the future.
       </p>
-      <h4>Use of your Personal Information</h4>
+      <h2>Use of your Personal Information</h2>
       <p>
         {companyName} collects and uses your personal information to operate and
         deliver the services you have requested.
@@ -60,7 +60,7 @@ export default function Privacy({
         inform you of other products or services available from
         {companyName} and its affiliates.
       </p>
-      <h4>Sharing Information with Third Parties</h4>
+      <h2>Sharing Information with Third Parties</h2>
       <p>
         {companyName} does not sell, rent or lease its customer lists to third
         parties.
@@ -82,7 +82,7 @@ export default function Privacy({
         circumstances to protect the personal safety of users of {companyName},
         or the public.
       </p>
-      <h4>Right to Deletion</h4>
+      <h2>Right to Deletion</h2>
       <p>
         Subject to certain exceptions set out below, on receipt of a verifiable
         request from you, we will:
@@ -144,14 +144,14 @@ export default function Privacy({
         </li>
       </ul>
 
-      <h4>Children Under Thirteen</h4>
+      <h2>Children Under Thirteen</h2>
       <p>
         {companyName} does not knowingly collect personally identifiable
         information from children under the age of thirteen. If you are under
         the age of thirteen, you must ask your parent or guardian for permission
         to use this application.
       </p>
-      <h4>E-mail Communications</h4>
+      <h2>E-mail Communications</h2>
       <p>
         From time to time, {companyName} may contact you via email for the
         purpose of providing announcements, promotional offers, alerts,
@@ -160,12 +160,12 @@ export default function Privacy({
         from {companyName}, you may opt out of such communications by clicking
         the unsubscribe link in the email message.
       </p>
-      <h4>External Data Storage</h4>
+      <h2>External Data Storage</h2>
       <p>
         Sites We may store your data on servers provided by third party hosting
         vendors with whom we have contracted.
       </p>
-      <h4>Changes to this Statement</h4>
+      <h2>Changes to this Statement</h2>
       <p>
         {companyName} reserves the right to change this Privacy Policy from time
         to time. We will notify you about significant changes in the way we
@@ -176,7 +176,7 @@ export default function Privacy({
         modifications will constitute your: (a) acknowledgment of the modified
         Privacy Policy; and (b) agreement to abide and be bound by that Policy.
       </p>
-      <h4>Contact Information</h4>
+      <h2>Contact Information</h2>
       <p>
         {companyName} welcomes your questions or comments regarding this
         Statement of Privacy. If you believe that {companyName} has not adhered
@@ -194,7 +194,7 @@ export default function Privacy({
         <br />
         {companyEmail}
       </p>
-      <h5>Last updated: {updatedAt}</h5>
+      <p className="text-sm text-gray-600">Last updated: {updatedAt}</p>
     </div>
   );
 }

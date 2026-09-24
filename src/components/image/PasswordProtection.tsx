@@ -27,9 +27,9 @@ export const PasswordProtection = ({
 
   return (
     <div className="flex flex-col items-center mt-5">
-      <h2 className="text-xl mb-4">
+      <h1 className="text-xl mb-4">
         This image is password-protected. Please enter the password to view:
-      </h2>
+      </h1>
       <label htmlFor="view-password" className="block text-sm font-medium text-gray-700 mb-1">
         Password
       </label>

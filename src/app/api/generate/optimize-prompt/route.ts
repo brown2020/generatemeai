@@ -25,7 +25,7 @@ Return only the optimized prompt without any explanation or quotation marks.`;
 
 /**
  * POST /api/generate/optimize-prompt
- * Rewrites a prompt via GPT-4. Platform credits reserve the platform key.
+ * Rewrites a prompt with gpt-5.6-sol. Platform credits reserve the platform key.
  * Bring-your-own-key calls require the caller's key and do not touch that key.
  */
 export const POST = withAuth(async (uid, request: NextRequest) => {
@@ -49,11 +49,12 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
 
     const openai = createOpenAI({ apiKey });
     const { text } = await generateText({
-      model: openai("gpt-4"),
+      model: openai("gpt-5.6-sol"),
       system: SYSTEM_PROMPT,
       prompt,
       maxOutputTokens: 200,
       temperature: 0.7,
+      providerOptions: { openai: { reasoningEffort: "none" } },
     });
 
     chargedAmount = 0;

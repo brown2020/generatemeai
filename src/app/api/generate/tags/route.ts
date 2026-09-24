@@ -77,12 +77,13 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
     });
 
     const { text } = await generateText({
-      model: openai("gpt-4"),
+      model: openai("gpt-5.6-sol"),
       system:
         "For all responses, reply with just the answer without giving any description.",
       prompt,
       maxOutputTokens: 200,
       temperature: 0.7,
+      providerOptions: { openai: { reasoningEffort: "none" } },
     });
 
     chargedAmount = 0;

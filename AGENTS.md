@@ -42,7 +42,7 @@ Package manager is **npm** (`package-lock.json`, `.npmrc`). Do not switch packag
 src/
 ├── app/                 # App Router pages + API route handlers
 │   ├── api/             # Route Handlers (server work lives here)
-│   │   ├── auth/sync/           # Set/clear auth cookie
+│   │   ├── auth/sync/           # Store sign-in metadata on users/{uid}
 │   │   ├── generate/            # image (NDJSON stream), video, gif, tags, optimize-prompt, background-removal
 │   │   ├── images/[imageId]/    # GET/PATCH/DELETE + /share
 │   │   ├── payments/            # intent, process, validate
@@ -75,7 +75,7 @@ firestore.rules  storage.rules  next.config.mjs  eslint.config.mjs  .env.example
 1. **Client → API route → Firebase Admin.** Components and hooks call typed wrappers in `src/actions/*`, which call `src/lib/api/client.ts` helpers, which `fetch` an `/api/*` route. Routes run on the Node runtime and use Firebase **Admin** SDK for all privileged reads/writes.
 2. **Uniform envelope.** Every JSON API returns `ActionResult<T>` = `{ success: true, data }` or `{ success: false, error, code }`. `apiFetch` normalizes network/parse failures into the same shape. Image generation is the exception: it streams **NDJSON progress events** (`started`/`generating`/`uploading`/`complete`/`error`) and always responds `200` so errors arrive as structured events.
 3. **Route handler helpers** (`src/lib/api/server.ts`): wrap handlers in `withAuth(handler)` to inject the authenticated `uid`; validate JSON with `parseJsonBody(req, schema)`; return `jsonOk`/`jsonError`; let thrown `AppError` subclasses map to status codes via `errorToResponse`.
-4. **Auth.** `src/proxy.ts` is a soft edge gate that only checks for the auth cookie's existence (prevents protected-page flashes). Real auth is `authenticateAction()` in `src/utils/serverAuth.ts`, which verifies the Firebase ID token from the cookie with the Admin SDK on every request. The cookie is set/cleared via `/api/auth/sync`.
+4. **Auth.** `src/proxy.ts` is a soft edge gate that only checks for the auth cookie's existence (prevents protected-page flashes). Real auth is `authenticateAction()` in `src/utils/serverAuth.ts`, which verifies the Firebase ID token from the cookie with the Admin SDK on every request. `useAuthToken` writes the ID-token cookie in the browser before it marks auth ready, and sign-out deletes the cookie before `signOut`. `/api/auth/sync` only stores sign-in metadata. The proxy sends signed-out visitors to `/login?redirect=<path>`; `AuthPageForm` settles the cookie, then returns to that path (limited to protected paths by `signInRedirectPath`) or `/generate`.
 5. **Strategy Pattern (image providers).** `getStrategy(model)` in `src/strategies/index.ts` resolves an implementation via `MODEL_REGISTRY[model].strategyKey`. Video (D-ID, RunwayML) is handled inline in `src/app/api/generate/video/route.ts` with `pollWithTimeout`, not via strategies.
 6. **Model Registry.** `src/constants/modelRegistry.ts` is the single source of truth for model id/label/type, credit cost (env key + fallback), API-key mapping (env var + FormData key), and capabilities. Everything reads from it.
 7. **Credits.** Validated and deducted **server-side** in `src/utils/creditValidator.ts` (`assertSufficientCreditsServer`, `deductCreditsServer` via Firestore transaction). Client-supplied credit values are never trusted. When BYOK is active (`useCredits === false`) no credits are deducted.
@@ -132,7 +132,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 ### Non-interactive testing rules
 
-- A small **Vitest** unit suite exists (`npm test` → `vitest run`); there is **no CI** wired yet. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`), model registry env documentation (`src/constants/modelRegistry.test.ts`), profile-update sanitization (`src/utils/profileFields.test.ts`), storage URL allowlisting (`src/utils/storageUrl.test.ts`), the critical generate/gallery/share/payment route handlers (`src/app/api/criticalTasks.test.ts`), credit reservation for video, tags, and background removal (`src/app/api/generate/creditReserve.test.ts`), and Firestore rules in the emulator (`src/firebase/firestore.rules.test.ts`, skipped unless `FIRESTORE_EMULATOR_HOST` is set).
+- A small **Vitest** unit suite exists (`npm test` → `vitest run`); GitHub Actions CI runs in `.github/workflows/ci.yml`. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`), model registry env documentation (`src/constants/modelRegistry.test.ts`), profile-update sanitization (`src/utils/profileFields.test.ts`), storage URL allowlisting (`src/utils/storageUrl.test.ts`), the critical generate/gallery/share/payment route handlers (`src/app/api/criticalTasks.test.ts`), auth error messages (`src/utils/authErrors.test.ts`), the sign-in redirect allowlist (`src/constants/routes.test.ts`), gallery empty-state copy (`src/components/images/galleryEmptyMessage.test.ts`), credit reservation for video, tags, and background removal (`src/app/api/generate/creditReserve.test.ts`), and Firestore rules in the emulator (`src/firebase/firestore.rules.test.ts`, skipped unless `FIRESTORE_EMULATOR_HOST` is set).
 - Always run tests in run mode (`vitest run` / `npm test`), never watch mode.
 - Never start dev servers or a headed browser as part of validation.
 - Never wait for manual login or interactive input.
@@ -186,7 +186,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 - `src/utils/creditValidator.ts` + `MODEL_REGISTRY` credit config — money/credits. Keep deductions server-side and transactional.
 - `src/app/api/profile/route.ts` + `src/utils/profileFields.ts` — `PATCH /api/profile` merges client-supplied fields, so it strips server-controlled fields (`credits`) via `stripServerControlledProfileFields`. Never let `credits` (or any future money field) be client-writable here.
 - `src/app/api/images/[imageId]/route.ts` — owner-scoped. `DELETE`/`PATCH` must verify the caller owns `profiles/{uid}/covers/{imageId}` **before** touching the global `publicImages/{imageId}` mirror, or any user could mutate another user's public image by id.
-- `src/utils/serverAuth.ts`, `src/app/api/auth/sync/route.ts` — auth/session cookie. Breaking these logs everyone out.
+- `src/utils/serverAuth.ts`, `src/hooks/useAuthToken.ts`, `src/components/auth/AuthPageForm.tsx` — auth/session cookie and sign-in. The `/login` form must never create an account; only `/signup` calls `createUserWithEmailAndPassword`. Breaking these logs everyone out.
 - `firestore.rules`, `storage.rules` — security boundaries. Public image password is **stored in plaintext in the public doc; it is not a secret** — never treat it as one.
 - `src/app/api/payments/*`, `src/actions/paymentActions.ts`, `src/lib/stripe.ts` — Stripe. Validate `paymentIntentId`; never trust client amounts.
 - `src/app/api/generate/image/route.ts` — NDJSON streaming contract shared with `src/actions/generateImage.ts`. Keep event shapes in sync.
@@ -235,3 +235,13 @@ Stop and report (do not guess or expand scope) when:
 - The next step is genuinely ambiguous or would exceed a single PR-sized change.
 
 When you stop, report what was done, what's blocking, and the recommended next step.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

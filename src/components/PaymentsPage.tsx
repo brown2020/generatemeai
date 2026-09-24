@@ -63,6 +63,7 @@ export default function PaymentsPage() {
             </p>
           </div>
           <button
+            type="button"
             onClick={handleBuyCredits}
             className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
           >
@@ -76,9 +77,15 @@ export default function PaymentsPage() {
           Recent Transactions
         </h3>
         {paymentsLoading ? (
-          <div className="text-center py-4 text-gray-500">Loading transactions...</div>
+          <div className="text-center py-4 text-gray-600" role="status">Loading transactions…</div>
         ) : paymentsError ? (
-          <div className="text-center py-4 text-red-500">Error loading transactions</div>
+          <div className="text-center py-4 text-red-700" role="alert">
+            We couldn&apos;t load your transactions. Reload the page to try again.
+          </div>
+        ) : payments.length === 0 ? (
+          <p className="text-center py-4 text-sm text-gray-600">
+            No purchases yet. Credit packs you buy will appear here.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -101,7 +108,7 @@ export default function PaymentsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatPaymentDate(payment.createdAt)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 tabular-nums">
                       {payment.currency || '$'}{(payment.amount / 100).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

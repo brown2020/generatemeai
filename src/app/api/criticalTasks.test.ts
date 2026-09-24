@@ -158,7 +158,7 @@ describe("critical routes", () => {
     const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
     const anonymous = proxy(new NextRequestCtor("http://localhost/generate"));
     expect(anonymous.status).toBe(307);
-    expect(anonymous.headers.get("location")).toContain("redirect=%2Fgenerate");
+    expect(anonymous.headers.get("location")).toContain("/login?redirect=%2Fgenerate");
 
     const signedIn = proxy(
       new NextRequestCtor("http://localhost/generate", {
@@ -249,7 +249,11 @@ describe("critical routes", () => {
       throw new Error("provider down");
     };
     const events = await readEvents(await generateImage(imageForm("dall-e", 4)));
-    expect(events.at(-1)?.status).toBe("error");
+    expect(events.at(-1)).toMatchObject({
+      status: "error",
+      code: "GENERATION_FAILED",
+      error: "provider down Your credits were refunded.",
+    });
     expect(memory.docs.get(profilePath)?.credits).toBe(100);
     expect(coverPaths()).toHaveLength(0);
   });
@@ -257,7 +261,8 @@ describe("critical routes", () => {
   it("refuses a generation the balance cannot cover", async () => {
     seedProfile(10);
     const events = await readEvents(await generateImage(imageForm("dall-e", 4)));
-    expect(events.at(-1)?.status).toBe("error");
+    expect(events.at(-1)).toMatchObject({ status: "error", code: "INSUFFICIENT_CREDITS" });
+    expect(events.at(-1)?.error).not.toContain("refunded");
     expect(strategyCall.calls).toHaveLength(0);
     expect(memory.docs.get(profilePath)?.credits).toBe(10);
   });

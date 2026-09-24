@@ -11,7 +11,7 @@ function TermsIntro({
 }: Pick<Props, "companyName" | "privacyLink">) {
   return (
     <>
-      <h3>Terms of Service</h3>
+      <h1>Terms of Service</h1>
 
       <p>
         Welcome and thank you for your interest in {companyName} services and
@@ -35,7 +35,7 @@ function TermsIntro({
         which is incorporated by reference. If you do not agree to these terms
         and conditions, you may not use the Services.
       </p>
-      <h4>Access and Use</h4>
+      <h2>Access and Use</h2>
       <p>
         {companyName} grants you a limited license to access the Sites subject
         to this Agreement. If you choose to subscribe to and use the Mobile
@@ -106,7 +106,7 @@ function TermsIntro({
         requirements associated with the services provided by such third-parties
         in connection with the Services.
       </p>
-      <h4>Customer Responsibilities</h4>
+      <h2>Customer Responsibilities</h2>
       <p>
         You acknowledge that you are solely responsible and liable for your use
         of the Services, directly or indirectly, including understanding whether
@@ -158,7 +158,7 @@ function TermsIntro({
         foregoing, this Agreement does not entitle you to any guaranteed level,
         availability, or turnaround time of support services for the Services.
       </p>
-      <h4>Payment and Fees</h4>
+      <h2>Payment and Fees</h2>
       <p>
         Paid Services are one-time credit-pack purchases. {companyName} does not
         sell automatically renewing subscriptions. The pack price and the
@@ -186,7 +186,7 @@ function TermsBilling({
 }: Pick<Props, "companyName" | "companyEmail" | "privacyLink">) {
   return (
     <>
-      <h4>Credit packs</h4>
+      <h2>Credit packs</h2>
       <p>
         Extra credits are sold as a one-time pack. Buying a pack charges your
         payment method once for the price shown at checkout and adds the
@@ -219,7 +219,7 @@ function TermsBilling({
         of any changes to the Fees. You are solely responsible for all
         applicable taxes, and will be charged for taxes when required by law.
       </p>
-      <h4>Data and Communications</h4>
+      <h2>Data and Communications</h2>
       <p>
         {companyName} may collect and process information regarding your usage
         of the Services. You consent to {companyName}’s collection and use of
@@ -258,7 +258,7 @@ function TermsBilling({
         otherwise required by any applicable federal, state, or international
         laws, rules, or regulations.
       </p>
-      <h4>Intellectual Property Rights</h4>
+      <h2>Intellectual Property Rights</h2>
       <p>
         {companyName} is a trademark of {companyName}.{companyName} Content,{" "}
         {companyName} products,
@@ -327,7 +327,7 @@ function TermsBilling({
         owner or are authorized to act on behalf of the owner of a copyright
         that is allegedly infringed.
       </p>
-      <h4>Warranty Disclaimer</h4>
+      <h2>Warranty Disclaimer</h2>
       <p className="uppercase">
         THE SERVICES ARE PROVIDED TO YOU “AS IS WITH ALL FAULTS” AND “AS
         AVAILABLE” WITHOUT WARRANTY OF ANY KIND, AND {companyName} AND ITS
@@ -349,7 +349,7 @@ function TermsBilling({
         THE EXCLUSION OF IMPLIED WARRANTIES OR LIMITATIONS ON APPLICABLE
         STATUTORY RIGHTS OF A CONSUMER, SO THE ABOVE EXCLUSION MAY NOT APPLY.
       </p>
-      <h4>Limitation of Liability</h4>
+      <h2>Limitation of Liability</h2>
       <p className="uppercase">
         IN NO EVENT WILL {companyName}, ITS SUBSIDIARIES, AFFILIATES, OFFICERS,
         DIRECTORS, EMPLOYEES, REPRESENTATIVES, AGENTS, PARTNERS, AND LICENSORS
@@ -385,7 +385,7 @@ function TermsLegal({
 }: Pick<Props, "companyName" | "companyEmail" | "updatedAt">) {
   return (
     <>
-      <h4>Precautions</h4>
+      <h2>Precautions</h2>
       <p className="uppercase">
         THE SERVICES ARE NOT A MEDICAL DEVICE AND YOU EXPRESSLY AGREE THAT THE
         SERVICES DO NOT INVOLVE THE PROVISION OF MEDICAL ADVICE BY
@@ -479,18 +479,18 @@ function TermsLegal({
         using your account or Credentials; or (v) violation of any law,
         regulation, or other legal requirement.
       </p>
-      <h4>Notice for California Users</h4>
+      <h2>Notice for California Users</h2>
       <p>
         Under California Civil Code Section 1789.3, California users of the
         Services are entitled to the following specific consumer rights notice:
       </p>
-      <h5>
+      <p className="font-semibold">
         The Complaint Assistance Unit of the Division of Consumer Services of
         the California Department of Consumer Affairs may be contacted in
         writing at 1625 N. Market Blvd., Suite N 112, Sacramento, California
         95834, or by telephone at (800) 952-5210.
-      </h5>
-      <h4>Termination; Cancellation</h4>
+      </p>
+      <h2>Termination; Cancellation</h2>
       <p>
         This Agreement shall continue in full force until terminated or canceled
         pursuant to this Agreement.
@@ -518,7 +518,7 @@ function TermsLegal({
         during any notice period shall survive termination of this Agreement for
         any reason whatsoever.
       </p>
-      <h4>Federal Government End Use Restrictions</h4>
+      <h2>Federal Government End Use Restrictions</h2>
       <p>
         If you are a U.S. federal government department or agency or are
         contracting on behalf of such a department or agency, Services are
@@ -530,16 +530,16 @@ function TermsLegal({
         to you with only those rights as provided under the terms and conditions
         of this Agreement.
       </p>
-      <h4>Export Compliance and Use Restrictions</h4>
+      <h2>Export Compliance and Use Restrictions</h2>
       <p>
         You will not directly or indirectly export or re-export the Services, or
         any technical information related thereto, to any destination or person
         prohibited or restricted by applicable law, including, without
         limitation, all applicable U.S. export control laws and regulations.
       </p>
-      <h4>
+      <h2>
         Governing Law; Forum; Mandatory Binding Arbitration, Class Action Waiver
-      </h4>
+      </h2>
       <p>
         Any action related to this Agreement, the Services, and your
         relationship with {companyName} shall be governed by, construed, and
@@ -576,7 +576,7 @@ function TermsLegal({
         representative action, except where such waiver is prohibited by law or
         deemed by a court of law to be against public policy.
       </p>
-      <h4>Miscellaneous</h4>
+      <h2>Miscellaneous</h2>
       <p>
         You acknowledge that {companyName} has the right to monitor use of the
         Services to ensure compliance with the Agreement.
@@ -611,7 +611,7 @@ function TermsLegal({
         In case of any conflict between the terms of this Agreement and the
         terms of the Privacy Policy, the terms of this Agreement shall prevail.
       </p>
-      <h4>Modification of the Terms and Services</h4>
+      <h2>Modification of the Terms and Services</h2>
       <p>
         {companyName} reserves the right to update this Agreement and/or the
         Privacy Policy at any time and for any reason in its sole discretion by
@@ -633,7 +633,7 @@ function TermsLegal({
         {companyName} shall not be liable to you or to any third party for any
         modification, suspension, or discontinuance of the Services.
       </p>
-      <h5>Last Updated: {updatedAt}</h5>
+      <p className="text-sm text-gray-600">Last Updated: {updatedAt}</p>
     </>
   );
 }

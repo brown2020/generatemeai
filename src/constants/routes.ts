@@ -51,6 +51,18 @@ export const isProtectedRoute = (pathname: string): boolean => {
 };
 
 /**
+ * The page to return to after sign-in, taken from the `redirect` query that
+ * proxy.ts adds when it sends a visitor to /login. Only protected same-site paths qualify, so the value can
+ * never send a user to another origin.
+ */
+export const signInRedirectPath = (value: string | null): string | null => {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+    return null;
+  }
+  return isProtectedRoute(value) ? value : null;
+};
+
+/**
  * Checks if a pathname is a public route.
  */
 export const isPublicRoute = (pathname: string): boolean => {

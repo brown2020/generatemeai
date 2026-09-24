@@ -47,7 +47,7 @@ export const SelectableCard = memo(function SelectableCard({
         <div className="w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
           <img
             src={previewUrl}
-            alt={label}
+            alt=""
             className="w-full h-full object-cover"
             loading="lazy"
             onError={handleImgError}

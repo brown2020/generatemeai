@@ -10,6 +10,7 @@ const providers = vi.hoisted(() => ({
   sourceFails: false,
   briaFails: false,
   calls: 0,
+  modelId: "",
 }));
 
 vi.mock("@/firebase/firebaseAdmin", async () => {
@@ -40,7 +41,10 @@ vi.mock("ai", () => ({
 }));
 
 vi.mock("@ai-sdk/openai", () => ({
-  createOpenAI: () => () => "gpt-4",
+  createOpenAI: () => (modelId: string) => {
+    providers.modelId = modelId;
+    return modelId;
+  },
 }));
 
 import { POST as generateVideo } from "@/app/api/generate/video/route";
@@ -120,6 +124,7 @@ describe("credit reservation", () => {
     providers.sourceFails = false;
     providers.briaFails = false;
     providers.calls = 0;
+    providers.modelId = "";
     process.env.DID_API_KEY = "test-did";
     process.env.OPENAI_API_KEY = "test-openai";
     process.env.BRIA_AI_API_KEY = "test-bria";
@@ -152,22 +157,22 @@ describe("credit reservation", () => {
   });
 
   it("charges a finished video and refunds when the provider fails", async () => {
-    seedProfile(80);
+    seedProfile(100);
     const success = await generateVideo(videoRequest());
     expect(success.status).toBe(200);
-    expect(credits()).toBe(30);
+    expect(credits()).toBe(50);
 
     providers.videoFails = true;
     const failure = await generateVideo(videoRequest());
     expect(failure.status).toBe(500);
-    expect(credits()).toBe(30);
+    expect(credits()).toBe(50);
   });
 
   it("lets only one overlapping video spend a single video's balance", async () => {
     seedProfile(50);
     const [first, second] = await Promise.all([generateVideo(videoRequest()), generateVideo(videoRequest())]);
     const statuses = [first.status, second.status].sort();
-    expect(statuses).toEqual([200, 500]);
+    expect(statuses).toEqual([200, 402]);
     expect(credits()).toBe(0);
   });
 
@@ -177,6 +182,7 @@ describe("credit reservation", () => {
     expect(success.status).toBe(200);
     expect(credits()).toBe(10 - generationCreditCost("chatgpt", 1));
     expect(providers.calls).toBe(1);
+    expect(providers.modelId).toBe("gpt-5.6-sol");
 
     providers.tagsFail = true;
     const failure = await optimizePrompt(optimizeRequest());
@@ -197,6 +203,7 @@ describe("credit reservation", () => {
     const success = await generateTags(tagsRequest());
     expect(success.status).toBe(200);
     expect(credits()).toBe(8);
+    expect(providers.modelId).toBe("gpt-5.6-sol");
 
     providers.tagsFail = true;
     const failure = await generateTags(tagsRequest());

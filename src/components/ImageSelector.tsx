@@ -12,6 +12,7 @@ import {
   TagFilter,
   ImageGrid,
   Pagination,
+  galleryEmptyMessage,
 } from "./images";
 
 const ITEMS_PER_PAGE = 30;
@@ -126,10 +127,12 @@ const ImageListPage = () => {
     startIndex,
     startIndex + ITEMS_PER_PAGE
   );
+  const emptyMessage = galleryEmptyMessage(images.length > 0);
 
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-[1600px] mx-auto space-y-6">
+        <h1 className="sr-only">Your images</h1>
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
           <FilterBar
             searchQuery={searchQuery}
@@ -166,8 +169,8 @@ const ImageListPage = () => {
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No images yet</h3>
-            <p className="text-gray-500">Generate your first image to get started!</p>
+            <h2 className="text-lg font-medium text-gray-900 mb-1">{emptyMessage.title}</h2>
+            <p className="text-gray-600">{emptyMessage.body}</p>
           </div>
         )}
       </div>

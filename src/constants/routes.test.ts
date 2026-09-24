@@ -2,9 +2,25 @@ import { describe, it, expect } from "vitest";
 import {
   isProtectedRoute,
   isPublicRoute,
+  signInRedirectPath,
   PROTECTED_ROUTES,
   PUBLIC_ROUTES,
 } from "./routes";
+
+describe("signInRedirectPath", () => {
+  it("returns the protected page the proxy sent the visitor away from", () => {
+    expect(signInRedirectPath("/generate")).toBe("/generate");
+    expect(signInRedirectPath("/images")).toBe("/images");
+  });
+
+  it("ignores a missing, public, or off-site value", () => {
+    expect(signInRedirectPath(null)).toBeNull();
+    expect(signInRedirectPath("/about")).toBeNull();
+    expect(signInRedirectPath("https://evil.example/generate")).toBeNull();
+    expect(signInRedirectPath("//evil.example/generate")).toBeNull();
+    expect(signInRedirectPath("/\\evil.example")).toBeNull();
+  });
+});
 
 describe("isProtectedRoute", () => {
   it("treats each configured protected route as protected", () => {

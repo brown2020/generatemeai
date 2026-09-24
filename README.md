@@ -19,14 +19,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16.1.6-black?logo=next.js" alt="Next.js 16.1.6">
-  <img src="https://img.shields.io/badge/React-19.2.4-61DAFB?logo=react" alt="React 19.2.4">
-  <img src="https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript" alt="TypeScript 5.9.3">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4.1.18-38B2AC?logo=tailwind-css" alt="Tailwind CSS 4.1.18">
-  <img src="https://img.shields.io/badge/Firebase-12.8.0-FFCA28?logo=firebase" alt="Firebase 12.8.0">
-  <img src="https://img.shields.io/badge/Zustand-5.0.11-brown" alt="Zustand 5.0.11">
-  <img src="https://img.shields.io/badge/Vercel_AI_SDK-6.0.67-black?logo=vercel" alt="Vercel AI SDK 6.0.67">
-  <img src="https://img.shields.io/badge/Zod-4.3.6-3E67B1" alt="Zod 4.3.6">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19">
+  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript" alt="TypeScript 6">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css" alt="Tailwind CSS 4">
+  <img src="https://img.shields.io/badge/Firebase-12-FFCA28?logo=firebase" alt="Firebase 12">
+  <img src="https://img.shields.io/badge/Zustand-5-brown" alt="Zustand 5">
+  <img src="https://img.shields.io/badge/Vercel_AI_SDK-6-black?logo=vercel" alt="Vercel AI SDK 6">
+  <img src="https://img.shields.io/badge/Zod-4-3E67B1" alt="Zod 4">
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0 License">
 </p>
 
@@ -38,7 +38,7 @@ Generate.me AI is a full-stack application that enables users to create custom i
 
 Built with modern React patterns, this project showcases best practices including:
 
-- **React Server Components** with Next.js 16 App Router
+- **Next.js 16 App Router** with API route handlers and a streaming image pipeline
 - **Zustand** for efficient state management
 - **Zod 4** for TypeScript-first schema validation
 - **Strategy Pattern** for AI provider abstraction
@@ -57,7 +57,7 @@ Built with modern React patterns, this project showcases best practices includin
 - **Style Customization**: 20+ artistic styles from Renaissance to Contemporary Art
 - **Advanced Parameters**: Control lighting, color scheme, perspective, composition, medium, and mood
 - **Image-to-Image**: Use reference images to guide generation (supported models)
-- **Prompt Enhancement**: AI-powered prompt optimization using GPT-4
+- **Prompt Enhancement**: AI-powered prompt optimization using OpenAI `gpt-5.6-sol`
 - **Voice Input**: Speak your prompts with Web Speech API integration
 
 ### 🎬 Video Generation
@@ -69,7 +69,7 @@ Built with modern React patterns, this project showcases best practices includin
 
 ### 👤 User Management
 
-- **Firebase Authentication**: Google Sign-In, email/password, and passwordless email links
+- **Firebase Authentication**: Google Sign-In, email/password sign-in and account creation, password reset, and passwordless email links
 - **Profile Management**: Store and manage multiple API keys securely
 - **Credit System**: Pay-per-use credit system or bring your own API keys
 - **Image History**: Browse, filter, and manage generated content
@@ -77,12 +77,12 @@ Built with modern React patterns, this project showcases best practices includin
 ### 💳 Payment Integration
 
 - **Stripe Integration**: Secure payment processing
-- **Credit Purchases**: Buy credits for generation usage
+- **Credit Purchases**: One-time credit packs for generation usage
 - **Transaction History**: View all payment records
 
 ### 🔗 Social Features
 
-- **Image Sharing**: Share generated images publicly with optional password protection
+- **Image Sharing**: Publish an image to a public link, with an optional share password that is a casual gate, not account security
 - **Social Sharing**: Share to Facebook, Twitter, LinkedIn, and Email
 - **Tags & Categories**: Organize and filter generated content
 
@@ -112,95 +112,27 @@ Built with modern React patterns, this project showcases best practices includin
 | Service                 | Provider     | Features                           |
 | ----------------------- | ------------ | ---------------------------------- |
 | **Background Removal**  | Bria AI      | Remove image backgrounds           |
-| **Prompt Optimization** | OpenAI GPT-4 | Enhance prompts for better results |
-| **Tag Suggestions**     | OpenAI GPT-4 | AI-powered tag recommendations     |
+| **Prompt Optimization** | OpenAI `gpt-5.6-sol` | Enhance prompts for better results |
+| **Tag Suggestions**     | OpenAI `gpt-5.6-sol` | AI-powered tag recommendations     |
 
 ---
 
 ## Tech Stack
 
-### Core Framework
+Major versions below match `package.json`; the lockfile pins exact releases.
 
-| Package                                       | Version | Description                                 |
-| --------------------------------------------- | ------- | ------------------------------------------- |
-| [Next.js](https://nextjs.org/)                | 16.1.6  | React framework with App Router & Turbopack |
-| [React](https://react.dev/)                   | 19.2.4  | UI library with Server Components           |
-| [TypeScript](https://www.typescriptlang.org/) | 5.9.3   | Type-safe JavaScript                        |
-
-### State Management
-
-| Package                                  | Version | Description                  |
-| ---------------------------------------- | ------- | ---------------------------- |
-| [Zustand](https://zustand-demo.pmnd.rs/) | 5.0.11  | Lightweight state management |
-
-### Styling & UI
-
-| Package                                                     | Version | Description                 |
-| ----------------------------------------------------------- | ------- | --------------------------- |
-| [Tailwind CSS](https://tailwindcss.com/)                    | 4.1.18  | Utility-first CSS framework |
-| [Framer Motion](https://www.framer.com/motion/)             | 12.29.2 | Animation library           |
-| [Lucide React](https://lucide.dev/)                         | 0.563.0 | Icon library                |
-| [React Icons](https://react-icons.github.io/react-icons/)   | 5.5.0   | Additional icons            |
-| [tailwind-merge](https://github.com/dcastil/tailwind-merge) | 3.4.0   | Merge Tailwind classes      |
-| [clsx](https://github.com/lukeed/clsx)                      | 2.1.1   | Class name utility          |
-
-### Backend & Database
-
-| Package                                                                     | Version | Description                        |
-| --------------------------------------------------------------------------- | ------- | ---------------------------------- |
-| [Firebase](https://firebase.google.com/)                                    | 12.8.0  | Authentication, Firestore, Storage |
-| [Firebase Admin](https://firebase.google.com/docs/admin/setup)              | 13.6.0  | Server-side Firebase SDK           |
-| [react-firebase-hooks](https://github.com/CSFrequency/react-firebase-hooks) | 5.1.1   | React hooks for Firebase           |
-
-### AI Integration
-
-| Package                                                                   | Version | Description                     |
-| ------------------------------------------------------------------------- | ------- | ------------------------------- |
-| [Vercel AI SDK](https://sdk.vercel.ai/)                                   | 6.0.67  | AI SDK core                     |
-| [@ai-sdk/openai](https://sdk.vercel.ai/providers/ai-sdk-providers/openai) | 3.0.25  | OpenAI provider                 |
-| [Replicate](https://replicate.com/)                                       | 1.4.0   | Replicate API client            |
-
-### Payments
-
-| Package                                                            | Version | Description             |
-| ------------------------------------------------------------------ | ------- | ----------------------- |
-| [Stripe](https://stripe.com/)                                      | 20.3.0  | Payment processing      |
-| [@stripe/react-stripe-js](https://stripe.com/docs/stripe-js/react) | 5.6.0   | React Stripe components |
-| [@stripe/stripe-js](https://stripe.com/docs/js)                    | 8.7.0   | Stripe.js               |
-
-### Media Processing
-
-| Package                                                              | Version | Description                       |
-| -------------------------------------------------------------------- | ------- | --------------------------------- |
-| [Sharp](https://sharp.pixelplumbing.com/)                            | 0.34.5  | High-performance image processing |
-| [fluent-ffmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg) | 2.1.3   | FFmpeg wrapper                    |
-| [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)         | 5.2.0   | Static FFmpeg binaries            |
-| [dom-to-image](https://github.com/tsayen/dom-to-image)               | 2.6.0   | DOM to image conversion           |
-
-### Validation
-
-| Package                 | Version | Description                        |
-| ----------------------- | ------- | ---------------------------------- |
-| [Zod](https://zod.dev/) | 4.3.6   | TypeScript-first schema validation |
-
-### UI Components
-
-| Package                                                                        | Version | Description              |
-| ------------------------------------------------------------------------------ | ------- | ------------------------ |
-| [React Modal](https://reactcommunity.org/react-modal/)                         | 3.16.1  | Accessible modal dialogs |
-| [React Select](https://react-select.com/)                                      | 5.8.1   | Select input component   |
-| [React Hot Toast](https://react-hot-toast.com/)                                | 2.4.1   | Toast notifications      |
-| [React Spinners](https://www.davidhu.io/react-spinners/)                       | 0.17.0  | Loading spinners         |
-| [React Share](https://github.com/nygardk/react-share)                          | 5.1.0   | Social sharing buttons   |
-| [react-textarea-autosize](https://github.com/Andarist/react-textarea-autosize) | 8.5.3   | Auto-resizing textarea   |
-| [react-cookie-consent](https://github.com/Mastermindzh/react-cookie-consent)   | 10.0.1  | Cookie consent banner    |
-
-### Development
-
-| Package                         | Version | Description    |
-| ------------------------------- | ------- | -------------- |
-| [ESLint](https://eslint.org/)   | 9.15.0  | Code linting   |
-| [PostCSS](https://postcss.org/) | 8.4.47  | CSS processing |
+| Area | Packages |
+| ---- | -------- |
+| Framework | [Next.js](https://nextjs.org/) 16 (App Router, Turbopack dev), [React](https://react.dev/) 19, [TypeScript](https://www.typescriptlang.org/) 6 |
+| State | [Zustand](https://zustand-demo.pmnd.rs/) 5 |
+| Styling & UI | [Tailwind CSS](https://tailwindcss.com/) 4, [Framer Motion](https://www.framer.com/motion/) 12, [Lucide React](https://lucide.dev/) 1, [React Icons](https://react-icons.github.io/react-icons/) 5, tailwind-merge 3, clsx 2 |
+| Backend | [Firebase](https://firebase.google.com/) 12, [Firebase Admin](https://firebase.google.com/docs/admin/setup) 13, react-firebase-hooks 5 |
+| AI | [Vercel AI SDK](https://ai-sdk.dev/) 6, [@ai-sdk/openai](https://ai-sdk.dev/providers/ai-sdk-providers/openai) 3, [Replicate](https://replicate.com/) 1 |
+| Payments | [Stripe](https://stripe.com/) 22, @stripe/react-stripe-js 6, @stripe/stripe-js 9 |
+| Media | [Sharp](https://sharp.pixelplumbing.com/) 0.35, fluent-ffmpeg 2, ffmpeg-static 5, dom-to-image 2 |
+| Validation | [Zod](https://zod.dev/) 4 |
+| UI helpers | react-modal 3, react-select 5, react-hot-toast 2, react-spinners 0.17, react-share 5, react-textarea-autosize 8, react-cookie-consent 10 |
+| Development | [ESLint](https://eslint.org/) 10, [Vitest](https://vitest.dev/) 4, PostCSS 8, @firebase/rules-unit-testing 5 |
 
 ---
 
@@ -262,10 +194,11 @@ This repo includes production-ready Firebase rules that **protect user-generated
 
 - **Firestore (`firestore.rules`)**
 
-  - Private content: `profiles/{uid}/covers/{id}` is **owner-only** read/write.
-  - Private user data: `users/{uid}/**` is **owner-only** read/write.
-  - Public sharing: `publicImages/{imageId}` supports **public `get`** (no `list`) to avoid noisy permission errors when a doc is missing/unshared. Only the owner can **create/update/delete** (must have `profiles/{auth.uid}/covers/{imageId}`), and shared docs are enforced to be written with `isSharable == true`.
-  - **Note on “password protection”**: passwords are stored in the public doc today; do not treat it as a secret.
+  - Private content: `profiles/{uid}/covers/{id}` is **owner-read only**.
+  - Private user data: `users/{uid}/**` (profile, credits, payments) is **owner-read only**.
+  - Every client write is denied. Covers, credits, payments, and the public mirror are written by API routes with the Admin SDK.
+  - Public sharing: the client SDK cannot read or list `publicImages/{imageId}`; shared images are served by `GET /api/images/:id`.
+  - **Share password**: it is stored in plaintext in the public doc and is only a casual gate, not a secret.
 
 - **Storage (`storage.rules`)**
   - Private user uploads: `generated/{uid}/*` and `image-references/{uid}/*` are **owner-only** read/write (with basic image + size limits).
@@ -372,7 +305,7 @@ generatemeai/
 │   └── .well-known/                 # App association files
 ├── src/
 │   ├── app/                         # Next.js App Router
-│   │   ├── api/previews/            # API routes
+│   │   ├── api/                     # Route handlers: auth, generate, images, payments, profile, history, previews
 │   │   ├── generate/                # Image generation page
 │   │   ├── images/                  # Gallery & detail pages
 │   │   │   └── [id]/                # Dynamic image page
@@ -382,18 +315,18 @@ generatemeai/
 │   │   ├── loginfinish/             # Email link auth handler
 │   │   └── [legal pages]/           # About, Terms, Privacy, Support
 │   │
-│   ├── actions/                     # Server Actions
+│   ├── actions/                     # Client wrappers that call /api routes (no server actions)
 │   │   ├── generateImage.ts         # Image generation orchestration
 │   │   ├── generateVideo.ts         # Video generation (D-ID, Runway)
 │   │   ├── generateGif.ts           # GIF conversion (FFmpeg)
-│   │   ├── generateResponse.ts      # AI text responses
 │   │   ├── suggestTags.ts           # AI tag suggestions (AI SDK)
 │   │   ├── removeBackground.ts      # Background removal (Bria AI)
 │   │   └── paymentActions.ts        # Stripe payment processing
 │   │
 │   ├── components/                  # React components
 │   │   ├── auth/                    # Authentication components
-│   │   │   └── AuthModal.tsx        # Sign-in modal
+│   │   │   ├── AuthPageForm.tsx     # /login, /signup, /forgot-password form
+│   │   │   └── AuthModal.tsx        # Signed-in account dialog
 │   │   ├── common/                  # Shared UI components
 │   │   │   └── PaginatedGrid.tsx    # Generic paginated grid
 │   │   ├── generate/                # Image generation form
@@ -503,7 +436,7 @@ generatemeai/
 │   │   ├── cn.ts                    # Class name utility (clsx + tailwind-merge)
 │   │   ├── creditValidator.ts       # Credit validation
 │   │   ├── promptUtils.ts           # Prompt building
-│   │   ├── promptOptimizer.ts       # AI prompt enhancement (GPT-4)
+│   │   ├── promptOptimizer.ts       # Client call to the prompt optimization route
 │   │   ├── validationSchemas.ts     # Zod schemas
 │   │   ├── formDataBuilder.ts       # FormData construction
 │   │   ├── imageUtils.ts            # Image utilities
@@ -659,7 +592,7 @@ export class ExternalApiError extends AppError { ... }
 export class RateLimitError extends AppError { ... }
 export class NotFoundError extends AppError { ... }
 
-// Server action result type
+// JSON envelope returned by every API route
 export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; code?: ErrorCode };
@@ -731,6 +664,12 @@ npm start
 
 # Run ESLint
 npm run lint
+
+# Typecheck
+npx tsc --noEmit
+
+# Unit tests (Vitest, run mode)
+npm test
 ```
 
 ---
@@ -840,7 +779,7 @@ Requirements:
 
 **Build Errors**
 
-- Run `npm run lint` to check for TypeScript errors
+- Run `npx tsc --noEmit` for TypeScript errors and `npm run lint` for lint errors
 - Ensure all environment variables are set
 
 ---

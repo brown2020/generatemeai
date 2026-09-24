@@ -19,6 +19,7 @@ import googleLogo from "@/app/assets/google.svg";
 import { auth, hasClientConfig } from "@/firebase/firebaseClient";
 import { mapAuthError } from "@/utils/authErrors";
 import { STORAGE_KEYS } from "@/constants/storage";
+import { signInRedirectPath } from "@/constants/routes";
 import { useAuthStore } from "@/zustand/useAuthStore";
 
 export type AuthPageMode = "login" | "signup" | "forgot";
@@ -161,7 +162,8 @@ export function AuthPageForm({ mode }: Props) {
       authPending: false,
     });
     storeAuthInfo(u.email || email);
-    router.replace("/generate");
+    const requested = new URLSearchParams(window.location.search).get("redirect");
+    router.replace(signInRedirectPath(requested) ?? "/generate");
   };
 
   const runAuth = async (action: () => Promise<void>) => {

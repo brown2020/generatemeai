@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { Button } from "@/components/ui";
+import { buttonClassName } from "@/components/ui";
 import AuthComponent from "@/components/AuthComponent";
 import { STARTING_CREDITS } from "@/utils/creditCost";
 
@@ -82,19 +82,15 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             {isLoggedIn ? (
-              <Link href="/generate">
-                <Button size="lg" rightIcon={<ArrowRight className="h-5 w-5" />}>
-                  Start Creating
-                </Button>
+              <Link href="/generate" className={buttonClassName({ size: "lg", className: "gap-2.5" })}>
+                Start Creating
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Link>
             ) : (
               <>
-                {/* Sign in / Sign up button */}
                 <AuthComponent />
-                <Link href="/about">
-                  <Button variant="outline" size="lg">
-                    Learn More
-                  </Button>
+                <Link href="/about" className={buttonClassName({ variant: "ghost", size: "lg" })}>
+                  Learn More
                 </Link>
               </>
             )}
@@ -106,7 +102,7 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-8 text-sm text-gray-500"
+              className="mt-8 text-sm text-gray-600"
             >
               No credit card required. {STARTING_CREDITS} free credits to start.
             </m.p>

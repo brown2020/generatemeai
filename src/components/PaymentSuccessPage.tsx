@@ -15,7 +15,7 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
   // Derive the "no payment intent" state from props during initial render so
   // the effect doesn't have to write state synchronously for that branch.
   const [message, setMessage] = useState(
-    payment_intent ? "" : "No payment intent found"
+    payment_intent ? "" : "There is no payment to confirm on this page."
   );
   const [loading, setLoading] = useState(!!payment_intent);
   const [created, setCreated] = useState(0);
@@ -61,7 +61,7 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
       } catch (error) {
         console.error("Error handling payment success:", error);
         if (ignore) return;
-        setMessage("Error handling payment success");
+        setMessage("We couldn't reach the payment service. Reload the page to try again.");
       } finally {
         if (ignore) return;
         setLoading(false);
@@ -76,18 +76,28 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
   }, [payment_intent, uid, fetchProfile]);
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-12">
+    <div className="max-w-2xl mx-auto px-4 py-12">
       <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-        <div className="h-1 bg-linear-to-r from-green-400 to-emerald-500" />
+        <div
+          className={
+            loading
+              ? "h-1 bg-gray-200"
+              : id
+                ? "h-1 bg-linear-to-r from-green-400 to-emerald-500"
+                : "h-1 bg-amber-400"
+          }
+        />
         <div className="p-8 text-center">
           {loading ? (
             <div className="flex flex-col items-center gap-4 py-8">
-              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-              <p className="text-gray-500 text-lg">Validating payment...</p>
+              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" aria-hidden="true" />
+              <div role="status">
+                <h1 className="text-gray-700 text-lg">Validating payment…</h1>
+              </div>
             </div>
           ) : id ? (
             <div className="space-y-6">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto" aria-hidden="true" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Thank you!</h1>
                 <p className="text-gray-500 mt-1">
@@ -110,8 +120,16 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4 py-8">
-              <AlertCircle className="w-12 h-12 text-amber-500" />
+              <AlertCircle className="w-12 h-12 text-amber-500" aria-hidden="true" />
+              <h1 className="text-2xl font-bold text-gray-900">We couldn&apos;t confirm this payment</h1>
               <p className="text-gray-700">{message}</p>
+              <p className="text-sm text-gray-600">
+                No credits were added. If you were charged, contact{" "}
+                <Link href="/support" className="underline text-blue-700">
+                  support
+                </Link>{" "}
+                and include your payment receipt.
+              </p>
             </div>
           )}
 
@@ -124,6 +142,6 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
           </Link>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import { createPaymentIntent } from "@/actions/paymentActions";
 import convertToSubcurrency from "@/utils/convertToSubcurrency";
+import { CREDIT_PACK } from "@/constants/creditPack";
 import { ClipLoader } from "react-spinners";
 
 type Props = { amount: number };
@@ -103,26 +104,32 @@ export default function PaymentCheckoutPage({ amount }: Props) {
   }
 
   return (
-    <main className="flex flex-col w-full items-center max-w-6xl mx-auto py-10">
-      <div className="mb-10">
-        <h1 className="text-4xl">Buy 10,000 Credits</h1>
-        <h2 className="text-2xl">
-          Purchase amount: <span className="font-bold">${amount}</span>
-        </h2>
+    <div className="flex flex-col w-full items-center max-w-6xl mx-auto py-10">
+      <div className="mb-10 text-center">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Buy {CREDIT_PACK.credits.toLocaleString("en-US")} credits
+        </h1>
+        <p className="mt-2 text-lg text-gray-700">
+          One-time purchase: <span className="font-semibold tabular-nums">${amount}</span>
+        </p>
       </div>
       <form onSubmit={handleSubmit} className="bg-white p-2 rounded-md w-full">
         {clientSecret && <PaymentElement />}
 
-        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+        {errorMessage && (
+          <p role="alert" className="mt-2 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        )}
 
         <button
           type="submit"
           disabled={!stripe || loading}
-          className="text-white w-full p-5 bg-black mt-2 rounded-md font-bold disabled:opacity-50 disabled:animate-pulse"
+          className="text-white w-full p-4 bg-blue-600 hover:bg-blue-700 mt-4 rounded-lg font-semibold disabled:opacity-50"
         >
-          {!loading ? `Pay $${amount}` : "Processing..."}
+          {!loading ? `Pay $${amount}` : "Processing…"}
         </button>
       </form>
-    </main>
+    </div>
   );
 }

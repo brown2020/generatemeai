@@ -140,16 +140,19 @@
 }
 
 @utility input-primary {
-  @apply w-full text-black px-4 py-2 outline-hidden border border-[#111113]/20  bg-white rounded-lg;
+  @apply w-full text-black px-4 py-2 outline-hidden border border-[#111113]/20  bg-white rounded-lg focus-visible:border-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600/40;
 }
 
 @utility text-wrapper {
   @apply flex flex-col space-y-3 max-w-4xl mx-auto;
-  & h3 {
+  & h1 {
     @apply text-2xl;
   }
-  & h4 {
+  & h2 {
     @apply text-lg;
+  }
+  & h3 {
+    @apply text-base font-semibold;
   }
   & ul {
     @apply list-disc mx-4 space-y-3;

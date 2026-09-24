@@ -1,7 +1,7 @@
 import { apiPost } from "@/lib/api/client";
 
 /**
- * Optimizes an image generation prompt server-side via GPT-4.
+ * Optimizes an image generation prompt server-side via gpt-5.6-sol.
  *
  * @param prompt - The original prompt to optimize
  * @param apiKey - Optional user-supplied OpenAI key (BYOK path)

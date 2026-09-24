@@ -45,27 +45,20 @@ export const NavItem: React.FC<NavItemProps> = ({
   const Icon = item.icon;
 
   return (
-    <div
+    <button
+      type="button"
       className={cn(
         styles.container,
         isActive ? "bg-white/25 text-white" : "text-blue-50"
       )}
       onClick={onClick}
-      role="button"
-      tabIndex={0}
       aria-current={isActive ? "page" : undefined}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
     >
-      <div className={styles.iconWrapper}>
-        <Icon size={30} className="h-full w-full object-cover" aria-hidden />
-      </div>
-      <div className={styles.label}>{item.label}</div>
-    </div>
+      <span className={styles.iconWrapper}>
+        <Icon size={30} className="h-full w-full object-cover" aria-hidden="true" />
+      </span>
+      <span className={styles.label}>{item.label}</span>
+    </button>
   );
 };
 

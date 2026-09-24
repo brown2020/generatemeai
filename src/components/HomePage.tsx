@@ -1,5 +1,6 @@
 "use client";
 
+import { MotionConfig } from "framer-motion";
 import { useAuthState } from "@/zustand/selectors";
 import {
   HeroSection,
@@ -40,6 +41,7 @@ export default function HomePage({ initialImages = [] }: HomePageProps) {
   });
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-full bg-white">
       {/* Hero Section */}
       <HeroSection isLoggedIn={isLoggedIn} displayName={authDisplayName} />
@@ -58,5 +60,6 @@ export default function HomePage({ initialImages = [] }: HomePageProps) {
       {/* Final CTA */}
       <CTASection isLoggedIn={isLoggedIn} />
     </div>
+    </MotionConfig>
   );
 }

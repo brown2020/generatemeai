@@ -23,7 +23,7 @@ export default function Footer() {
         <Link
           key={item.label}
           href={item.href}
-          className="text-black/50 hover:text-black"
+          className="text-gray-600 hover:text-black"
         >
           <div>{item.label}</div>
         </Link>
@@ -31,9 +31,9 @@ export default function Footer() {
       {uid && (
         <button
           onClick={handleSignOut}
-          className="text-black/50 hover:text-black flex items-center gap-1"
+          className="text-gray-600 hover:text-black flex items-center gap-1"
         >
-          <LogOut className="w-3 h-3" />
+          <LogOut className="w-3 h-3" aria-hidden="true" />
           <span>Sign Out</span>
         </button>
       )}

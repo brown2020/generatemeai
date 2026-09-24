@@ -12,9 +12,9 @@ export default function AboutPage() {
 
   return (
     <div className="flex flex-col h-full items-center px-6 py-12 justify-center w-full max-w-5xl mx-auto flex-1 gap-12 bg-gray-100">
-      <div className="text-3xl font-bold text-center text-gray-800">
+      <h1 className="text-3xl font-bold text-center text-gray-800">
         About Generate.me
-      </div>
+      </h1>
 
       {/* About Section */}
       <div className="bg-white shadow-md p-8 rounded-lg">
@@ -57,9 +57,9 @@ export default function AboutPage() {
 
       {/* Instructions Section */}
       <div className="bg-white shadow-md p-8 rounded-lg">
-        <div className="text-3xl font-semibold text-gray-800 mb-6">
+        <h2 className="text-3xl font-semibold text-gray-800 mb-6">
           How to Use Generate.me
-        </div>
+        </h2>
         <ol className="list-decimal list-inside space-y-3 text-gray-700 text-lg">
           <li>
             <strong>Describe Your Image:</strong> Start by typing a detailed
@@ -99,9 +99,9 @@ export default function AboutPage() {
 
       {/* FAQs Section */}
       <div className="bg-white shadow-md p-8 rounded-lg w-full">
-        <div className="text-3xl font-semibold text-gray-800 mb-6">
+        <h2 className="text-3xl font-semibold text-gray-800 mb-6">
           Frequently Asked Questions
-        </div>
+        </h2>
         <div className="space-y-4">
           {faqData.map((faq) => (
             <div key={faq.question} className="border-b border-gray-300 pb-4">

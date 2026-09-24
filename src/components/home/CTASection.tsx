@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { Button } from "@/components/ui";
+import { buttonClassName } from "@/components/ui";
 
 interface CTASectionProps {
   isLoggedIn: boolean;
@@ -46,14 +46,15 @@ export function CTASection({ isLoggedIn }: CTASectionProps) {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mt-10"
         >
-          <Link href="/generate">
-            <Button
-              size="lg"
-              className="bg-white text-gray-900 hover:bg-gray-100"
-              rightIcon={<ArrowRight className="h-5 w-5" />}
-            >
-              {isLoggedIn ? "Go to Studio" : "Get Started Free"}
-            </Button>
+          <Link
+            href="/generate"
+            className={buttonClassName({
+              size: "lg",
+              className: "gap-2.5 bg-white text-gray-900 hover:bg-gray-100",
+            })}
+          >
+            {isLoggedIn ? "Go to Studio" : "Get Started Free"}
+            <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
         </m.div>
 
@@ -63,7 +64,7 @@ export function CTASection({ isLoggedIn }: CTASectionProps) {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-6 text-sm text-gray-500"
+            className="mt-6 text-sm text-gray-400"
           >
             No credit card required. Extra credits are a one-time purchase.
           </m.p>

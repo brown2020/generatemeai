@@ -25,6 +25,7 @@ import {
   AuthenticationError,
   ValidationError,
   getErrorMessage,
+  isAppError,
   type ErrorCode,
 } from "@/utils/errors";
 
@@ -231,9 +232,11 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (error) {
+        let refunded = false;
         if (chargedAmount > 0) {
           try {
             await refundCreditsServer(actorId, chargedAmount);
+            refunded = true;
           } catch (refundError) {
             console.error("[api] credit refund failed", refundError);
           }
@@ -251,10 +254,11 @@ export async function POST(request: NextRequest) {
             code: "VALIDATION_ERROR",
           });
         } else {
+          const message = getErrorMessage(error);
           emit({
             status: "error",
-            error: getErrorMessage(error),
-            code: "GENERATION_FAILED",
+            error: refunded ? `${message} Your credits were refunded.` : message,
+            code: isAppError(error) ? (error.code as ErrorCode) : "GENERATION_FAILED",
           });
         }
       } finally {

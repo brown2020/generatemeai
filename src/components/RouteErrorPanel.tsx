@@ -25,9 +25,9 @@ export function RouteErrorPanel({
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
-        <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
-        <p className="text-gray-500 mb-6">{message}</p>
+        <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" aria-hidden="true" />
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
+        <p className="text-gray-600 mb-6">{message}</p>
         <button
           type="button"
           onClick={reset}

@@ -25,9 +25,10 @@ export function proxy(request: NextRequest) {
     );
 
     if (!authCookie?.value) {
-      // Redirect to home page for unauthenticated users
+      // Send unauthenticated users to sign in, then back to this page
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = "/login";
+      url.search = "";
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }

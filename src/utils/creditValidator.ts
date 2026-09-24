@@ -2,6 +2,7 @@ import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
 import { Transaction } from "firebase-admin/firestore";
 import { boundedImageCount, generationCreditCost, STARTING_CREDITS } from "@/utils/creditCost";
+import { InsufficientCreditsError } from "@/utils/errors";
 
 export { boundedImageCount, generationCreditCost };
 
@@ -80,7 +81,7 @@ export const assertSufficientCreditsServer = async (
   const required = generationCreditCost(modelName, imageCount);
   const result = validateCredits(useCredits, credits, modelName, imageCount);
   if (!result.valid) {
-    throw new Error(result.error);
+    throw new InsufficientCreditsError(result.error);
   }
   return { useCredits, credits, imageCount: boundedCount, required };
 };
@@ -99,8 +100,8 @@ export async function deductCreditsServer(
     if (!snap.exists) throw new Error("Profile not found");
     const currentCredits = snap.data()?.credits ?? 0;
     if (currentCredits < amount) {
-      throw new Error(
-        `Insufficient credits. Required: ${amount}, Available: ${currentCredits}`
+      throw new InsufficientCreditsError(
+        `Not enough credits. Required: ${amount}, Available: ${currentCredits}. Please purchase credits or use your own API keys.`
       );
     }
     tx.update(profileRef, { credits: currentCredits - amount });

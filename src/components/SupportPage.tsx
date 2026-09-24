@@ -18,9 +18,9 @@ export default function Support({
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
 
-      <h2 className="text-xl font-bold mb-4 text-center">{companyName}</h2>
+      <h1 className="text-xl font-bold mb-4 text-center">{companyName}</h1>
 
-      <h4 className="text-lg font-semibold mb-2">Contact Information</h4>
+      <h2 className="text-lg font-semibold mb-2">Contact Information</h2>
       <p className="text-gray-700 mb-2">
         {companyName} welcomes your questions or comments regarding this
         application. If you have any questions or doubts about the application,
@@ -37,7 +37,7 @@ export default function Support({
         <p className="text-gray-700">Email Address:</p>
         <a
           href={`mailto:${companyEmail}`}
-          className="text-blue-500 hover:text-blue-700 transition-colors"
+          className="text-blue-700 hover:text-blue-900 transition-colors"
         >
           {companyEmail}
         </a>
