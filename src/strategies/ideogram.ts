@@ -5,15 +5,15 @@ import { GenerationStrategy, IdeogramResponse } from "./types";
  */
 const toIdeogramV3AspectRatio = (ratio?: string): string => {
   const map: Record<string, string> = {
-    "1:1": "ASPECT_1_1",
-    "16:9": "ASPECT_16_9",
-    "9:16": "ASPECT_9_16",
-    "4:3": "ASPECT_4_3",
-    "3:4": "ASPECT_3_4",
-    "3:2": "ASPECT_3_2",
-    "2:3": "ASPECT_2_3",
+    "1:1": "1x1",
+    "16:9": "16x9",
+    "9:16": "9x16",
+    "4:3": "4x3",
+    "3:4": "3x4",
+    "3:2": "3x2",
+    "2:3": "2x3",
   };
-  return map[ratio || ""] || "ASPECT_1_1";
+  return map[ratio || ""] || "1x1";
 };
 
 export const ideogramStrategy: GenerationStrategy = async ({
