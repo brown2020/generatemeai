@@ -21,10 +21,8 @@ const MetadataRow = ({ label, value }: { label: string; value?: string }) => {
  * Displays metadata information about the image.
  */
 export const ImageMetadata = ({ imageData }: ImageMetadataProps) => {
-  const timestampValue = imageData?.timestamp?.seconds
-    ? new Date(imageData.timestamp.seconds * 1000).toLocaleString("en-US", {
-        timeZone: "UTC",
-      })
+  const timestampValue = imageData?.timestamp
+    ? new Date(imageData.timestamp).toLocaleString("en-US", { timeZone: "UTC" })
     : undefined;
 
   return (

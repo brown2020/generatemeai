@@ -70,6 +70,22 @@ export function createMemoryFirestore() {
         doc(id?: string) {
           return ref(`${path}/${id ?? `gen-${++sequence}`}`);
         },
+        orderBy(field: string, direction: "asc" | "desc" = "asc") {
+          const sortKey = (data: DocData) => {
+            const value = data[field] as { toMillis?: () => number } | number | undefined;
+            return typeof value === "object" && value?.toMillis ? value.toMillis() : Number(value ?? 0);
+          };
+          return {
+            async get() {
+              const children = [...docs.keys()]
+                .filter((key) => key.startsWith(`${path}/`) && !key.slice(path.length + 1).includes("/"))
+                .map((key) => read(key))
+                .sort((a, b) => sortKey(a.data()!) - sortKey(b.data()!));
+              if (direction === "desc") children.reverse();
+              return { docs: children };
+            },
+          };
+        },
       };
     },
     async runTransaction<T>(fn: (tx: {

@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { apiGet } from "@/lib/api/client";
-import { db } from "@/firebase/firebaseClient";
-import { doc, getDoc } from "firebase/firestore";
-import { FirestorePaths } from "@/firebase/paths";
 import { ImageData } from "@/types/image";
 
 interface UseImagePageDataParams {
@@ -81,26 +78,9 @@ export const useImagePageData = ({
 
     const fetchImageData = async () => {
       try {
-        if (!authReady) return;
-
-        if (uid && !authPending) {
-          const ownerDocRef = doc(db, FirestorePaths.profileCover(uid, id));
-          const ownerDocSnap = await getDoc(ownerDocRef);
-          if (ignore) return;
-
-          if (ownerDocSnap.exists()) {
-            const data = ownerDocSnap.data() as ImageData;
-            applyImageData(data, id, {
-              setImageData,
-              setIsSharable,
-              setTags,
-              setCaption,
-              setBackgroundColor,
-            });
-            setIsOwner(true);
-            return;
-          }
-        }
+        // The route prefers the owner's copy when the session cookie is present,
+        // so wait for auth to settle before asking.
+        if (!authReady || authPending) return;
 
         const result = await apiGet<{ data: ImageData; isOwner: boolean }>(
           `/api/images/${id}`

@@ -71,18 +71,7 @@ export const useImageGenerator = () => {
     try {
       generationState.updateField("loading", true);
 
-      const prompt: string = generatePrompt(
-        generationState.imagePrompt,
-        generationState.imageStyle,
-        getColorFromLabel(generationState.colorScheme) || colors[0].value,
-        getLightingFromLabel(generationState.lighting) || lightings[0].value,
-        generationState.selectedCategory,
-        generationState.perspective,
-        generationState.composition,
-        generationState.medium,
-        generationState.mood,
-        generationState.tags
-      );
+      const prompt = generatePrompt(generationState);
 
       const formData = createImageGenerationFormData({
         message: prompt,

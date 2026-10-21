@@ -1,5 +1,13 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api/client";
 import type { ActionResult } from "@/utils/errors";
+import type { ImageListItem } from "@/types/image";
+
+/**
+ * Lists the signed-in user's gallery, newest first.
+ */
+export function listImages(): Promise<ActionResult<ImageListItem[]>> {
+  return apiGet<ImageListItem[]>("/api/images");
+}
 
 /**
  * Toggles the shareable status of an image.

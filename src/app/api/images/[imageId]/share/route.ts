@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { type Transaction } from "firebase-admin/firestore";
+import { revalidateTag } from "next/cache";
+import { PUBLIC_IMAGES_TAG } from "@/constants/cacheTags";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
 import {
@@ -36,19 +38,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const coversRef = adminDb.doc(FirestorePaths.profileCover(uid, imageId));
     const publicRef = adminDb.doc(FirestorePaths.publicImage(imageId));
 
-    const coversSnap = await coversRef.get();
-    if (!coversSnap.exists) {
-      return jsonError("Image not found", "NOT_FOUND", 404);
-    }
-
-    const currentData = coversSnap.data()!;
-    const newSharableState = !currentData.isSharable;
-
-    await adminDb.runTransaction(async (tx: Transaction) => {
+    const newSharableState = await adminDb.runTransaction(async (tx: Transaction) => {
       const coverSnap = await tx.get(coversRef);
-      if (!coverSnap.exists) throw new Error("Document not found");
+      if (!coverSnap.exists) return null;
 
-      if (newSharableState) {
+      const sharable = !coverSnap.data()?.isSharable;
+      if (sharable) {
         tx.set(publicRef, {
           ...coverSnap.data(),
           isSharable: true,
@@ -59,7 +54,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
         tx.update(coversRef, { isSharable: false, password: "" });
         tx.delete(publicRef);
       }
+      return sharable;
     });
+    if (newSharableState === null) {
+      return jsonError("Image not found", "NOT_FOUND", 404);
+    }
+    revalidateTag(PUBLIC_IMAGES_TAG, { expire: 0 });
 
     return jsonOk({ isSharable: newSharableState });
   } catch (error) {

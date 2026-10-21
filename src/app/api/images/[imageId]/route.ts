@@ -1,6 +1,9 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
+import { revalidateTag } from "next/cache";
 import { adminDb } from "@/firebase/firebaseAdmin";
+import { PUBLIC_IMAGES_TAG } from "@/constants/cacheTags";
+import { toImageJson } from "@/utils/imageJson";
 import { FirestorePaths } from "@/firebase/paths";
 import {
   jsonError,
@@ -42,20 +45,14 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       const ownerRef = adminDb.doc(FirestorePaths.profileCover(uid, imageId));
       const ownerSnap = await ownerRef.get();
       if (ownerSnap.exists) {
-        return jsonOk({
-          data: { id: imageId, ...ownerSnap.data() } as Record<string, unknown>,
-          isOwner: true,
-        });
+        return jsonOk({ data: toImageJson(imageId, ownerSnap.data()), isOwner: true });
       }
     }
 
     const publicRef = adminDb.doc(FirestorePaths.publicImage(imageId));
     const publicSnap = await publicRef.get();
     if (publicSnap.exists) {
-      return jsonOk({
-        data: { id: imageId, ...publicSnap.data() } as Record<string, unknown>,
-        isOwner: false,
-      });
+      return jsonOk({ data: toImageJson(imageId, publicSnap.data()), isOwner: false });
     }
 
     return jsonError("Image not found", "NOT_FOUND", 404);
@@ -88,6 +85,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const publicSnap = await publicRef.get();
     if (publicSnap.exists) {
       await publicRef.update(normalized);
+      revalidateTag(PUBLIC_IMAGES_TAG, { expire: 0 });
     }
 
     return jsonOk<void>(undefined);
@@ -117,6 +115,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     batch.delete(coverRef);
     batch.delete(adminDb.doc(FirestorePaths.publicImage(imageId)));
     await batch.commit();
+    revalidateTag(PUBLIC_IMAGES_TAG, { expire: 0 });
 
     return jsonOk<void>(undefined);
   } catch (error) {

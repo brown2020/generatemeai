@@ -17,6 +17,7 @@ const stripeMock = vi.hoisted(() => ({
   create: vi.fn(),
   retrieve: vi.fn(),
 }));
+const cacheMock = vi.hoisted(() => ({ revalidateTag: vi.fn() }));
 
 vi.mock("@/firebase/firebaseAdmin", async () => {
   const { memory: store } = await import("@/test/memoryFirestore");
@@ -49,6 +50,8 @@ vi.mock("@/strategies", () => ({
   },
 }));
 
+vi.mock("next/cache", () => ({ revalidateTag: cacheMock.revalidateTag }));
+
 vi.mock("@/utils/storage", () => ({
   saveToStorage: async () => "https://storage.example/generated/a.png",
   createGeneratedImagePath: () => "generated/user-a/a.png",
@@ -60,6 +63,9 @@ import { POST as createIntent } from "@/app/api/payments/intent/route";
 import { POST as processPayment } from "@/app/api/payments/process/route";
 import { POST as validatePayment } from "@/app/api/payments/validate/route";
 import { GET as getImage, DELETE as deleteImage } from "@/app/api/images/[imageId]/route";
+import { GET as listImages } from "@/app/api/images/route";
+import { PUBLIC_IMAGES_TAG } from "@/constants/cacheTags";
+import { Timestamp } from "firebase-admin/firestore";
 import { POST as shareImage } from "@/app/api/images/[imageId]/share/route";
 import { GET as getProfile } from "@/app/api/profile/route";
 import { POST as saveHistory } from "@/app/api/history/route";
@@ -143,6 +149,7 @@ describe("critical routes", () => {
       Array.from({ length: input.imageCount ?? 1 }, () => "png-bytes");
     stripeMock.create.mockReset();
     stripeMock.retrieve.mockReset();
+    cacheMock.revalidateTag.mockReset();
     process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME = "Generate Credits";
     process.env.OPENAI_API_KEY = "test-openai";
     process.env.REPLICATE_API_KEY = "test-replicate";
@@ -306,6 +313,7 @@ describe("critical routes", () => {
     expect(denied.status).toBe(404);
     expect(memory.docs.has(FirestorePaths.publicImage("img-1"))).toBe(true);
     expect(memory.docs.has(FirestorePaths.profileCover("user-a", "img-1"))).toBe(true);
+    expect(cacheMock.revalidateTag).not.toHaveBeenCalled();
 
     testAuth.uid = "user-a";
     const hidden = await getImage(
@@ -321,6 +329,7 @@ describe("critical routes", () => {
     expect(removed.status).toBe(200);
     expect(memory.docs.has(FirestorePaths.profileCover("user-a", "img-1"))).toBe(false);
     expect(memory.docs.has(FirestorePaths.publicImage("img-1"))).toBe(false);
+    expect(cacheMock.revalidateTag).toHaveBeenCalledWith(PUBLIC_IMAGES_TAG, { expire: 0 });
 
     const replay = await deleteImage(
       asRequest(new Request("http://localhost/api/images/img-1", { method: "DELETE" })),
@@ -366,6 +375,49 @@ describe("critical routes", () => {
     expect(payload.data.data.downloadUrl).toBe("https://storage.example/a.png");
     expect(JSON.stringify(payload)).not.toContain("private-gallery");
     expect(memory.docs.has(FirestorePaths.profileCover("user-b", "img-b"))).toBe(true);
+    expect(cacheMock.revalidateTag).toHaveBeenCalledTimes(1);
+
+    testAuth.uid = "user-a";
+    const unshared = await shareImage(
+      jsonPost("http://localhost/api/images/img-1/share", { password: "" }),
+      imageContext("img-1")
+    );
+    expect((await unshared.json()).data.isSharable).toBe(false);
+    expect(memory.docs.has(FirestorePaths.publicImage("img-1"))).toBe(false);
+    expect(cacheMock.revalidateTag).toHaveBeenLastCalledWith(PUBLIC_IMAGES_TAG, { expire: 0 });
+    expect(cacheMock.revalidateTag).toHaveBeenCalledTimes(2);
+
+    testAuth.uid = "";
+    const gone = await getImage(
+      asRequest(new Request("http://localhost/api/images/img-1")),
+      imageContext("img-1")
+    );
+    expect(gone.status).toBe(404);
+  });
+
+  it("lists only the caller's gallery, newest first, with millisecond timestamps", async () => {
+    memory.docs.set(FirestorePaths.profileCover("user-a", "old"), {
+      downloadUrl: "https://storage.example/old.png",
+      timestamp: Timestamp.fromMillis(1_000),
+    });
+    memory.docs.set(FirestorePaths.profileCover("user-a", "new"), {
+      downloadUrl: "https://storage.example/new.png",
+      timestamp: Timestamp.fromMillis(2_000),
+    });
+    memory.docs.set(FirestorePaths.profileCover("user-b", "theirs"), {
+      downloadUrl: "https://storage.example/private-b.png",
+      timestamp: Timestamp.fromMillis(3_000),
+    });
+
+    const listed = await listImages();
+    const payload = await listed.json();
+    expect(payload.data.map((image: { id: string }) => image.id)).toEqual(["new", "old"]);
+    expect(payload.data[0].timestamp).toBe(2_000);
+    expect(JSON.stringify(payload)).not.toContain("private-b");
+
+    testAuth.uid = "";
+    const anonymous = await listImages();
+    expect(anonymous.status).toBe(401);
   });
 
   it("sells only the published pack, grants it once, and reloads the balance", async () => {

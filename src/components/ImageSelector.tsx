@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/firebase/firebaseClient";
-import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { listImages } from "@/actions/imageActions";
+import { Button } from "@/components/ui/Button";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { ImageListItem } from "@/types/image";
 import {
@@ -26,6 +26,8 @@ const ImageListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const uid = useAuthStore((s) => s.uid);
   const authPending = useAuthStore((s) => s.authPending);
 
@@ -38,31 +40,22 @@ const ImageListPage = () => {
         return;
       }
 
+      setIsLoading(true);
+      setLoadError(null);
       try {
-        setIsLoading(true);
-        const q = query(
-          collection(db, "profiles", uid, "covers"),
-          orderBy("timestamp", "desc")
-        );
-        const querySnapshot = await getDocs(q);
+        const result = await listImages();
         if (ignore) return;
 
-        const fetchedImages: ImageListItem[] = [];
-        const tagsSet = new Set<string>();
-
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          fetchedImages.push({ id: doc.id, ...data } as ImageListItem);
-
-          if (Array.isArray(data.tags)) {
-            data.tags.forEach((tag: string) => {
-              tagsSet.add(tag.trim().toLowerCase());
-            });
-          }
-        });
-
-        setImages(fetchedImages);
-        setAllTags(Array.from(tagsSet));
+        if (result.success) {
+          const tagsSet = new Set<string>();
+          result.data.forEach((image) =>
+            image.tags?.forEach((tag) => tagsSet.add(tag.trim().toLowerCase()))
+          );
+          setImages(result.data);
+          setAllTags(Array.from(tagsSet));
+        } else {
+          setLoadError(result.error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -73,7 +66,7 @@ const ImageListPage = () => {
     return () => {
       ignore = true;
     };
-  }, [uid, authPending]);
+  }, [uid, authPending, reloadKey]);
 
   // Memoized filtered images to prevent recalculation on every render
   const filteredImages = useMemo(() => {
@@ -151,6 +144,14 @@ const ImageListPage = () => {
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-gray-500 text-sm">Loading your images...</p>
+          </div>
+        ) : loadError ? (
+          <div className="text-center py-16" role="alert">
+            <h2 className="text-lg font-medium text-gray-900 mb-1">We couldn&apos;t load your images</h2>
+            <p className="text-gray-600 mb-4">{loadError}</p>
+            <Button size="sm" onClick={() => setReloadKey((key) => key + 1)}>
+              Try again
+            </Button>
           </div>
         ) : paginatedImages.length > 0 ? (
           <>

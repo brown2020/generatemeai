@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import HomePage from "@/components/HomePage";
 import { PageWithFooter } from "@/components/layouts/PageWithFooter";
 import { adminDb, hasAdminConfig } from "@/firebase/firebaseAdmin";
+import { PUBLIC_IMAGES_TAG } from "@/constants/cacheTags";
 
 /**
  * Fetches public images with caching for better performance.
@@ -35,8 +36,8 @@ const getPublicImages = unstable_cache(
       return [];
     }
   },
-  ["public-images"],
-  { revalidate: 3600, tags: ["public-images"] }
+  [PUBLIC_IMAGES_TAG],
+  { revalidate: 3600, tags: [PUBLIC_IMAGES_TAG] }
 );
 
 export default async function Home() {

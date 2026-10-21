@@ -1,7 +1,5 @@
-import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_APIKEY,
@@ -16,16 +14,10 @@ const firebaseConfig = {
 /** True when public Firebase web config is present (false in CI without secrets). */
 export const hasClientConfig = Boolean(firebaseConfig.apiKey?.trim());
 
-let app: FirebaseApp | undefined;
-let db: Firestore;
 let auth: Auth;
-let storage: FirebaseStorage;
 
 if (hasClientConfig) {
-  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  auth = getAuth(app);
-  storage = getStorage(app);
+  auth = getAuth(getApps().length ? getApp() : initializeApp(firebaseConfig));
 } else {
   // CI gate jobs / SSG without Actions secrets: skip module-level init so
   // prerender does not throw auth/invalid-api-key. Runtime without config
@@ -33,9 +25,7 @@ if (hasClientConfig) {
   console.warn(
     "Firebase client config missing (NEXT_PUBLIC_FIREBASE_APIKEY); deferring init"
   );
-  db = null as unknown as Firestore;
   auth = null as unknown as Auth;
-  storage = null as unknown as FirebaseStorage;
 }
 
-export { auth, db, storage };
+export { auth };

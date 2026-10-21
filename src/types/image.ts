@@ -1,4 +1,3 @@
-import { Timestamp } from "firebase/firestore";
 import { GenerationParams } from "./generation";
 
 /**
@@ -22,8 +21,8 @@ export interface ImageData extends Partial<GenerationParams> {
   scriptPrompt?: string;
   animation?: string;
 
-  // Metadata
-  timestamp?: Timestamp;
+  // Metadata (epoch milliseconds)
+  timestamp?: number;
 }
 
 /**
@@ -37,7 +36,7 @@ export interface ImageListItem {
   tags?: string[];
   backgroundColor?: string;
   videoDownloadUrl?: string;
-  timestamp?: Timestamp;
+  timestamp?: number;
 }
 
 /**
