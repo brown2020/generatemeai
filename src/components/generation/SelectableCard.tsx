@@ -41,6 +41,7 @@ export const SelectableCard = memo(function SelectableCard({
             ? "border-blue-600 bg-blue-50"
             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
         }`}
+      aria-pressed={isSelected}
       onClick={onClick}
     >
       {showPreview &&
@@ -82,7 +83,7 @@ export const SelectableCard = memo(function SelectableCard({
       )}
 
       {isSelected && (
-        <div className="absolute top-1 left-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+        <div aria-hidden="true" className="absolute top-1 left-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
           <svg
             className="w-2.5 h-2.5 text-white"
             fill="currentColor"

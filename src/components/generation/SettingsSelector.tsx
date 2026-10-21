@@ -49,7 +49,7 @@ export const SettingsSelector = memo(function SettingsSelector({
   return (
     <div className="space-y-2 relative">
       <p className="text-sm font-medium text-gray-700">{label}</p>
-      <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
+      <div role="group" aria-label={label} className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg">
         {options.map((option) => {
           const isSelected = currentValue === option.label;
 
@@ -63,6 +63,7 @@ export const SettingsSelector = memo(function SettingsSelector({
                     ? "bg-blue-600 text-white"
                     : "bg-white border border-gray-300 hover:bg-gray-100"
                 }`}
+              aria-pressed={isSelected}
               onClick={() => handleOptionClick(option.label, option.value)}
             >
               {option.label}
