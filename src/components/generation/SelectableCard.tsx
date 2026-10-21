@@ -43,17 +43,29 @@ export const SelectableCard = memo(function SelectableCard({
         }`}
       onClick={onClick}
     >
-      {showPreview && previewUrl && !imgError && (
-        <div className="w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
-          <img
-            src={previewUrl}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={handleImgError}
-          />
-        </div>
-      )}
+      {showPreview &&
+        (previewUrl && !imgError ? (
+          <div className="w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
+            <img
+              src={previewUrl}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={handleImgError}
+            />
+          </div>
+        ) : (
+          <div
+            aria-hidden="true"
+            className="w-full aspect-square mb-2 rounded bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center text-lg font-semibold text-gray-500"
+          >
+            {label
+              .split(/[\s-]+/)
+              .map((word) => word[0])
+              .join("")
+              .slice(0, 2)}
+          </div>
+        ))}
 
       <span
         className={`text-xs font-medium text-center line-clamp-2 ${
@@ -95,7 +107,7 @@ export const SelectableCard = memo(function SelectableCard({
 type PreviewType = "models" | "styles";
 
 interface ItemCardProps {
-  item: { value: string; label: string };
+  item: { value: string; label: string; hasPreview?: boolean };
   isSelected: boolean;
   onClick: () => void;
 }
@@ -140,8 +152,8 @@ export const StyleCard = memo(function StyleCard({
   onClick,
 }: ItemCardProps) {
   const previewUrl = useMemo(
-    () => getPreviewUrl("styles", item.value),
-    [item.value]
+    () => (item.hasPreview ? getPreviewUrl("styles", item.value) : undefined),
+    [item.hasPreview, item.value]
   );
 
   return (

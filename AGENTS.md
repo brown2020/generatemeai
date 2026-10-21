@@ -31,7 +31,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 - **AI**: Vercel AI SDK 6 (`ai`, `@ai-sdk/openai`), Replicate SDK, plus direct REST calls (Stability, Ideogram, Fireworks, D-ID, RunwayML, Bria)
 - **Payments**: Stripe 22 (`stripe`, `@stripe/react-stripe-js`, `@stripe/stripe-js`)
 - **Validation**: Zod 4
-- **Media**: `sharp`, `fluent-ffmpeg` + `ffmpeg-static` (GIF), `dom-to-image`
+- **Media**: `fluent-ffmpeg` + `ffmpeg-static` (GIF), `dom-to-image`; `sharp` arrives as a Next.js optional dependency
 - **Lint**: ESLint 10 (flat config `eslint.config.mjs`, `eslint-config-next`)
 
 Package manager is **npm** (`package-lock.json`, `.npmrc`). Do not switch package managers.
@@ -117,6 +117,7 @@ npm start              # serve production build
 npm run lint           # ESLint (flat config)
 npx tsc --noEmit       # typecheck (no dedicated script exists)
 npm test               # Vitest unit tests (run mode, non-interactive)
+npm run test:rules     # Firestore rules suite in the emulator (Java 21; CI runs it)
 ```
 
 ### Canonical validation/check command
@@ -132,7 +133,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 ### Non-interactive testing rules
 
-- A small **Vitest** unit suite exists (`npm test` → `vitest run`); GitHub Actions CI runs in `.github/workflows/ci.yml`. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`), model registry env documentation (`src/constants/modelRegistry.test.ts`), profile-update sanitization (`src/utils/profileFields.test.ts`), storage URL allowlisting (`src/utils/storageUrl.test.ts`), the critical generate/gallery/share/payment route handlers (`src/app/api/criticalTasks.test.ts`), auth error messages (`src/utils/authErrors.test.ts`), the sign-in redirect allowlist (`src/constants/routes.test.ts`), gallery empty-state copy (`src/components/images/galleryEmptyMessage.test.ts`), credit reservation for video, tags, and background removal (`src/app/api/generate/creditReserve.test.ts`), and Firestore rules in the emulator (`src/firebase/firestore.rules.test.ts`, skipped unless `FIRESTORE_EMULATOR_HOST` is set).
+- A small **Vitest** unit suite exists (`npm test` → `vitest run`); GitHub Actions CI runs in `.github/workflows/ci.yml`. The suite currently covers pure route-protection logic (`src/constants/routes.test.ts`), model registry env documentation (`src/constants/modelRegistry.test.ts`), profile-update sanitization (`src/utils/profileFields.test.ts`), storage URL allowlisting (`src/utils/storageUrl.test.ts`), the critical generate/gallery/share/payment route handlers (`src/app/api/criticalTasks.test.ts`), auth error messages (`src/utils/authErrors.test.ts`), the sign-in redirect allowlist (`src/constants/routes.test.ts`), gallery empty-state copy (`src/components/images/galleryEmptyMessage.test.ts`), credit reservation for video, tags, and background removal (`src/app/api/generate/creditReserve.test.ts`), prompt assembly from generation settings (`src/utils/promptUtils.test.ts`), generate-page preview assets (`src/constants/previewAssets.test.ts`), the gallery list and home-page cache invalidation (`src/app/api/criticalTasks.test.ts`), and Firestore rules in the emulator (`src/firebase/firestore.rules.test.ts`, skipped under `npm test`; run with `npm run test:rules`, which CI's `firestore-rules` job does).
 - Always run tests in run mode (`vitest run` / `npm test`), never watch mode.
 - Never start dev servers or a headed browser as part of validation.
 - Never wait for manual login or interactive input.
@@ -159,7 +160,8 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 - **Server-only** code (Firebase Admin, provider secrets, credit logic) lives in `src/app/api/**/route.ts`, `src/lib/api/server.ts`, `src/utils/serverAuth.ts`, `src/utils/creditValidator.ts`, `src/strategies/*`, and `src/firebase/firebaseAdmin.ts`. Mark new server-only modules with `import "server-only"`.
 - **Never** import `firebaseAdmin`, provider secrets, or `process.env.*_API_KEY` into client components or `src/actions/*`.
-- Client never writes to Firestore directly. Client → `src/actions/*` wrapper → `/api/*` route → Admin SDK. After a write, refresh local state (e.g. `fetchProfile()`).
+- Client never reads or writes Firestore directly; the browser bundle only loads Firebase Auth. Client → `src/actions/*` wrapper → `/api/*` route → Admin SDK (the gallery uses `GET /api/images`). After a write, refresh local state (e.g. `fetchProfile()`).
+- The home page caches `publicImages` under `PUBLIC_IMAGES_TAG` (`src/constants/cacheTags.ts`). Any route that adds, edits, or removes a public mirror must call `revalidateTag(PUBLIC_IMAGES_TAG, { expire: 0 })` so unshared or deleted images leave the home page on the next request.
 - New server endpoints: add a route under `src/app/api/...`, wrap with `withAuth`, validate with Zod, return `jsonOk`/`jsonError`; add a matching client wrapper in `src/actions/*` using `src/lib/api/client.ts`.
 
 ### Route-protection guidance

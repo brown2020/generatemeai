@@ -27,7 +27,7 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 | AI | Vercel AI SDK (`ai` ^6, `@ai-sdk/openai`), Replicate SDK, direct REST (Stability, Ideogram, Fireworks, D-ID, RunwayML, Bria) |
 | Payments | Stripe ^22 + `@stripe/react-stripe-js` |
 | Validation | Zod ^4.3.6 |
-| Media | `sharp`, `fluent-ffmpeg` + `ffmpeg-static`, `dom-to-image` |
+| Media | `fluent-ffmpeg` + `ffmpeg-static`, `dom-to-image` (`sharp` comes with Next.js for self-hosted image optimization) |
 | Tests / quality | Vitest ^4.1.8, ESLint 10, React Doctor |
 
 ## Project structure
@@ -60,7 +60,7 @@ Architecture notes: privileged work runs in Node API routes with Firebase Admin.
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 24 (`engines.node`; CI and Vercel use the same major)
 - npm
 - Firebase project (Auth, Firestore, Storage)
 - Stripe account (for credit purchases)
@@ -131,18 +131,19 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest |
+| `npm run test:rules` | Firestore rules suite in the emulator (needs Java 21) |
 | `npm run doctor` | React Doctor checks |
 
 ## Testing and CI
 
 - Unit tests (Vitest) cover model registry, routes, credit reserve, and related API helpers.
-- `.github/workflows/ci.yml` on `dev` / `main`: lint → typecheck → unit tests → React Doctor → production build (build env from Actions secrets only).
+- `.github/workflows/ci.yml` on `dev` / `main`: lint → typecheck → unit tests → React Doctor → production build (build env from Actions secrets only), plus a Firestore rules job that runs `npm run test:rules` in the emulator.
 - A separate malware IOC scan workflow runs via `scripts/malware-scan.sh`.
 
 ## Firebase / services setup
 
 1. Enable Email/Password, Google, and Email link auth as needed.
-2. Deploy `firestore.rules` and `storage.rules` (client reads are owner-scoped; privileged writes use Admin SDK).
+2. Deploy `firestore.rules` and `storage.rules` (the browser only uses Firebase Auth; gallery reads and all writes go through API routes with the Admin SDK).
 3. Configure Storage CORS if browsers upload/download across origins (`cors.json` / `firebase-cors.json` are included as references).
 4. Wire Stripe products/prices to match your credit packs (`src/constants/creditPack.ts`).
 

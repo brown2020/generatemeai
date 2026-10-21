@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version-file: package.json
           cache: npm
       # Install without lifecycle scripts and without CI secrets in scope
       # (react-doctor build-pipeline-secret-boundary).
@@ -49,6 +49,23 @@ jobs:
           NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL: ${{ secrets.NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL }}
         # Soft-skip Firebase client init when secrets are unset — do not re-inline values.
         run: npm run build
+
+  firestore-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci --ignore-scripts
+      - name: Firestore rules (emulator)
+        run: npm run test:rules
 
   malware-scan:
     runs-on: ubuntu-latest

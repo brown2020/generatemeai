@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { checkImageExists } from "@/utils/imageUtils";
+import { optionPreviewImages } from "@/constants/optionPreviews";
 
 interface PreviewCardProps {
   type: string;
@@ -7,66 +6,14 @@ interface PreviewCardProps {
 }
 
 export const PreviewCard = ({ type, value }: PreviewCardProps) => {
-  const [loadedImages, setLoadedImages] = useState<string[]>([]);
-  const previewRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (value === "none" || !value) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadImages = async () => {
-      const possibleImages = Array.from(
-        { length: 6 },
-        (_, i) => `/previews/${type}s/${value}/${i + 1}.jpg`
-      );
-
-      const checks = await Promise.all(
-        possibleImages.map(async (img) =>
-          (await checkImageExists(img)) ? img : null
-        )
-      );
-      const existingImages = checks.filter((img): img is string => img !== null);
-
-      if (!cancelled) {
-        setLoadedImages(existingImages);
-      }
-    };
-
-    loadImages();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [type, value]);
-
-  if (value === "none" || !value) {
-    return null;
-  }
-
-  const baseClassName =
-    "absolute z-50 bg-white rounded-lg shadow-xl p-3 w-64 transform -translate-x-1/2 left-1/2 mt-2";
-
-  if (loadedImages.length === 0) {
-    return (
-      <div ref={previewRef} className={baseClassName}>
-        <div className="text-center text-gray-500 py-4">
-          No preview images available
-        </div>
-      </div>
-    );
-  }
+  const images = optionPreviewImages(type, value);
+  if (images.length === 0) return null;
 
   return (
-    <div ref={previewRef} className={baseClassName}>
+    <div className="absolute z-50 bg-white rounded-lg shadow-xl p-3 w-64 transform -translate-x-1/2 left-1/2 mt-2">
       <div className="grid grid-cols-2 gap-2">
-        {loadedImages.map((src, index) => (
-          <div
-            key={src}
-            className="relative aspect-square rounded-md overflow-hidden"
-          >
+        {images.map((src, index) => (
+          <div key={src} className="relative aspect-square rounded-md overflow-hidden">
             <img
               src={src}
               alt={`${type} preview ${index + 1}`}
@@ -81,4 +28,3 @@ export const PreviewCard = ({ type, value }: PreviewCardProps) => {
     </div>
   );
 };
-

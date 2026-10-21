@@ -63,9 +63,9 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 - Both video providers run a poll-until-ready loop inside the request (`maxDuration = 300`, Node runtime). **(inferred: there is no separate job queue or cron — long jobs complete within the request.)**
 
 **Gallery & sharing**
-- Private gallery of generated media with a paginated grid and tag filtering.
+- Private gallery of generated media with a paginated grid and tag filtering, loaded newest-first from `GET /api/images`; a failed load shows a retryable error instead of an empty gallery.
 - Per-image detail page: metadata, tags (CRUD), caption, background color, download.
-- Public sharing: copy an image into `publicImages/{id}` with optional password and social-share buttons.
+- Public sharing: copy an image into `publicImages/{id}` with optional password and social-share buttons. The home page shows recent unprotected public images from a tagged cache; sharing, unsharing, editing, or deleting expires that cache so changes appear on the next request.
 
 **Accounts, profile & payments**
 - Firebase auth: Google, email/password on dedicated `/login` and `/signup` pages, `/forgot-password`, and passwordless email link, with mapped inline errors and a show/hide password control. A signed-out visit to a protected page goes to `/login` and returns there after sign-in.
@@ -75,7 +75,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 ### Current user flows
 
 - **Auth flow**: `/login`, `/signup`, and `/forgot-password` (`AuthPageForm`) → Firebase sign-in → the form writes the ID-token cookie before navigating → returns to the `?redirect=` page the proxy set, or `/generate` → `proxy.ts` allows protected routes → API routes verify the token with Admin SDK. `/api/auth/sync` stores sign-in metadata only.
-- **Generate flow**: `useImageGenerator` builds a prompt + FormData → streams `/api/generate/image`. The route reserves `creditsToMinus(model) × bounded imageCount` before the provider call, refunds that reserve if generation or upload fails, stores the media, and writes the gallery cover before `complete`. The client then refreshes profile credits and fills style metadata on that same cover. Video, tag suggestions, and background removal reserve their model cost before the provider call and refund it if that work fails. A refunded image failure ends with "Your credits were refunded." in the error event, and an unaffordable request fails as `INSUFFICIENT_CREDITS` (402 on JSON routes) before any charge.
+- **Generate flow**: `useImageGenerator` builds a prompt (the description plus chosen option labels; options left at None add nothing) + FormData → streams `/api/generate/image`. The route reserves `creditsToMinus(model) × bounded imageCount` before the provider call, refunds that reserve if generation or upload fails, stores the media, and writes the gallery cover before `complete`. The client then refreshes profile credits and fills style metadata on that same cover. Video, tag suggestions, and background removal reserve their model cost before the provider call and refund it if that work fails. A refunded image failure ends with "Your credits were refunded." in the error event, and an unaffordable request fails as `INSUFFICIENT_CREDITS` (402 on JSON routes) before any charge.
 - **Image detail flow**: `useImagePageData` loads owner data (falls back to public copy) → owner actions (share/delete/tags/caption/background/video) call `/api/images/[id]*`.
 - **Payment flow**: create a PaymentIntent for the published pack only (`9999` cents → `10000` credits), bound to the signed-in uid → Stripe Elements → process/validate. Process grants credits once, inside a transaction keyed by the PaymentIntent id.
 
@@ -100,7 +100,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 
 ### Known limitations
 
-- **Minimal automated tests and no CI.** A small Vitest unit suite covers route-protection, model registry env documentation, profile-sanitization, and storage URL allowlisting logic; the rest of the app is unverified by tests, and no CI pipeline runs them automatically. Validation is `lint` + `tsc --noEmit` + `npm test` + `build`. **(inferred.)**
+- **Route-level tests, no browser end-to-end suite.** Vitest covers the critical API routes (generate, gallery, share, delete, payments, credits), route protection, prompt assembly, and preview assets; the Firestore rules suite runs in the emulator. GitHub Actions runs lint, typecheck, tests, React Doctor, build, and the rules job on `dev` and `main`. UI flows are verified manually.
 - **Public-image password is stored in plaintext** in the public doc — it deters casual access only and is not a real secret (documented in `README.md` and `firestore.rules`).
 - **Gallery has tag filtering and pagination but no free-text prompt search and no bulk operations.** **(inferred.)**
 - **No cost/credit preview before generating** — users don't see what an action will cost until after. **(inferred.)**

@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "doctor": "npx -y react-doctor@0.9.14 . --verbose"
+    "doctor": "npx -y react-doctor@0.9.14 . --verbose",
+    "test:rules": "npx -y firebase-tools@15.34.0 emulators:exec --only firestore --project demo-generatemeai 'vitest run src/firebase/firestore.rules.test.ts'"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.53",
@@ -26,7 +27,7 @@
     "fluent-ffmpeg": "^2.1.3",
     "framer-motion": "^12.38.0",
     "lucide-react": "1.17.0",
-    "next": "^16.3.6",
+    "next": "^16.4.2",
     "react": "^19.2.5",
     "react-cookie-consent": "^10.0.1",
     "react-dom": "^19.2.5",
@@ -39,7 +40,6 @@
     "react-spinners": "^0.17.0",
     "react-textarea-autosize": "^8.5.9",
     "replicate": "^1.4.0",
-    "sharp": "^0.35.4",
     "stripe": "^22.0.2",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6",
@@ -55,7 +55,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/react-modal": "^3.16.3",
     "eslint": "^10.2.1",
-    "eslint-config-next": "^16.3.6",
+    "eslint-config-next": "^16.4.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.4",
@@ -65,5 +65,8 @@
   "overrides": {
     "uuid": "^11.1.1",
     "@tootallnate/once": ">=3.0.1"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }
