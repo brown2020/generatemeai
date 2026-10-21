@@ -96,6 +96,8 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 
 - Long-running video/GIF jobs must finish inside one request (Vercel `maxDuration` ≤ 300; Hobby plan caps at 60s). **(inferred constraint.)**
 - Provider rate limits and per-provider API differences are absorbed in strategies/routes; failures surface as `ExternalApiError`.
+- **FLUX Kontext Pro (Fireworks) cannot generate.** Fireworks stopped serving every FLUX model serverless on 2026-07-22 (`supportsServerless: false`), so `/workflows/.../flux-kontext-pro` returns 404 and the app refunds. The model still appears in the picker until it is removed or moved to another host.
+- **No Firestore backups or error monitoring** are configured (checked 2026-10-20), so a restore drill is not possible yet. Owner action: enable a backup schedule or PITR and an error monitor, then run one restore into a scratch database.
 - Build/runtime require many env vars (Firebase Admin + client, provider keys, Stripe, credit costs, cookie name).
 
 ### Known limitations
@@ -159,6 +161,11 @@ Product-oriented, ordered by impact and dependency. Each item is sized for **one
 - **User value**: Table stakes for serious users — reproduce or vary a result deterministically.
 - **Implementation intent**: For models whose providers support a seed, add a seed field to the generate form, thread it through FormData → validation schema → the relevant strategies, persist it in history, and display it on the image detail page. Gate visibility by a new `supportsSeed` capability on `MODEL_REGISTRY`.
 - **Acceptance criteria**: Seed is settable where supported, used by the provider call, saved with the image, and re-loadable via M3; unsupported models hide the field; gate passes.
+
+### M10 — Server-rendered public pages
+- **User value**: The home and shared-image pages show content on first paint and are indexable; today the server sends only a spinner because `ClientProvider` renders nothing until Firebase Auth settles.
+- **Implementation intent**: Render children during auth settle on public routes (`routes.ts` non-protected paths) and keep the spinner for protected ones; make the header's signed-in controls tolerate the unsettled state. Touches the auth/session settle path, so keep the cookie-before-ready ordering in `useAuthToken`.
+- **Acceptance criteria**: `/` and `/images/[id]` server HTML contain their headings and images; signed-in users see no protected-data 401s or redirect flicker; auth tests and the gate pass.
 
 ### Roadmap notes
 
