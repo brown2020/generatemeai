@@ -64,7 +64,10 @@
   },
   "overrides": {
     "uuid": "^11.1.1",
-    "@tootallnate/once": ">=3.0.1"
+    "@tootallnate/once": ">=3.0.1",
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "^1.14.6"
+    }
   },
   "engines": {
     "node": "24.x"

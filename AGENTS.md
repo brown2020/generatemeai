@@ -194,6 +194,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 - `src/app/api/generate/image/route.ts` — NDJSON streaming contract shared with `src/actions/generateImage.ts`. Keep event shapes in sync.
 - `src/app/api/generate/video/route.ts`, `src/actions/generateGif.ts` — long-running polling + FFmpeg (`maxDuration = 300`, Node runtime). Mind Vercel plan timeouts.
 - `package-lock.json` and other generated files — don't hand-edit; change via npm.
+- `package.json` `overrides` lifts `@firebase/firestore`'s pinned `@grpc/grpc-js ~1.9` to the 1.14 line (GHSA-m9gg-hp2v-232j, GHSA-f596-whhp-79r4). The browser no longer loads client Firestore; `npm run test:rules` is the Node consumer that proves it still works. Drop the override once `@firebase/firestore` ships grpc-js ≥1.13.6.
 
 ## Git Workflow Expectations
 
