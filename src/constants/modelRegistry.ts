@@ -212,7 +212,7 @@ export type Model = keyof typeof MODEL_REGISTRY;
  * Type guard to check if a string is a valid model.
  */
 export const isValidModel = (value: string): value is Model => {
-  return value in MODEL_REGISTRY;
+  return Object.hasOwn(MODEL_REGISTRY, value);
 };
 
 /**

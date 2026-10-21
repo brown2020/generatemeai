@@ -31,14 +31,18 @@ export const createOptionFinder = <T extends Option>(options: T[]) => {
   };
 };
 
+const labelKey = (text: string) =>
+  text.toLowerCase().replace(/[\s_]+/g, " ").trim();
+
 /**
  * Creates an option finder by label for a given options array.
+ * Also matches the snake_case form produced by `getValueFromLabel`, which is
+ * what saved images store.
  */
 export const createOptionFinderByLabel = <T extends Option>(options: T[]) => {
   return (searchLabel: string): T | undefined => {
-    return options.find(
-      (option) => option.label.toLowerCase() === searchLabel.toLowerCase()
-    );
+    const key = labelKey(searchLabel);
+    return options.find((option) => labelKey(option.label) === key);
   };
 };
 

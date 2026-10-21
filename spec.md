@@ -128,6 +128,7 @@ Product-oriented, ordered by impact and dependency. Each item is sized for **one
 - **User value**: Fast iteration and activation — re-generate or tweak a previous prompt in one click.
 - **Implementation intent**: On an image detail page (and/or gallery card), add "Edit prompt & regenerate" that loads the saved generation record (prompt, model, style, settings already persisted via `saveGenerationHistory`) into `useGenerationStore` and routes to `/generate` prefilled.
 - **Acceptance criteria**: Clicking populates the generate form with the prior settings; user can adjust and generate; no data loss on round-trip; gate passes.
+- **Today**: "Try again" already routes to `/generate` with the saved settings as query params. Saved color/lighting values (stored snake_case, plus older lowercase forms) restore to their labels, and retired model ids (about 84% of stored images use `playground-v2`, `playground-v2-5`, or `stable-diffusion-xl`) fall back to the default model.
 
 ### M4 — Bulk select & delete in the gallery
 - **User value**: Removes one-at-a-time tedium; basic library hygiene.

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { MODEL_REGISTRY } from "./modelRegistry";
+import { MODEL_REGISTRY, isValidModel } from "./modelRegistry";
 
 const readEnvExampleKeys = (): Set<string> => {
   const envExample = readFileSync(join(process.cwd(), ".env.example"), "utf8");
@@ -37,5 +37,14 @@ describe("MODEL_REGISTRY environment documentation", () => {
       .sort();
 
     expect(documentedCreditKeys).toEqual(expectedCreditKeys);
+  });
+});
+
+describe("isValidModel", () => {
+  it("accepts registered ids and rejects retired or inherited names", () => {
+    expect(Object.keys(MODEL_REGISTRY).every(isValidModel)).toBe(true);
+    for (const name of ["playground-v2", "stable-diffusion-xl", "constructor", "toString", ""]) {
+      expect(isValidModel(name)).toBe(false);
+    }
   });
 });
