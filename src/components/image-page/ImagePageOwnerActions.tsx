@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { SiStagetimer } from "react-icons/si";
+import { useState } from "react";
+import Link from "next/link";
 import TextareaAutosize from "react-textarea-autosize";
+import { Button, Modal, buttonClassName } from "@/components/ui";
 import { ImageData } from "@/types/image";
 
 interface ImagePageOwnerActionsProps {
@@ -42,97 +43,81 @@ export const ImagePageOwnerActions = ({
   onShowVideoModal,
   onCreateGif,
 }: ImagePageOwnerActionsProps) => {
-  const router = useRouter();
+  const [confirmingBackgroundRemoval, setConfirmingBackgroundRemoval] = useState(false);
 
-  // Non-owner view: show generate button
   if (!isOwner) {
     return (
-      <button
-        className="btn-primary2 h-12 flex items-center justify-center mx-3"
-        onClick={() => router.push("/generate")}
-      >
-        Next: Generate Your Image
-      </button>
+      <Link href="/generate" className={buttonClassName({ size: "lg", className: "w-full" })}>
+        Generate Your Own Image
+      </Link>
     );
   }
 
   const isCloudFrontImage = imageData.downloadUrl?.includes("cloudfront.net");
-  const isGoogleStorageImage =
-    imageData.downloadUrl?.includes("googleapis.com");
+  const isGoogleStorageImage = imageData.downloadUrl?.includes("googleapis.com");
 
   return (
-    <>
-      {/* Caption editor (only for non-video content) */}
+    <section aria-label="Edit image" className="space-y-4 rounded-xl border border-gray-200 bg-white p-6">
       {!hasVideo && (
-        <div className="mt-4 w-full p-3 py-0">
-          <h2 className="text-2xl mb-3 font-bold">Caption:</h2>
+        <div>
+          <label htmlFor="image-caption" className="mb-1.5 block text-sm font-medium text-gray-700">
+            Caption
+          </label>
           <TextareaAutosize
+            id="image-caption"
+            name="image-caption"
+            autoComplete="off"
             value={caption}
             onChange={onCaptionChange}
-            placeholder="Enter caption"
-            className="p-2 border border-gray-300 rounded-md w-full"
+            placeholder="Add a caption…"
+            className="input-primary"
           />
+          <p className="mt-1 text-xs text-gray-500">Saves automatically.</p>
         </div>
       )}
 
-      {/* Background color change (CloudFront images only) */}
-      {isCloudFrontImage && !hasVideo && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-          onClick={onShowColorPicker}
-        >
-          Change Background Color
-        </button>
-      )}
+      <div className="flex flex-wrap gap-3">
+        {isCloudFrontImage && !hasVideo && (
+          <Button variant="secondary" onClick={onShowColorPicker}>
+            Change Background Color
+          </Button>
+        )}
+        {isGoogleStorageImage && !hasVideo && (
+          <Button variant="secondary" onClick={() => setConfirmingBackgroundRemoval(true)}>
+            Remove Background
+          </Button>
+        )}
+        {hasVideo && !isGif && (
+          <Button variant="secondary" loading={loading} onClick={onCreateGif}>
+            {loading ? "Converting…" : "Create GIF"}
+          </Button>
+        )}
+        <Button variant="secondary" onClick={hasVideo ? onShowVideoModal : onTryAgain}>
+          Try Again
+        </Button>
+      </div>
 
-      {/* Background removal (Google Storage images only) */}
-      {isGoogleStorageImage && !hasVideo && (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3 mt-2"
-          onClick={onBackgroundRemove}
+      {confirmingBackgroundRemoval && (
+        <Modal
+          title="Remove the Background?"
+          description="This replaces the saved image with a transparent-background version and uses credits (or your Bria API key)."
+          onClose={() => setConfirmingBackgroundRemoval(false)}
         >
-          Remove Background
-        </button>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setConfirmingBackgroundRemoval(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmingBackgroundRemoval(false);
+                onBackgroundRemove();
+              }}
+            >
+              Remove Background
+            </Button>
+          </div>
+        </Modal>
       )}
-
-      {/* GIF creation (video content only, not already a GIF) */}
-      {hasVideo && !isGif && (
-        <div className="p-2">
-          <button
-            onClick={onCreateGif}
-            className="btn-primary2 flex h-12 items-center justify-center w-full"
-            disabled={loading}
-          >
-            {loading ? (
-              <span className="flex flex-row items-center space-x-2">
-                <span className="rotating-icon">
-                  <SiStagetimer />
-                </span>
-                <span>Converting...</span>
-              </span>
-            ) : (
-              <span>Create GIF</span>
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Try again button */}
-      {!hasVideo ? (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={onTryAgain}
-        >
-          Try again
-        </button>
-      ) : (
-        <button
-          className="btn-primary2 h-12 flex items-center justify-center mx-3"
-          onClick={onShowVideoModal}
-        >
-          Try again
-        </button>
-      )}
-    </>
+    </section>
   );
 };

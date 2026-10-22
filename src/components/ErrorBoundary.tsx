@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from "react";
+import { buttonClassName } from "@/components/ui/buttonStyles";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -63,11 +64,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       return (
         <div className="flex flex-col gap-5 p-5 h-full bg-[#333b51] text-white">
           <h2 className="text-xl">
-            Oops, there is an error! It could be related to your internet
-            service. Try reloading.
+            Something went wrong. Reload the app; if it keeps happening, check
+            your connection or contact support.
           </h2>
           <button
-            className="btn btn-primary mr-auto px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+            className={buttonClassName({ className: "mr-auto" })}
             type="button"
             onClick={this.handleTryAgain}
           >

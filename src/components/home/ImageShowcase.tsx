@@ -51,7 +51,7 @@ export function ImageShowcase({ images }: ImageShowcaseProps) {
         </div>
 
         {/* Image grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           {showcaseImages.map((image, index) => (
             <m.div
               key={image.id}
@@ -59,7 +59,7 @@ export function ImageShowcase({ images }: ImageShowcaseProps) {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
-              className="aspect-square relative rounded-xl overflow-hidden bg-gray-200 group"
+              className="group relative aspect-square w-[calc(50%-0.5rem)] overflow-hidden rounded-xl bg-gray-200 md:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3rem)/4)]"
             >
               <Image
                 src={image.downloadUrl}
@@ -69,7 +69,7 @@ export function ImageShowcase({ images }: ImageShowcaseProps) {
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
               {/* Hover overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true" />
             </m.div>
           ))}
         </div>

@@ -35,7 +35,7 @@ export const SelectableCard = memo(function SelectableCard({
   return (
     <button
       type="button"
-      className={`relative flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition-colors
+      className={`relative flex min-h-14 flex-col items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-colors
         ${
           isSelected
             ? "border-blue-600 bg-blue-50"
@@ -105,8 +105,6 @@ export const SelectableCard = memo(function SelectableCard({
 // Specialized Card Components (thin wrappers for type safety)
 // ============================================================================
 
-type PreviewType = "models" | "styles";
-
 interface ItemCardProps {
   item: { value: string; label: string; hasPreview?: boolean };
   isSelected: boolean;
@@ -114,32 +112,25 @@ interface ItemCardProps {
 }
 
 /**
- * Creates a preview URL based on item type and value.
+ * Preview URL for a style that ships a sample image.
  */
-const getPreviewUrl = (type: PreviewType, value: string): string => {
-  const normalizedValue = type === "styles" ? normalizeValue(value) : value;
-  return `/previews/${type}/${normalizedValue}/1.jpg`;
-};
+const getStylePreviewUrl = (value: string): string =>
+  `/previews/styles/${normalizeValue(value)}/1.jpg`;
 
 /**
- * Model selection card.
+ * Model selection card. Models ship no sample images, so the card is text-only.
  */
 export const ModelCard = memo(function ModelCard({
   item,
   isSelected,
   onClick,
 }: ItemCardProps) {
-  const previewUrl = useMemo(
-    () => getPreviewUrl("models", item.value),
-    [item.value]
-  );
-
   return (
     <SelectableCard
       label={item.label}
-      previewUrl={previewUrl}
       isSelected={isSelected}
       onClick={onClick}
+      showPreview={false}
     />
   );
 });
@@ -153,7 +144,7 @@ export const StyleCard = memo(function StyleCard({
   onClick,
 }: ItemCardProps) {
   const previewUrl = useMemo(
-    () => (item.hasPreview ? getPreviewUrl("styles", item.value) : undefined),
+    () => (item.hasPreview ? getStylePreviewUrl(item.value) : undefined),
     [item.hasPreview, item.value]
   );
 

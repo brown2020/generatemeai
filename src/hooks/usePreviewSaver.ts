@@ -93,7 +93,7 @@ export const usePreviewSaver = () => {
       }
 
       try {
-        const loadingToast = toast.loading("Saving preview...");
+        const loadingToast = toast.loading("Saving preview…");
 
         const response = await fetch("/api/previews", {
           method: "POST",

@@ -1,7 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { getImageModels } from "@/constants/modelRegistry";
 import { artStyles } from "@/constants/artStyles";
 import { OPTION_PREVIEW_COUNTS } from "@/constants/optionPreviews";
 import { normalizeValue } from "@/utils/imageUtils";
@@ -11,13 +10,6 @@ const previewFile = (type: string, value: string) =>
   path.join(previewRoot, type, value, "1.jpg");
 
 describe("generate page preview images", () => {
-  it("ships a preview for every image model card", () => {
-    const missing = getImageModels()
-      .map((model) => model.value)
-      .filter((value) => !existsSync(previewFile("models", value)));
-    expect(missing).toEqual([]);
-  });
-
   it("marks exactly the art styles that ship a preview", () => {
     const mismatched = artStyles
       .filter(

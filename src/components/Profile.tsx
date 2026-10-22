@@ -92,7 +92,7 @@ export default function Profile() {
                     type="button"
                     aria-label="Copy user ID"
                     onClick={() => copy(uid || "", "uid")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     {isCopied("uid") ? (
                       <Check className="w-4 h-4 text-green-500" />
@@ -135,6 +135,49 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Billing Section */}
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+              <div className="w-2 h-2 rounded-full bg-orange-500 mr-2" />
+              How You Pay
+            </h2>
+            <div>
+              <label htmlFor="payment-method" className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Method
+              </label>
+              <select
+                id="payment-method"
+                value={profile.useCredits ? "credits" : "apikeys"}
+                onChange={(e) =>
+                  updateProfile({ useCredits: e.target.value === "credits" })
+                }
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5
+                  text-sm transition-colors focus:border-blue-500 focus:ring-1 
+                  focus:ring-blue-500 hover:border-gray-400"
+              >
+                <option value="credits">Use Credits</option>
+                <option value="apikeys">Use API Keys</option>
+              </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Credits are charged per generation. With API keys, providers
+                bill you directly and no credits are used.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Credits & Payments Section */}
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+              <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+              Credits & Payments
+            </h2>
+            <PaymentsPage />
+          </div>
+        </div>
+
         {/* API Keys Section */}
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
@@ -155,46 +198,20 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Credits & Payments Section */}
+        {/* Danger Zone Section */}
         <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-              <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-              Credits & Payments
-            </h2>
-            <PaymentsPage />
-          </div>
-        </div>
-
-        {/* Settings Section */}
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-              <div className="w-2 h-2 rounded-full bg-orange-500 mr-2" />
-              Settings
+              <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+              Danger Zone
             </h2>
             <div className="space-y-6">
               <div>
-                <label htmlFor="payment-method" className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Method
-                </label>
-                <select
-                  id="payment-method"
-                  value={profile.useCredits ? "credits" : "apikeys"}
-                  onChange={(e) =>
-                    updateProfile({ useCredits: e.target.value === "credits" })
-                  }
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2.5
-                    text-sm transition-colors focus:border-blue-500 focus:ring-1 
-                    focus:ring-blue-500 hover:border-gray-400"
-                >
-                  <option value="credits">Use Credits</option>
-                  <option value="apikeys">Use API Keys</option>
-                </select>
-              </div>
-
-              <div className="pt-6 border-t border-gray-200">
+                <p className="mb-4 text-sm text-gray-600">
+                  Permanently delete your account, images, and payment history.
+                </p>
                 <button
+                  type="button"
                   onClick={() => setShowDeleteModal(true)}
                   className="px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium 
                     hover:bg-red-100 transition-colors active:bg-red-200"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, Modal } from "@/components/ui";
 
 interface ColorPickerModalProps {
   initialColor: string;
@@ -19,34 +20,33 @@ export const ColorPickerModal = ({
   const [selectedColor, setSelectedColor] = useState(initialColor);
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
-        <h2 className="text-xl font-semibold mb-4">
-          Select a Background Color
-        </h2>
-        <label htmlFor="background-color" className="block text-sm font-medium text-gray-700 mb-1">
-          Background color
+    <Modal title="Background Color" onClose={onCancel}>
+      <form
+        method="dialog"
+        className="mt-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onConfirm(selectedColor);
+        }}
+      >
+        <label htmlFor="background-color" className="mb-1.5 block text-sm font-medium text-gray-700">
+          Color
         </label>
         <input
           id="background-color"
+          name="background-color"
           type="color"
-          aria-label="Background color"
           value={selectedColor}
           onChange={(e) => setSelectedColor(e.target.value)}
-          className="w-full mb-4 h-10"
+          className="h-10 w-full cursor-pointer rounded-lg border border-gray-300"
         />
-        <div className="flex justify-end">
-          <button className="btn-secondary mr-2" onClick={onCancel}>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            className="btn-primary"
-            onClick={() => onConfirm(selectedColor)}
-          >
-            Apply
-          </button>
+          </Button>
+          <Button type="submit">Apply</Button>
         </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 };

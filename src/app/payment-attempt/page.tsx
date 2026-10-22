@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { buttonClassName } from "@/components/ui";
 import PaymentCheckoutPage from "@/components/PaymentCheckoutPage";
 import { CREDIT_PACK } from "@/constants/creditPack";
 import convertToSubcurrency from "@/utils/convertToSubcurrency";
@@ -23,7 +24,7 @@ export default function PaymentAttempt() {
           Stripe is not configured in this environment. Credit purchase is disabled until
           NEXT_PUBLIC_STRIPE_KEY is set.
         </p>
-        <Link href="/profile" className="btn-primary">
+        <Link href="/profile" className={buttonClassName()}>
           Back to profile
         </Link>
       </div>

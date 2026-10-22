@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import TextareaAutosize from "react-textarea-autosize";
 import Select, { SingleValue } from "react-select";
 import Modal from "react-modal";
+import { Button } from "@/components/ui";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
 
@@ -174,7 +175,7 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
           </h3>
           <button
             type="button"
-            className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-2.5"
+            className="rounded-lg bg-transparent p-2.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-blue-500"
             onClick={onRequestClose}
           >
             <X className="w-5 h-5" />
@@ -185,10 +186,10 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
         <div className="p-4 md:p-5 space-y-6">
           <div className="flex w-full">
             <button
-              className={`w-1/2 px-4 py-2 rounded-md rounded-r-none ${
-                mode === "video"
-                  ? "bg-[#2563EB] text-white"
-                  : "bg-gray-200 text-black-500"
+              type="button"
+              aria-pressed={mode === "video"}
+              className={`w-1/2 rounded-md rounded-r-none px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                mode === "video" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"
               }`}
               onClick={() => {
                 setMode("video");
@@ -198,10 +199,10 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
               Video
             </button>
             <button
-              className={`w-1/2 px-4 py-2 rounded-md rounded-l-none ${
-                mode === "animation"
-                  ? "bg-[#2563EB] text-white"
-                  : "bg-gray-200 text-black-500"
+              type="button"
+              aria-pressed={mode === "animation"}
+              className={`w-1/2 rounded-md rounded-l-none px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                mode === "animation" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"
               }`}
               onClick={() => {
                 setMode("animation");
@@ -214,13 +215,20 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
 
           <div className="space-y-4">
             {mode === "video" && (
-              <TextareaAutosize
-                minRows={4}
-                value={scriptPrompt}
-                placeholder="Write the script here"
-                onChange={(e) => setScriptPrompt(e.target.value)}
-                className="border-2 border-blue-500 bg-blue-100 rounded-md px-3 py-2 w-full"
-              />
+              <div>
+                <label htmlFor="video-script" className="mb-2 block text-sm font-medium text-gray-900">
+                  Script
+                </label>
+                <TextareaAutosize
+                  id="video-script"
+                  name="video-script"
+                  minRows={4}
+                  value={scriptPrompt}
+                  placeholder="What should the avatar say?…"
+                  onChange={(e) => setScriptPrompt(e.target.value)}
+                  className="input-primary"
+                />
+              </div>
             )}
             <div>
               <label htmlFor="video-model" className="block mb-2 text-sm font-medium text-gray-900">
@@ -294,17 +302,13 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
           </div>
         </div>
 
-        <div className="p-4 md:p-5 flex justify-end space-x-4 border-t border-gray-300">
-          <button className="btn-secondary" onClick={onRequestClose}>
+        <div className="flex justify-end gap-3 border-t border-gray-300 p-4 md:p-5">
+          <Button variant="outline" onClick={onRequestClose}>
             Cancel
-          </button>
-          <button
-            className="btn-primary"
-            onClick={handleGenerate}
-            disabled={loading}
-          >
-            {loading ? "Generating..." : "Generate"}
-          </button>
+          </Button>
+          <Button loading={loading} onClick={handleGenerate}>
+            {loading ? "Generating…" : "Generate"}
+          </Button>
         </div>
       </div>
     </Modal>

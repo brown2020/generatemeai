@@ -14,6 +14,7 @@ export { Button, type ButtonProps } from "./Button";
 export { buttonClassName } from "./buttonStyles";
 export { IconButton, type IconButtonProps } from "./IconButton";
 export { LoadingSpinner, type LoadingSpinnerProps } from "./LoadingSpinner";
+export { Modal } from "./Modal";
 export {
   Skeleton,
   SkeletonText,

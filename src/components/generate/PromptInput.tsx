@@ -71,12 +71,16 @@ export const PromptInput = ({
       />
 
       <div className="relative rounded-lg">
+        <label htmlFor="image-prompt" className="sr-only">
+          Image prompt
+        </label>
         <TextareaAutosize
-          autoFocus
+          id="image-prompt"
+          name="prompt"
           minRows={3}
           maxRows={5}
           value={value || ""}
-          placeholder="Describe your image in detail..."
+          placeholder="Describe your image in detail…"
           onChange={onChange}
           className="block w-full px-4 py-3 pr-32 text-lg border-2 border-blue-200 
             rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 
@@ -92,6 +96,7 @@ export const PromptInput = ({
                 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 
                 transition-colors duration-200 hover:shadow-md"
               title="Upload reference image"
+              aria-label="Upload reference image"
             >
               <ImagePlus className="w-5 h-5 text-gray-600 group-hover:text-gray-800 transition-colors" />
             </button>
@@ -108,6 +113,8 @@ export const PromptInput = ({
                   : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
               }`}
             title={isRecording ? "Stop recording" : "Start voice input"}
+            aria-label={isRecording ? "Stop recording" : "Start voice input"}
+            aria-pressed={isRecording}
           >
             {isRecording ? (
               <StopCircle className="w-5 h-5 text-red-600 group-hover:text-red-700" />
@@ -128,6 +135,7 @@ export const PromptInput = ({
                   : "bg-purple-50 hover:bg-purple-100 border border-purple-200"
               }`}
             title="Enhance prompt with AI"
+            aria-label="Enhance prompt with AI"
           >
             {isOptimizing ? (
               <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
@@ -149,14 +157,15 @@ export const PromptInput = ({
           <div className="relative group">
             <img
               src={previewUrl}
-              alt="Reference"
-              className="w-40 h-40 object-cover rounded-lg border-2 border-blue-600 shadow-md transition-transform hover:scale-105"
+              alt="Uploaded reference"
+              className="w-40 h-40 object-cover rounded-lg border-2 border-blue-600 shadow-md"
             />
             <button
               type="button"
               className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 transition-colors shadow-md"
               onClick={onRemoveImage}
-              title="Remove Image"
+              title="Remove reference image"
+              aria-label="Remove reference image"
             >
               <XCircle size={16} />
             </button>

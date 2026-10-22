@@ -304,7 +304,17 @@ function ImagePageContent({
   );
   const pageUrl = `${origin}/images/${id}`;
 
-  if (!imageData || typeof imageData === "boolean") return null;
+  if (!imageData || typeof imageData === "boolean") {
+    return (
+      <div
+        aria-busy="true"
+        className="mx-auto w-full max-w-4xl space-y-8 px-4 py-8 sm:px-6"
+      >
+        <h1 className="sr-only">Loading image…</h1>
+        <div className="aspect-square w-full animate-pulse rounded-xl bg-gray-100 motion-reduce:animate-none" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">

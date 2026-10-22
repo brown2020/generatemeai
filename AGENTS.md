@@ -23,7 +23,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 ## Current Tech Stack
 
 - **Framework**: Next.js 16 (App Router, Turbopack dev, `src/proxy.ts` edge guard)
-- **Language**: TypeScript 6, strict mode, `@/*` → `src/*`. Stay on 6.x until typescript-eslint (via `eslint-config-next`) supports TypeScript 7; today `npm run lint` refuses to run under it.. Stay on 6.x until typescript-eslint (via `eslint-config-next`) supports TypeScript 7; today `npm run lint` refuses to run under it
+- **Language**: TypeScript 6, strict mode, `@/*` → `src/*`. Stay on 6.x until typescript-eslint (via `eslint-config-next`) supports TypeScript 7; today `npm run lint` refuses to run under it.
 - **React**: 19
 - **Styling**: Tailwind CSS 4 (`@tailwindcss/postcss`, no `tailwind.config.ts` — config is CSS-first in `globals.css`), Framer Motion
 - **State**: Zustand 5
@@ -144,6 +144,10 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 
 - Functional components; add `"use client"` only when a component uses hooks/browser APIs. Props interfaces required.
 - Tailwind utilities + `cn()` from `src/utils/cn.ts`. Tailwind 4 syntax (`bg-linear-to-r`, not `bg-gradient-to-r`). Reference `src/styles/tokens.ts`.
+- UI primitives live in `src/components/ui`: `Button`/`buttonClassName` for every button and button-styled `Link` (never nest a `Button` inside a `Link`), and `Modal` (native `<dialog>` with `showModal()`, which provides focus trapping, Escape, and a labelled dialog) for every overlay; destructive actions confirm through `DeleteConfirmModal`. `globals.css` keeps only base styles and the few app-wide utilities; there are no `btn-*` or `form-*` classes.
+- Model cards are text-only; don't reintroduce shared placeholder images under `public/previews/models`.
+- UI primitives live in `src/components/ui`: `Button`/`buttonClassName` for every button and button-styled `Link` (never nest a `Button` inside a `Link`), and `Modal` (native `<dialog>` with `showModal()`, which provides focus trapping, Escape, and a labelled dialog) for every overlay; destructive actions confirm through `DeleteConfirmModal`. `globals.css` keeps only base styles and the few app-wide utilities; there are no `btn-*` or `form-*` classes.
+- Model cards are text-only; don't reintroduce shared placeholder images under `public/previews/models`.
 - Reuse before creating: search for an existing util/hook/component/type first.
 - No single-use wrappers or speculative abstractions. Inline simple logic.
 - Comments explain **why**, never restate **what**. Don't narrate edits in comments.

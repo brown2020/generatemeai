@@ -18,25 +18,26 @@ export default function Footer() {
   });
 
   return (
-    <div className="flex flex-wrap gap-x-2 w-full min-h-14 items-center px-5 py-2 justify-center shrink-0 bg-white border-t border-gray-100">
+    <footer className="flex min-h-14 w-full shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-gray-100 bg-white px-5 py-2 text-sm">
       {menuItems.map((item) => (
         <Link
           key={item.label}
           href={item.href}
-          className="text-gray-600 hover:text-black"
+          className="rounded-sm text-gray-600 hover:text-black"
         >
-          <div>{item.label}</div>
+          {item.label}
         </Link>
       ))}
       {uid && (
         <button
+          type="button"
           onClick={handleSignOut}
-          className="text-gray-600 hover:text-black flex items-center gap-1"
+          className="flex items-center gap-1 rounded-sm text-gray-600 hover:text-black"
         >
           <LogOut className="w-3 h-3" aria-hidden="true" />
           <span>Sign Out</span>
         </button>
       )}
-    </div>
+    </footer>
   );
 }

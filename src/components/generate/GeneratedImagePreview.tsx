@@ -76,7 +76,7 @@ export const GeneratedImagePreview = ({
                 setSelectedIndex(i);
                 onSelectImage?.(url);
               }}
-              className={`relative rounded-lg overflow-hidden border-2 transition-all aspect-square ${
+              className={`relative rounded-lg overflow-hidden border-2 transition-colors aspect-square ${
                 i === selectedIndex
                   ? "border-blue-600 ring-2 ring-blue-200"
                   : "border-gray-200 hover:border-gray-400"

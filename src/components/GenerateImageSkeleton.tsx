@@ -54,7 +54,7 @@ export default function GenerateImageSkeleton() {
 
         {/* Image placeholder */}
         <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-          <div className="text-gray-400">Loading...</div>
+          <div className="text-gray-400">Loading…</div>
         </div>
       </div>
     </div>

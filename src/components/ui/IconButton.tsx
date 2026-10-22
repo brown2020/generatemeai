@@ -111,7 +111,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         className={cn(
           // Base styles
           "inline-flex items-center justify-center rounded-lg",
-          "transition-all duration-200 ease-in-out",
+          "transition-[color,background-color,border-color,box-shadow,opacity] duration-200 ease-in-out",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
           // Variant and size
           variants[variant],

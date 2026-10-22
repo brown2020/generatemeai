@@ -33,7 +33,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * </Button>
  *
  * <Button variant="secondary" loading>
- *   Saving...
+ *   Saving…
  * </Button>
  *
  * <Button variant="ghost" leftIcon={<Icon />}>

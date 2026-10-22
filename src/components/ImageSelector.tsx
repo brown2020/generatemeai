@@ -143,7 +143,7 @@ const ImageListPage = () => {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-500 text-sm">Loading your images...</p>
+            <p className="text-gray-500 text-sm">Loading your images…</p>
           </div>
         ) : loadError ? (
           <div className="text-center py-16" role="alert">

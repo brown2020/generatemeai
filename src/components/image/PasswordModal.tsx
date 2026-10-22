@@ -1,5 +1,7 @@
 "use client";
 
+import { Button, Modal } from "@/components/ui";
+
 interface PasswordModalProps {
   password: string;
   setPassword: (password: string) => void;
@@ -17,31 +19,38 @@ export const PasswordModal = ({
   onCancel,
 }: PasswordModalProps) => {
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
-        <h2 className="text-xl font-semibold mb-4">
-          Make Sharable with Password (Optional)
-        </h2>
-        <label htmlFor="share-password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password
+    <Modal
+      title="Share This Image"
+      description="Anyone with the link can view it. Add an optional password to limit who can open it."
+      onClose={onCancel}
+    >
+      <form
+        method="dialog"
+        className="mt-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onConfirm();
+        }}
+      >
+        <label htmlFor="share-password" className="mb-1.5 block text-sm font-medium text-gray-700">
+          Password (optional)
         </label>
         <input
           id="share-password"
+          name="share-password"
           type="password"
+          autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter password (optional)"
-          className="w-full p-2 border rounded-sm mb-4"
+          className="input-primary"
         />
-        <div className="flex justify-end">
-          <button className="btn-secondary mr-2" onClick={onCancel}>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
-          </button>
-          <button className="btn-primary" onClick={onConfirm}>
-            Confirm
-          </button>
+          </Button>
+          <Button type="submit">Make Sharable</Button>
         </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 };

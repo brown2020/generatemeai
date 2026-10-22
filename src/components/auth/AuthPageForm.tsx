@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
@@ -21,6 +20,7 @@ import { mapAuthError } from "@/utils/authErrors";
 import { STORAGE_KEYS } from "@/constants/storage";
 import { signInRedirectPath } from "@/constants/routes";
 import { useAuthStore } from "@/zustand/useAuthStore";
+import { buttonClassName } from "@/components/ui";
 
 export type AuthPageMode = "login" | "signup" | "forgot";
 
@@ -91,7 +91,6 @@ function PasswordField({
           autoComplete={autoComplete}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter your password"
           className="input-primary w-full pr-12"
           required
         />
@@ -140,11 +139,10 @@ function AuthFooterLinks({ mode }: { mode: AuthPageMode }) {
 }
 
 export function AuthPageForm({ mode }: Props) {
-  const router = useRouter();
   const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(true);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
@@ -163,7 +161,9 @@ export function AuthPageForm({ mode }: Props) {
     });
     storeAuthInfo(u.email || email);
     const requested = new URLSearchParams(window.location.search).get("redirect");
-    router.replace(signInRedirectPath(requested) ?? "/generate");
+    // A full navigation drops router-cache entries prefetched while signed out,
+    // which hold the proxy's redirect back to /login.
+    window.location.replace(signInRedirectPath(requested) ?? "/generate");
   };
 
   const runAuth = async (action: () => Promise<void>) => {
@@ -247,7 +247,7 @@ export function AuthPageForm({ mode }: Props) {
             If an account exists for <strong>{email}</strong>, a password reset link is on its way.
             Check your inbox and spam folder.
           </p>
-          <Link href="/login" className="btn-primary text-center">
+          <Link href="/login" className={buttonClassName({ size: "lg", className: "w-full" })}>
             Back to sign in
           </Link>
         </div>
@@ -265,12 +265,12 @@ export function AuthPageForm({ mode }: Props) {
               type="button"
               onClick={onGoogle}
               disabled={loading}
-              className="flex w-full items-center gap-2 rounded-md border px-4 py-2 hover:bg-gray-50 disabled:opacity-60"
+              className={buttonClassName({ variant: "outline", size: "lg", className: "w-full disabled:opacity-60" })}
             >
               <span className="relative h-6 w-6">
                 <Image src={googleLogo} alt="" fill sizes="24px" className="object-contain" />
               </span>
-              <span className="grow text-center">Continue with Google</span>
+              <span>Continue with Google</span>
             </button>
             <div className="flex h-8 items-center justify-center">
               <hr className="h-px grow border-0 bg-gray-300" />
@@ -288,9 +288,10 @@ export function AuthPageForm({ mode }: Props) {
           name="email"
           type="email"
           autoComplete="email"
+          spellCheck={false}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter your email"
+          placeholder="you@example.com"
           className="input-primary"
           required
         />
@@ -340,8 +341,12 @@ export function AuthPageForm({ mode }: Props) {
           </p>
         )}
 
-        <button type="submit" className="btn-primary disabled:opacity-60" disabled={loading}>
-          <span className="flex h-8 items-center justify-center gap-2">
+        <button
+          type="submit"
+          className={buttonClassName({ size: "lg", className: "mt-2 w-full disabled:opacity-60" })}
+          disabled={loading}
+        >
+          <span className="flex items-center justify-center gap-2">
             {loading ? (
               <span aria-live="polite">Working…</span>
             ) : mode === "forgot" ? (

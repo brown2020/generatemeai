@@ -6,7 +6,7 @@ export default function PaymentSuccess() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center min-h-screen">
-          <p className="text-muted-foreground">Loading payment details...</p>
+          <p className="text-muted-foreground">Loading payment details…</p>
         </div>
       }
     >

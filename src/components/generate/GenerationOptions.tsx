@@ -2,7 +2,6 @@
 
 import { memo, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { PulseLoader } from "react-spinners";
 import { artStyles } from "@/constants/artStyles";
 import {
   ASPECT_RATIOS,
@@ -17,6 +16,7 @@ import { PaginatedGrid } from "@/components/common/PaginatedGrid";
 import { ModelCard, StyleCard } from "@/components/generation/SelectableCard";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
 import { GeneratedImagePreview, GenerationSettings } from "@/components/generate";
+import { Button } from "@/components/ui";
 
 const imageModels = getImageModels();
 
@@ -146,7 +146,7 @@ export function GenerationOptions({
             id="negative-prompt"
             value={formState.negativePrompt}
             onChange={(e) => updateField("negativePrompt", e.target.value)}
-            placeholder="e.g. blurry, low quality, watermark, text..."
+            placeholder="e.g. blurry, low quality, watermark, text…"
             rows={2}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
           />
@@ -162,6 +162,7 @@ export function GenerationOptions({
                 <button
                   key={ar.value}
                   type="button"
+                  aria-pressed={formState.aspectRatio === ar.value}
                   onClick={() => updateField("aspectRatio", ar.value)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                     formState.aspectRatio === ar.value
@@ -186,6 +187,8 @@ export function GenerationOptions({
                   <button
                     key={n}
                     type="button"
+                    aria-pressed={formState.imageCount === n}
+                    aria-label={`${n} ${n === 1 ? "image" : "images"}`}
                     onClick={() => updateField("imageCount", n)}
                     className={`w-10 h-10 text-sm font-medium rounded-lg border transition-colors ${
                       formState.imageCount === n
@@ -203,34 +206,24 @@ export function GenerationOptions({
 
       <GenerationSettingsWrapper />
 
-      <button
-        type="button"
-        className={`py-2 px-4 rounded-lg font-medium text-white transition-colors
-          ${
-            loading
-              ? "bg-blue-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }
-          ${!isPromptValid || !isModelValid ? "opacity-50 cursor-not-allowed" : ""}
-        `}
-        disabled={loading || !isPromptValid || !isModelValid}
-        onClick={onGenerate}
-      >
-        {loading ? (
-          <span className="flex items-center justify-center">
-            <PulseLoader color="#fff" size={12} />
-          </span>
-        ) : (
-          <span className="flex items-center justify-center gap-2">
-            Generate{formState.imageCount > 1 ? ` ${formState.imageCount} Images` : " Image"}
-            {useCredits && (
-              <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
-                {creditCost} credits
-              </span>
-            )}
-          </span>
-        )}
-      </button>
+      <div className="sticky bottom-0 z-10 -mx-3 border-t border-gray-100 bg-white/95 px-3 py-3 backdrop-blur-sm">
+        <Button
+          fullWidth
+          size="lg"
+          loading={loading}
+          disabled={!isPromptValid || !isModelValid}
+          onClick={onGenerate}
+        >
+          {loading
+            ? "Generating…"
+            : `Generate${formState.imageCount > 1 ? ` ${formState.imageCount} Images` : " Image"}`}
+          {useCredits && !loading && (
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
+              {creditCost} credits
+            </span>
+          )}
+        </Button>
+      </div>
 
       <div className="w-full">
         <GeneratedImagePreview

@@ -119,7 +119,7 @@ export default function LoginFinishPage() {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
       <ClipLoader color="#2563EB" size={50} />
-      <p className="text-gray-600">Completing sign in...</p>
+      <p className="text-gray-600">Completing sign in…</p>
     </div>
   );
 }

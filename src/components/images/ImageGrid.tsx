@@ -72,7 +72,7 @@ const ImageCard = memo(function ImageCard({ image, onClick }: ImageCardProps) {
 
         {image.caption && (
           <div
-            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 
+            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100
             transition-opacity flex items-center justify-center p-4"
           >
             <p className="text-white text-sm text-center line-clamp-4">

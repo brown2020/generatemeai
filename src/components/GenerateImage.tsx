@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, ChangeEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import toast from "react-hot-toast";
+import { RotateCcw } from "lucide-react";
 import { supportsImageUpload } from "@/constants/modelRegistry";
 import { suggestTags } from "@/actions/suggestTags";
 import { optimizePrompt } from "@/utils/promptOptimizer";
@@ -16,6 +17,7 @@ import useProfileStore from "@/zustand/useProfileStore";
 
 import { PromptInput } from "@/components/generate";
 import { GenerationOptions } from "@/components/generate/GenerationOptions";
+import { Button } from "@/components/ui";
 
 /**
  * Main image generation component.
@@ -194,13 +196,14 @@ function GenerateImage() {
       <h1 className="sr-only">Generate images</h1>
       <div className="flex flex-col w-full max-w-4xl space-y-4 relative">
         <div className="flex justify-end">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleClearAll}
-            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+            leftIcon={<RotateCcw size={16} aria-hidden />}
           >
-            Clear All Options
-          </button>
+            Reset Form
+          </Button>
         </div>
 
         <PromptInput

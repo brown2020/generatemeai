@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuthState } from "@/zustand/selectors";
 import { useAuthLogic } from "@/hooks/useAuthLogic";
 import { AuthModal } from "./auth";
-import { Button } from "@/components/ui";
+import { Button, buttonClassName } from "@/components/ui";
 import { ArrowRight } from "lucide-react";
 
 export default function AuthComponent() {
@@ -19,10 +19,9 @@ export default function AuthComponent() {
         </Button>
       ) : (
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link href="/signup">
-            <Button size="lg" rightIcon={<ArrowRight className="h-5 w-5" />}>
-              Get Started Free
-            </Button>
+          <Link href="/signup" className={buttonClassName({ size: "lg" })}>
+            Get Started Free
+            <ArrowRight className="h-5 w-5" aria-hidden="true" />
           </Link>
           <Link
             href="/login"

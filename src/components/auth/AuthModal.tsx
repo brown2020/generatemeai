@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { PulseLoader } from "react-spinners";
+import { Button, buttonClassName } from "@/components/ui";
 
 interface AuthStateProps {
   uid: string;
@@ -70,19 +71,19 @@ export function AuthModal({
         type="button"
         aria-label="Close account dialog"
         onClick={onClose}
-        className="absolute top-0 right-0 m-2 rounded-full bg-gray-200 p-2 hover:bg-gray-400"
+        className="absolute top-0 right-0 m-2 rounded-full bg-gray-200 p-2 hover:bg-gray-300 focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         <X size={24} className="text-gray-800" />
       </button>
 
       {uid ? (
         <div className="flex flex-col gap-2">
-          <div className="text-center text-2xl">You are signed in</div>
-          <div className="input-disabled">{authDisplayName}</div>
-          <div className="input-disabled">{authEmail}</div>
-          <button type="button" onClick={handlers.handleSignOut} className="btn-danger">
+          <h2 className="text-center text-2xl">You are signed in</h2>
+          <p className="truncate rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{authDisplayName}</p>
+          <p className="truncate rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{authEmail}</p>
+          <Button variant="danger" fullWidth onClick={handlers.handleSignOut}>
             Sign Out
-          </button>
+          </Button>
         </div>
       ) : authPending ? (
         <div className="flex flex-col gap-2">
@@ -94,9 +95,9 @@ export function AuthModal({
               <PulseLoader color="#000000" size={6} />
             </div>
           </div>
-          <button type="button" onClick={handlers.handleSignOut} className="btn-danger">
+          <Button variant="danger" fullWidth onClick={handlers.handleSignOut}>
             Start Over
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="flex flex-col gap-3 py-2">
@@ -104,12 +105,12 @@ export function AuthModal({
           <p className="text-center text-sm text-gray-600">
             Sign in or create an account to generate images and manage your gallery.
           </p>
-          <Link href="/login" className="btn-primary text-center" onClick={onClose}>
+          <Link href="/login" className={buttonClassName({ className: "w-full" })} onClick={onClose}>
             Sign in
           </Link>
           <Link
             href="/signup"
-            className="rounded-md border border-gray-300 px-4 py-2 text-center hover:bg-gray-50"
+            className={buttonClassName({ variant: "outline", className: "w-full" })}
             onClick={onClose}
           >
             Create account

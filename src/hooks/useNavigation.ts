@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, type MouseEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 /**
- * Shared navigation hook for Header and BottomBar components.
- * Provides consistent navigation behavior across the app.
+ * Shared navigation hook for Header and BottomBar links.
  */
 export const useNavigation = () => {
   const router = useRouter();
@@ -23,35 +22,19 @@ export const useNavigation = () => {
   );
 
   /**
-   * Navigates to a path with a small delay.
-   *
-   * Note: The 100ms delay is intentional for React Native WebView compatibility.
-   * Without this delay, navigation can be interrupted by WebView's gesture handling,
-   * causing inconsistent behavior on iOS. This ensures the tap event completes
-   * before navigation begins.
+   * Click handler for nav links. Browsers follow the link normally. Inside the
+   * React Native WebView, navigation waits 100ms so the WebView's gesture
+   * handling doesn't interrupt it on iOS, and the home link asks the shell to refresh.
    */
-  const navigate = useCallback(
-    (path: string) => {
+  const onLinkClick = useCallback(
+    (path: string) => (event: MouseEvent<HTMLAnchorElement>) => {
+      if (typeof window === "undefined" || !window.ReactNativeWebView) return;
+      event.preventDefault();
+      if (path === "/") window.ReactNativeWebView.postMessage("refresh");
       setTimeout(() => router.push(path), 100);
     },
     [router]
   );
 
-  /**
-   * Handles logo/home click with React Native WebView support.
-   * Posts a "refresh" message to the WebView if running in that context.
-   */
-  const navigateHome = useCallback(() => {
-    if (typeof window !== "undefined" && window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage("refresh");
-    }
-    navigate("/");
-  }, [navigate]);
-
-  return {
-    pathname,
-    isActive,
-    navigate,
-    navigateHome,
-  };
+  return { pathname, isActive, onLinkClick };
 };

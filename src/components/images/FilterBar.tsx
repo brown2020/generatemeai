@@ -34,7 +34,7 @@ export const FilterBar = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by prompt or tags..."
+            placeholder="Search by prompt or tags…"
             className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 
               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           />

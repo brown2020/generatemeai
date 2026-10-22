@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Download, Lock, Share2, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { Button } from "@/components/ui";
+import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import { ImageData } from "@/types/image";
 import { getFileTypeFromUrl } from "@/utils/imageUtils";
 
@@ -27,6 +30,8 @@ export const ImageActions = ({
   onDelete,
   onShowPasswordModal,
 }: ImageActionsProps) => {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
   const handleDownload = async () => {
     if (imageData?.videoDownloadUrl) {
       const videoUrl = imageData.videoDownloadUrl;
@@ -88,49 +93,50 @@ export const ImageActions = ({
     }
   };
 
+  const actionClass = "min-w-[200px] flex-1";
+
   return (
     <div className="flex flex-wrap gap-3">
       {imageData && (
-        <button
-          className="flex-1 min-w-[200px] px-4 py-3 bg-blue-600 text-white rounded-lg font-medium 
-            hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-          onClick={handleDownload}
-        >
-          <Download className="w-5 h-5" />
+        <Button size="lg" className={actionClass} leftIcon={<Download className="size-5" />} onClick={handleDownload}>
           Download
-        </button>
+        </Button>
       )}
 
       {uid && isOwner && (
-        <button
-          className="flex-1 min-w-[200px] px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium 
-            hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+        <Button
+          size="lg"
+          variant="secondary"
+          className={actionClass}
+          leftIcon={isSharable ? <Lock className="size-5" /> : <Share2 className="size-5" />}
           onClick={handleShareClick}
         >
-          {isSharable ? (
-            <>
-              <Lock className="w-5 h-5" />
-              Make Private
-            </>
-          ) : (
-            <>
-              <Share2 className="w-5 h-5" />
-              Make Sharable
-            </>
-          )}
-        </button>
+          {isSharable ? "Make Private" : "Make Sharable"}
+        </Button>
       )}
 
       {imageData && uid && isOwner && (
-        <button
-          className="flex-1 min-w-[200px] px-4 py-3 bg-red-50 text-red-600 rounded-lg font-medium 
-            hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
-          onClick={onDelete}
+        <Button
+          size="lg"
+          variant="outline"
+          className={`${actionClass} border-red-200 text-red-600 hover:bg-red-50`}
+          leftIcon={<Trash2 className="size-5" />}
+          onClick={() => setConfirmingDelete(true)}
         >
-          <Trash2 className="w-5 h-5" />
           Delete
-        </button>
+        </Button>
       )}
+
+      <DeleteConfirmModal
+        isOpen={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+        onConfirm={() => {
+          setConfirmingDelete(false);
+          onDelete();
+        }}
+        title="Delete This Image?"
+        message="It will be removed from your gallery and any public link will stop working. This can't be undone."
+      />
     </div>
   );
 };

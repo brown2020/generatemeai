@@ -9,6 +9,7 @@ import useAuthToken from "@/hooks/useAuthToken";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import { hasClientConfig } from "@/firebase/firebaseClient";
 import ErrorBoundary from "./ErrorBoundary";
+import { buttonClassName } from "./ui/buttonStyles";
 
 const getCookieName = (): string => {
   return process.env.NEXT_PUBLIC_COOKIE_NAME?.trim() || "generateAuthToken";
@@ -71,8 +72,16 @@ function ClientShell({
         {children}
         {!isWebView && (
           <aside aria-label="Cookie consent">
-            <CookieConsent>
-              This app uses cookies to enhance the user experience.
+            <CookieConsent
+              disableStyles
+              location="none"
+              buttonText="Got It"
+              containerClasses="fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] z-40 mx-auto flex max-w-xl items-center gap-3 rounded-xl border border-gray-200 bg-white py-3 pr-3 pl-4 text-sm text-gray-700 shadow-lg"
+              contentClasses="min-w-0 flex-1"
+              buttonClasses={buttonClassName({ size: "sm" })}
+            >
+              This app uses cookies to keep you signed in and improve the
+              experience.
             </CookieConsent>
           </aside>
         )}

@@ -29,7 +29,7 @@ export interface LoadingSpinnerProps {
  * ```tsx
  * <LoadingSpinner size="md" />
  *
- * <LoadingSpinner size="lg" label="Loading images..." />
+ * <LoadingSpinner size="lg" label="Loading images…" />
  * ```
  */
 export function LoadingSpinner({

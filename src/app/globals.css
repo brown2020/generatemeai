@@ -23,11 +23,6 @@
   }
 }
 
-@utility h-container-max {
-  max-height: calc(100vh - 4rem);
-  overscroll-behavior-y: contain;
-}
-
 @utility h-container-custom {
   height: calc(100vh - 4rem);
   overscroll-behavior-y: contain;
@@ -38,105 +33,8 @@
   overscroll-behavior-y: contain;
 }
 
-@utility sidebar-closed {
-  transform-origin: top left;
-  transform: scale(0);
-  opacity: 0;
-  visibility: hidden;
-  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
-    visibility 0s 0.5s;
-}
-
-@utility sidebar-open {
-  transform-origin: top left;
-  transform: scale(1);
-  opacity: 1;
-  visibility: visible;
-  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-}
-
-@utility menu-closed {
-  transform-origin: top right;
-  transform: scale(0);
-  opacity: 0;
-  visibility: hidden;
-  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out,
-    visibility 0s 0.5s;
-}
-
-@utility menu-open {
-  transform-origin: top right;
-  transform: scale(1);
-  opacity: 1;
-  visibility: visible;
-  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-}
-
-@utility overlay-closed {
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
-  visibility: hidden;
-}
-
-@utility overlay-open {
-  opacity: 0.3;
-  transition: opacity 0.3s ease-in-out;
-  visibility: visible;
-  transition-delay: 0.2s;
-}
-
 @utility noscroll {
   overflow: hidden;
-}
-
-@utility overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* Base button utility */
-@utility btn {
-  @apply flex items-center justify-center px-3 py-2 hover:opacity-50 rounded-md gap-1 disabled:opacity-50;
-}
-
-/* Shared base for full-width pill buttons */
-@utility btn-base {
-  @apply cursor-pointer flex outline-hidden text-center justify-center items-center gap-2 mt-2 px-6 py-2 font-semibold rounded-full disabled:cursor-not-allowed;
-}
-
-/* Full-width button variants */
-@utility btn-primary {
-  @apply btn-base w-full bg-[#2563EB] text-white hover:bg-[#2563EB]/30 disabled:bg-[#2563EB]/30 disabled:hover:bg-[#2563EB]/30;
-}
-
-@utility btn-blue {
-  @apply btn-base w-full bg-blue-500 text-white hover:opacity-70 disabled:opacity-50;
-}
-
-@utility btn-danger {
-  @apply btn-base w-full bg-red-500 text-white hover:opacity-70 disabled:opacity-50;
-}
-
-@utility btn-muted {
-  @apply btn-base w-full bg-gray-400 text-white hover:opacity-70 disabled:opacity-50;
-}
-
-/* Inline button variants */
-@utility btn-white {
-  @apply btn-base bg-white text-black hover:opacity-70 disabled:opacity-50;
-}
-
-@utility btn-primary2 {
-  @apply btn-base bg-black/20 text-black hover:bg-black/30 disabled:bg-white/10 disabled:hover:bg-white/10;
-}
-
-@utility btn-secondary {
-  @apply btn-base bg-white/10 text-black/50 hover:bg-white/30 ml-auto;
 }
 
 @utility input-primary {
@@ -156,72 +54,6 @@
   }
   & ul {
     @apply list-disc mx-4 space-y-3;
-  }
-}
-
-@utility form-wrapper {
-  @apply flex flex-col space-y-3 w-full;
-  & form {
-    @apply flex flex-col space-y-3;
-  }
-  & label {
-    @apply flex flex-col space-y-1;
-  }
-  & input {
-    @apply px-3 py-2 outline-hidden border rounded-md;
-  }
-  & textarea {
-    @apply px-3 py-2 outline-hidden border rounded-md;
-  }
-  & button {
-    @apply mr-auto py-2 px-3 bg-orange-500 text-black rounded-md cursor-pointer disabled:opacity-50 hover:opacity-50;
-  }
-}
-
-@utility response {
-  @apply p-3 bg-orange-500 my-3 bg-black/20 rounded-md whitespace-pre-wrap;
-}
-
-@utility form-input {
-  @apply px-2 py-2 border  border-[#111113]/20  w-full outline-hidden text-sm rounded-[4px];
-}
-
-@utility form-input-required {
-  @apply px-2 py-2 border border-red-500 w-full outline-hidden text-sm rounded-[4px];
-}
-
-@utility checkbox-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px; /* Adjust as needed */
-}
-
-@utility custom-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  background-color: #fff; /* Default background */
-  border-color: rgba(66, 80, 102, 0.4); /* Border color */
-  border-width: 1px;
-  box-shadow: 0px 0px 2px 4px rgba(66, 80, 102, 0.1);
-  padding: 10px; /* Size of the checkbox */
-  display: inline-block;
-  position: relative;
-  cursor: pointer;
-  vertical-align: middle;
-  margin-right: 8px; /* Space between checkbox and label */
-
-  &:checked {
-    background-color: #fbbf24; /* Bright yellow background */
-  }
-
-  &:checked:after {
-    content: "✓";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 16px; /* Adjust size of checkmark */
-    color: #000000;
   }
 }
 
@@ -257,12 +89,26 @@
     background-color: #ffffff;
     color: #000000;
   }
-}
 
-.videoWrapper {
-  position: relative;
-  padding-bottom: 56.25%;
-  height: 0;
+  html {
+    color-scheme: light;
+  }
+
+  a,
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea,
+  label,
+  summary {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-blue-600);
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -273,26 +119,5 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-.videoWrapper iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-.rotating-icon {
-  display: inline-block; /* Ensures the animation is centered */
-  animation: rotate 1s linear infinite; /* 1s duration, linear timing function, infinite loop */
-}
-
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg); /* Start at 0 degrees */
-  }
-  100% {
-    transform: rotate(360deg); /* Rotate to 360 degrees */
   }
 }

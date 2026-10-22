@@ -21,11 +21,11 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
     <LazyMotion features={domAnimation}>
     <section className="relative overflow-hidden bg-white">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-gray-50" />
+      <div aria-hidden="true" className="absolute inset-0 bg-linear-to-br from-blue-50/50 via-white to-gray-50" />
 
       {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-100/30 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-gray-100/50 rounded-full blur-3xl" />
+      <div aria-hidden="true" className="absolute top-20 left-10 w-72 h-72 bg-blue-100/30 rounded-full blur-3xl" />
+      <div aria-hidden="true" className="absolute bottom-10 right-10 w-96 h-96 bg-gray-100/50 rounded-full blur-3xl" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 lg:py-40">
         <div className="text-center max-w-4xl mx-auto">
@@ -36,7 +36,7 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-medium mb-8"
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
             <span>AI-Powered Image Generation</span>
           </m.div>
 
@@ -45,15 +45,19 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance text-gray-900"
           >
             {isLoggedIn ? (
-              <>
-                Welcome back,{" "}
-                <span className="text-blue-600">
-                  {displayName || "Creator"}
-                </span>
-              </>
+              displayName ? (
+                <>
+                  Welcome back,{" "}
+                  <span className="text-blue-600">{displayName}</span>
+                </>
+              ) : (
+                <>
+                  Welcome <span className="text-blue-600">back</span>
+                </>
+              )
             ) : (
               <>
                 Turn your ideas into{" "}
@@ -70,7 +74,7 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
             className="mt-6 text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
           >
             {isLoggedIn
-              ? "Ready to create something amazing? Start generating images with our powerful AI models."
+              ? "Describe an idea, pick a model and style, and get images in seconds."
               : "Create beautiful AI-generated images with GPT Image, Stability SD3.5 Turbo, FLUX, and more. No design skills required."}
           </m.p>
 

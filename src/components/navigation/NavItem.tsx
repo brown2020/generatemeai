@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { type MouseEvent } from "react";
+import Link from "next/link";
 import { cn } from "@/utils/cn";
+import { useAuthStore } from "@/zustand/useAuthStore";
 
 export interface NavItemData {
   label: string;
@@ -13,26 +15,24 @@ export interface NavItemProps {
   item: NavItemData;
   variant: "header" | "bottom";
   isActive: boolean;
-  onClick: () => void;
+  onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 const variantStyles = {
   header: {
-    container:
-      "flex items-center gap-1 px-3 h-full transition duration-300 cursor-pointer hover:bg-white/20",
+    container: "flex h-full items-center gap-1 px-3 transition-colors duration-300 hover:bg-white/20",
     iconWrapper: "h-9 aspect-square",
-    label: "text-lx font-bold",
+    label: "text-lg font-bold",
   },
   bottom: {
-    container:
-      "flex flex-col items-center px-3 py-2 grow cursor-pointer hover:bg-white/20 transition-colors duration-300",
+    container: "flex grow flex-col items-center px-3 py-2 transition-colors duration-300 hover:bg-white/20",
     iconWrapper: "h-9 aspect-square",
     label: "text-xs font-medium",
   },
 };
 
 /**
- * Reusable navigation item for Header and BottomBar.
+ * Reusable navigation link for Header and BottomBar.
  * Active/inactive colors keep WCAG contrast on blue-800.
  */
 export const NavItem: React.FC<NavItemProps> = ({
@@ -41,14 +41,18 @@ export const NavItem: React.FC<NavItemProps> = ({
   isActive,
   onClick,
 }) => {
+  const isSignedIn = useAuthStore((s) => Boolean(s.uid));
   const styles = variantStyles[variant];
   const Icon = item.icon;
 
   return (
-    <button
-      type="button"
+    <Link
+      href={item.path}
+      // Signed out, these protected routes only prefetch the proxy's /login redirect.
+      prefetch={isSignedIn ? undefined : false}
       className={cn(
         styles.container,
+        "focus-visible:outline-white focus-visible:-outline-offset-4",
         isActive ? "bg-white/25 text-white" : "text-blue-50"
       )}
       onClick={onClick}
@@ -58,7 +62,7 @@ export const NavItem: React.FC<NavItemProps> = ({
         <Icon size={30} className="h-full w-full object-cover" aria-hidden="true" />
       </span>
       <span className={styles.label}>{item.label}</span>
-    </button>
+    </Link>
   );
 };
 

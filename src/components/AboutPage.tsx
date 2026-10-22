@@ -11,13 +11,14 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="flex flex-col h-full items-center px-6 py-12 justify-center w-full max-w-5xl mx-auto flex-1 gap-12 bg-gray-100">
-      <h1 className="text-3xl font-bold text-center text-gray-800">
+    <div className="w-full flex-1 bg-gray-50">
+    <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-8 px-4 py-12 sm:px-6">
+      <h1 className="text-3xl font-bold text-center text-balance text-gray-900">
         About Generate.me
       </h1>
 
       {/* About Section */}
-      <div className="bg-white shadow-md p-8 rounded-lg">
+      <div className="bg-white shadow-xs border border-gray-200 p-6 sm:p-8 rounded-xl">
         <p className="text-lg text-gray-700 leading-relaxed">
           Welcome to <strong>Generate.me</strong>, an innovative platform that
           brings your imagination to life through cutting-edge AI models.
@@ -56,8 +57,8 @@ export default function AboutPage() {
       </div>
 
       {/* Instructions Section */}
-      <div className="bg-white shadow-md p-8 rounded-lg">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-6">
+      <div className="bg-white shadow-xs border border-gray-200 p-6 sm:p-8 rounded-xl">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
           How to Use Generate.me
         </h2>
         <ol className="list-decimal list-inside space-y-3 text-gray-700 text-lg">
@@ -98,8 +99,8 @@ export default function AboutPage() {
       </div>
 
       {/* FAQs Section */}
-      <div className="bg-white shadow-md p-8 rounded-lg w-full">
-        <h2 className="text-3xl font-semibold text-gray-800 mb-6">
+      <div className="bg-white shadow-xs border border-gray-200 p-6 sm:p-8 rounded-xl w-full">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
           Frequently Asked Questions
         </h2>
         <div className="space-y-4">
@@ -107,7 +108,7 @@ export default function AboutPage() {
             <div key={faq.question} className="border-b border-gray-300 pb-4">
               <button
                 type="button"
-                className="flex w-full justify-between items-center cursor-pointer text-left"
+                className="flex w-full justify-between items-center gap-4 rounded-sm text-left"
                 onClick={() => toggleFAQ(faq.question)}
                 aria-expanded={openFAQ === faq.question}
               >
@@ -115,9 +116,9 @@ export default function AboutPage() {
                   {faq.question}
                 </span>
                 {openFAQ === faq.question ? (
-                  <ChevronUp className="text-gray-500" />
+                  <ChevronUp className="shrink-0 text-gray-500" />
                 ) : (
-                  <ChevronDown className="text-gray-500" />
+                  <ChevronDown className="shrink-0 text-gray-500" />
                 )}
               </button>
               {openFAQ === faq.question && (
@@ -128,52 +129,53 @@ export default function AboutPage() {
         </div>
       </div>
     </div>
+    </div>
   );
 }
 
 const faqData = [
   {
-    question: "1. What is Generate.me?",
+    question: "What is Generate.me?",
     answer:
       "Generate.me is a powerful AI-based platform that allows users to create images from text descriptions using models like GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and others.",
   },
   {
-    question: "2. How do I generate an image?",
+    question: "How do I generate an image?",
     answer:
       'Simply describe the image you want to create, select an AI model, choose an artistic style, and click "Generate". The AI will then produce an image based on your input.',
   },
   {
-    question: "3. Can I manage the images I've generated?",
+    question: "Can I manage the images I've generated?",
     answer:
       "Yes. You can update tags, captions, background colors, sharing settings, and downloads from the image detail page.",
   },
   {
-    question: "4. What are tags and how do I use them?",
+    question: "What are tags and how do I use them?",
     answer:
       "Tags help you organize your generated images. You can add custom tags to each image, making it easier to filter through your creations later.",
   },
   {
-    question: "5. How can I share my images?",
+    question: "How can I share my images?",
     answer:
       "Images can be shared by generating a shareable link or directly posting to your social media channels from within the platform.",
   },
   {
-    question: "6. Can I download my images?",
+    question: "Can I download my images?",
     answer:
       "Yes, you can download any image you create in high resolution directly to your device.",
   },
   {
-    question: "7. Are there any limitations to the models?",
+    question: "Are there any limitations to the models?",
     answer:
       "Each AI model has its own strengths and limitations. Some models may excel at realism while others are better at abstract or artistic styles. We recommend experimenting to find the best model for your needs.",
   },
   {
-    question: "8. Is there a limit to the number of images I can generate?",
+    question: "Is there a limit to the number of images I can generate?",
     answer:
       "Image and video generation can use platform credits, or you can bring your own provider API keys and pay providers directly.",
   },
   {
-    question: "9. Can I use my own API keys instead of buying credits?",
+    question: "Can I use my own API keys instead of buying credits?",
     answer:
       "Yes, you can use your own API keys! Just go to your profile, add your API keys, and select the option to use them instead of the platform’s default credit system.",
   },

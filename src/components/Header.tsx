@@ -8,44 +8,50 @@ import { CogIcon } from "lucide-react";
 import { useAuthState } from "@/zustand/selectors";
 
 export default function Header() {
-  const { navigateHome, navigate, isActive } = useNavigation();
+  const { onLinkClick, isActive } = useNavigation();
   const { uid } = useAuthState();
 
   return (
-    <div className="z-10 flex h-16 items-center justify-between bg-blue-800 px-4">
-      <button className="flex cursor-pointer items-center" onClick={navigateHome}>
-        <CogIcon size={30} className="text-white" aria-hidden />
-        <span className="whitespace-nowrap text-2xl uppercase text-white">Generate.me</span>
-      </button>
-      <div className="flex h-full items-center gap-2">
-        <div className="hidden h-full items-center gap-2 md:flex">
+    <header className="z-10 flex h-16 items-center justify-between gap-2 bg-blue-800 px-4">
+      <Link
+        href="/"
+        onClick={onLinkClick("/")}
+        className="flex min-w-0 items-center gap-1 focus-visible:outline-white"
+      >
+        <CogIcon size={30} className="shrink-0 text-white" aria-hidden />
+        <span translate="no" className="truncate text-xl uppercase text-white sm:text-2xl">
+          Generate.me
+        </span>
+      </Link>
+      <div className="flex h-full shrink-0 items-center gap-2">
+        <nav aria-label="Primary" className="hidden h-full items-center gap-2 md:flex">
           {navItems.map((item) => (
             <NavItem
               key={item.path}
               item={item}
               variant="header"
               isActive={isActive(item.path)}
-              onClick={() => navigate(item.path)}
+              onClick={onLinkClick(item.path)}
             />
           ))}
-        </div>
+        </nav>
         {!uid && (
-          <div className="ml-2 flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1 whitespace-nowrap text-sm sm:ml-2 sm:gap-2">
             <Link
               href="/login"
-              className="rounded px-2 py-1 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white"
+              className="rounded px-2 py-1 text-white hover:bg-blue-700 focus-visible:outline-white"
             >
               Sign in
             </Link>
             <Link
               href="/signup"
-              className="rounded bg-white px-2 py-1 font-medium text-blue-900 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white"
+              className="rounded bg-white px-2 py-1 font-medium text-blue-900 hover:bg-blue-50 focus-visible:outline-white"
             >
               Create account
             </Link>
           </div>
         )}
       </div>
-    </div>
+    </header>
   );
 }

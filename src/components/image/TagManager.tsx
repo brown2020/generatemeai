@@ -115,10 +115,10 @@ export const TagManager = ({
 
   return (
     <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden p-6">
-      <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
+      <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
         <Tag className="w-5 h-5 text-gray-500" />
         Tags
-      </h3>
+      </h2>
 
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
@@ -157,6 +157,7 @@ export const TagManager = ({
             />
           </div>
           <button
+            type="button"
             onClick={() => handleAddTag()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium 
               hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -165,6 +166,7 @@ export const TagManager = ({
             Add
           </button>
           <button
+            type="button"
             onClick={handleSuggestions}
             className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg font-medium 
               hover:bg-purple-100 transition-colors flex items-center gap-2"
