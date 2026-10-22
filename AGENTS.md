@@ -23,7 +23,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 ## Current Tech Stack
 
 - **Framework**: Next.js 16 (App Router, Turbopack dev, `src/proxy.ts` edge guard)
-- **Language**: TypeScript 6, strict mode, `@/*` → `src/*`
+- **Language**: TypeScript 6, strict mode, `@/*` → `src/*`. Stay on 6.x until typescript-eslint (via `eslint-config-next`) supports TypeScript 7; today `npm run lint` refuses to run under it.. Stay on 6.x until typescript-eslint (via `eslint-config-next`) supports TypeScript 7; today `npm run lint` refuses to run under it
 - **React**: 19
 - **Styling**: Tailwind CSS 4 (`@tailwindcss/postcss`, no `tailwind.config.ts` — config is CSS-first in `globals.css`), Framer Motion
 - **State**: Zustand 5
