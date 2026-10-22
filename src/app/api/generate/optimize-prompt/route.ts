@@ -50,7 +50,7 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
     const openai = createOpenAI({ apiKey });
     const { text } = await generateText({
       model: openai("gpt-5.6-sol"),
-      system: SYSTEM_PROMPT,
+      instructions: SYSTEM_PROMPT,
       prompt,
       maxOutputTokens: 200,
       temperature: 0.7,

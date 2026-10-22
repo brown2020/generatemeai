@@ -13,11 +13,11 @@
     "test:rules": "npx -y firebase-tools@15.34.0 emulators:exec --only firestore --project demo-generatemeai 'vitest run src/firebase/firestore.rules.test.ts'"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.53",
+    "@ai-sdk/openai": "^4.0.99",
     "@stripe/react-stripe-js": "^7.0.0",
     "@stripe/stripe-js": "^10.1.0",
     "@types/dom-to-image": "^2.6.7",
-    "ai": "^6.0.168",
+    "ai": "^7.0.148",
     "clsx": "^2.1.1",
     "cookies-next": "^6.1.1",
     "dom-to-image": "^2.6.0",

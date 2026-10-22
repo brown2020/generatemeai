@@ -78,7 +78,7 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
 
     const { text } = await generateText({
       model: openai("gpt-5.6-sol"),
-      system:
+      instructions:
         "For all responses, reply with just the answer without giving any description.",
       prompt,
       maxOutputTokens: 200,

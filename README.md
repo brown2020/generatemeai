@@ -24,7 +24,7 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 | Language | TypeScript ^6.0.3 |
 | State | Zustand ^5.0.12 |
 | Backend | Firebase client ^13 + Firebase Admin ^14 (Auth, Firestore, Storage) |
-| AI | Vercel AI SDK (`ai` ^6, `@ai-sdk/openai`), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
+| AI | Vercel AI SDK (`ai` ^7, `@ai-sdk/openai` ^4), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
 | Payments | Stripe ^23 (API `2026-09-30.endive`) + `@stripe/react-stripe-js` ^7 |
 | Validation | Zod ^4.3.6 |
 | Media | `fluent-ffmpeg` + `ffmpeg-static`, `dom-to-image` (`sharp` comes with Next.js for self-hosted image optimization) |
