@@ -47,7 +47,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 ### Current feature inventory
 
 **Image generation**
-- Models (image): DALL·E / GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), Ideogram 3.0, FLUX Kontext Pro (Fireworks). **(inferred: the registry is the source of truth; older Playground V2/V2.5 and Fireworks SDXL entries documented elsewhere are no longer registered.)**
+- Models (image): DALL·E / GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), Ideogram 3.0. **(inferred: the registry is the source of truth; older Playground V2/V2.5, Fireworks SDXL, and FLUX Kontext Pro entries are no longer registered.)**
 - Prompt enrichment via style, color scheme, lighting, perspective, composition, medium, mood (Factory-pattern option sets).
 - Aspect-ratio selection, negative prompts, and multi-image counts — gated per-model by `MODEL_REGISTRY` capabilities (`supportsAspectRatio`, `supportsNegativePrompt`, `maxImages`).
 - Image-to-image reference upload for models that support it.
@@ -81,7 +81,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 
 ### Existing integrations
 
-OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fireworks (FLUX Kontext), Ideogram, D-ID, RunwayML, Bria AI; Firebase (Auth/Firestore/Storage); Stripe; Vercel (hosting/AI SDK).
+OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Ideogram, D-ID, RunwayML, Bria AI; Firebase (Auth/Firestore/Storage); Stripe; Vercel (hosting/AI SDK).
 
 ### Current architecture summary
 
@@ -96,7 +96,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Fir
 
 - Long-running video/GIF jobs must finish inside one request (Vercel `maxDuration` ≤ 300; Hobby plan caps at 60s). **(inferred constraint.)**
 - Provider rate limits and per-provider API differences are absorbed in strategies/routes; failures surface as `ExternalApiError`.
-- **FLUX Kontext Pro (Fireworks) cannot generate.** Fireworks stopped serving every FLUX model serverless on 2026-07-22 (`supportsServerless: false`), so `/workflows/.../flux-kontext-pro` returns 404 and the app refunds. The model still appears in the picker until it is removed or moved to another host.
+- **FLUX Kontext Pro was removed** after Fireworks stopped serving every FLUX model serverless on 2026-07-22 (its endpoint returned 404). Old images with that model still display, and "Try again" falls back to the default model.
 - **No Firestore backups or error monitoring** are configured (checked 2026-10-20), so a restore drill is not possible yet. Owner action: enable a backup schedule or PITR and an error monitor, then run one restore into a scratch database.
 - Build/runtime require many env vars (Firebase Admin + client, provider keys, Stripe, credit costs, cookie name).
 

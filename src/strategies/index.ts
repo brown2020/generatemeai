@@ -2,7 +2,6 @@ import { dalleStrategy } from "./dalle";
 import { stabilityStrategy } from "./stability";
 import { replicateStrategy } from "./replicate";
 import { ideogramStrategy } from "./ideogram";
-import { fireworksKontextStrategy } from "./fireworksKontext";
 import type { GenerationStrategy } from "./types";
 import {
   type Model,
@@ -19,7 +18,6 @@ const strategyImplementations: Record<string, GenerationStrategy> = {
   stability: stabilityStrategy,
   replicate: replicateStrategy,
   ideogram: ideogramStrategy,
-  fireworksKontext: fireworksKontextStrategy,
 };
 
 /**

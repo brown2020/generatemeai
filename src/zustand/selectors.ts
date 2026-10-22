@@ -43,7 +43,6 @@ export const useProfileCredits = createProfileSelector([
 
 export const useProfileApiKeys = createProfileSelector([
   "openai_api_key",
-  "fireworks_api_key",
   "stability_api_key",
   "replicate_api_key",
   "ideogram_api_key",

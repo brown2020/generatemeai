@@ -12,7 +12,6 @@ export interface ProfileType {
   photoUrl: string;
   emailVerified: boolean;
   credits: number;
-  fireworks_api_key: string;
   openai_api_key: string;
   stability_api_key: string;
   bria_api_key: string;
@@ -32,7 +31,6 @@ const defaultProfile: ProfileType = {
   photoUrl: "",
   emailVerified: false,
   credits: 0,
-  fireworks_api_key: "",
   openai_api_key: "",
   stability_api_key: "",
   bria_api_key: "",

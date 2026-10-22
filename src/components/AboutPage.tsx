@@ -26,7 +26,7 @@ export default function AboutPage() {
           and watch it materialize as stunning images. With multiple
           state-of-the-art AI engines like{" "}
           <strong>
-            GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and FLUX Kontext
+            GPT Image, Stability SD3.5 Turbo, FLUX, and Ideogram
           </strong>{" "}
           integrated into the platform, the possibilities are endless.
         </p>
@@ -69,7 +69,7 @@ export default function AboutPage() {
           <li>
             <strong>Choose Your Model:</strong> Select from a variety of
             advanced AI models including GPT Image, Stability SD3.5 Turbo,
-            FLUX, Ideogram, and FLUX Kontext. Each model has its own strengths
+            FLUX, and Ideogram. Each model has its own strengths
             in terms of style and detail.
           </li>
           <li>

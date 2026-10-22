@@ -4,7 +4,7 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 
 ## Features
 
-- **Multi-provider image generation** — GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), FLUX Kontext Pro (Fireworks), Ideogram 3.0
+- **Multi-provider image generation** — GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), Ideogram 3.0
 - **Style controls** — art style, color, lighting, perspective, composition, medium, mood; aspect ratios; negative prompt (where supported); multi-image counts
 - **Image-to-image** reference upload for supported models
 - **Video** — D-ID talking avatars and RunwayML image-to-video; GIF conversion via FFmpeg
@@ -24,7 +24,7 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 | Language | TypeScript ^6.0.3 |
 | State | Zustand ^5.0.12 |
 | Backend | Firebase client ^12.12.1 + Firebase Admin ^13.8.0 (Auth, Firestore, Storage) |
-| AI | Vercel AI SDK (`ai` ^6, `@ai-sdk/openai`), Replicate SDK, direct REST (Stability, Ideogram, Fireworks, D-ID, RunwayML, Bria) |
+| AI | Vercel AI SDK (`ai` ^6, `@ai-sdk/openai`), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
 | Payments | Stripe ^22 + `@stripe/react-stripe-js` |
 | Validation | Zod ^4.3.6 |
 | Media | `fluent-ffmpeg` + `ffmpeg-static`, `dom-to-image` (`sharp` comes with Next.js for self-hosted image optimization) |
@@ -45,7 +45,7 @@ src/
       previews/        # model/style preview listing
   actions/             # Client wrappers that call /api/* (not server actions)
   lib/api/             # apiGet/apiPost helpers + withAuth / ActionResult envelope
-  strategies/          # Image provider Strategy Pattern (dalle, stability, replicate, ideogram, fireworksKontext)
+  strategies/          # Image provider Strategy Pattern (dalle, stability, replicate, ideogram)
   constants/           # modelRegistry (source of truth), options, routes
   firebase/            # Client + Admin SDK setup
   components/          # UI by domain (generate, gallery, auth, profile, …)
@@ -110,7 +110,6 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 | `OPENAI_ORG_ID` | OpenAI org id (optional) | Same |
 | `STABILITY_API_KEY` | Stability SD3.5 Turbo | [platform.stability.ai](https://platform.stability.ai) |
 | `REPLICATE_API_KEY` | FLUX via Replicate | [replicate.com](https://replicate.com) |
-| `FIREWORKS_API_KEY` | FLUX Kontext Pro | [fireworks.ai](https://fireworks.ai) |
 | `IDEOGRAM_API_KEY` | Ideogram 3.0 | [ideogram.ai](https://ideogram.ai) |
 | `DID_API_KEY` | D-ID video | [d-id.com](https://www.d-id.com) |
 | `RUNWAYML_API_SECRET` | RunwayML video | [runwayml.com](https://runwayml.com) |

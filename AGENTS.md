@@ -14,7 +14,7 @@ The app is a Next.js 16 App Router project deployed on Vercel, backed by Firebas
 
 Give creators a simple, transparent alternative to closed AI-art suites:
 
-- **Multiple providers behind one UI** — DALL·E / GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX (Replicate + Fireworks Kontext), Ideogram, plus D-ID and RunwayML for video.
+- **Multiple providers behind one UI** — DALL·E / GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX (Replicate), Ideogram, plus D-ID and RunwayML for video.
 - **BYOK or credits** — users pay providers directly with their own keys, or buy credits via Stripe. No markup is forced.
 - **Deliberately simple** — a single generation screen, opinionated defaults, fast results.
 
@@ -28,7 +28,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 - **Styling**: Tailwind CSS 4 (`@tailwindcss/postcss`, no `tailwind.config.ts` — config is CSS-first in `globals.css`), Framer Motion
 - **State**: Zustand 5
 - **Backend**: Firebase 12 client SDK + Firebase Admin 13 (Auth, Firestore, Storage)
-- **AI**: Vercel AI SDK 6 (`ai`, `@ai-sdk/openai`), Replicate SDK, plus direct REST calls (Stability, Ideogram, Fireworks, D-ID, RunwayML, Bria)
+- **AI**: Vercel AI SDK 6 (`ai`, `@ai-sdk/openai`), Replicate SDK, plus direct REST calls (Stability, Ideogram, D-ID, RunwayML, Bria)
 - **Payments**: Stripe 22 (`stripe`, `@stripe/react-stripe-js`, `@stripe/stripe-js`)
 - **Validation**: Zod 4
 - **Media**: `fluent-ffmpeg` + `ffmpeg-static` (GIF), `dom-to-image`; `sharp` arrives as a Next.js optional dependency
@@ -60,7 +60,7 @@ src/
 ├── constants/           # modelRegistry (source of truth), optionFactory, routes, option sets
 ├── firebase/            # firebaseClient, firebaseAdmin, paths
 ├── hooks/               # client hooks (auth, generation, speech, debounce, clipboard, url sync)
-├── strategies/          # image provider Strategy Pattern (dalle, stability, replicate, ideogram, fireworksKontext)
+├── strategies/          # image provider Strategy Pattern (dalle, stability, replicate, ideogram)
 ├── styles/tokens.ts     # design tokens
 ├── types/               # shared TS types
 ├── utils/               # errors, validationSchemas, creditValidator, profileFields, serverAuth, storage, promptUtils, polling, cn, ...

@@ -133,19 +133,6 @@ export const MODEL_REGISTRY = {
     capabilities: { ...NO_UPLOAD_CAPABILITIES, supportsNegativePrompt: true, maxImages: 1 },
     strategyKey: "ideogram",
   },
-  "flux-kontext-pro": {
-    id: 12,
-    value: "flux-kontext-pro",
-    label: "FLUX Kontext Pro (Fireworks)",
-    type: "image",
-    credits: {
-      envKey: "NEXT_PUBLIC_CREDITS_PER_FLUX_KONTEXT_PRO",
-      fallback: 4,
-    },
-    apiKey: { envKey: "FIREWORKS_API_KEY", formDataKey: "fireworksAPIKey" },
-    capabilities: { ...IMAGE_ONLY_CAPABILITIES, supportsNegativePrompt: false, maxImages: 1 },
-    strategyKey: "fireworksKontext",
-  },
   "d-id": {
     id: 7,
     value: "d-id",
@@ -357,23 +344,6 @@ export const getAspectRatioDimensions = (
   const found = ASPECT_RATIOS.find((r) => r.value === ratio);
   return found ? { width: found.width, height: found.height } : { width: 1024, height: 1024 };
 };
-
-// ============================================================================
-// FormData utilities for server actions
-// ============================================================================
-
-/**
- * Gets all API keys from FormData for server actions.
- */
-export const extractApiKeysFromForm = (formData: FormData) => ({
-  openAPIKey: formData.get("openAPIKey") as string | null,
-  fireworksAPIKey: formData.get("fireworksAPIKey") as string | null,
-  stabilityAPIKey: formData.get("stabilityAPIKey") as string | null,
-  replicateAPIKey: formData.get("replicateAPIKey") as string | null,
-  ideogramAPIKey: formData.get("ideogramAPIKey") as string | null,
-  didAPIKey: formData.get("didAPIKey") as string | null,
-  runwayApiKey: formData.get("runwayApiKey") as string | null,
-});
 
 // ============================================================================
 // Legacy exports for backward compatibility

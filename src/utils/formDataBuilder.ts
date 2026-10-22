@@ -5,7 +5,6 @@ import { ProfileType } from "@/zustand/useProfileStore";
  */
 const API_KEY_FORM_FIELDS = [
   { formKey: "openAPIKey", profileKey: "openai_api_key" },
-  { formKey: "fireworksAPIKey", profileKey: "fireworks_api_key" },
   { formKey: "stabilityAPIKey", profileKey: "stability_api_key" },
   { formKey: "replicateAPIKey", profileKey: "replicate_api_key" },
   { formKey: "ideogramAPIKey", profileKey: "ideogram_api_key" },
