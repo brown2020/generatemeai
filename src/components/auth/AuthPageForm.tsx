@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   GoogleAuthProvider,
@@ -17,6 +17,7 @@ import Image from "next/image";
 import googleLogo from "@/app/assets/google.svg";
 import { auth, hasClientConfig } from "@/firebase/firebaseClient";
 import { mapAuthError } from "@/utils/authErrors";
+import { isIOSReactNativeWebView } from "@/utils/platform";
 import { STORAGE_KEYS } from "@/constants/storage";
 import { signInRedirectPath } from "@/constants/routes";
 import { useAuthStore } from "@/zustand/useAuthStore";
@@ -138,8 +139,12 @@ function AuthFooterLinks({ mode }: { mode: AuthPageMode }) {
   );
 }
 
+const subscribeToNothing = () => () => {};
+
 export function AuthPageForm({ mode }: Props) {
   const setAuthDetails = useAuthStore((s) => s.setAuthDetails);
+  // The mobile app's WebView cannot host Firebase's Google popup, so offer email only there.
+  const isNativeApp = useSyncExternalStore(subscribeToNothing, isIOSReactNativeWebView, () => false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -259,7 +264,7 @@ export function AuthPageForm({ mode }: Props) {
     <div className="mx-auto w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <h1 className="mb-4 text-center text-3xl font-semibold text-gray-900">{TITLES[mode]}</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
-        {mode !== "forgot" && (
+        {mode !== "forgot" && !isNativeApp && (
           <>
             <button
               type="button"

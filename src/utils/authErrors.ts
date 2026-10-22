@@ -12,6 +12,7 @@ const AUTH_MESSAGES: Record<string, string> = {
   "auth/network-request-failed": "Network error. Check your connection and try again.",
   "auth/popup-closed-by-user": "Sign-in was cancelled.",
   "auth/cancelled-popup-request": "Sign-in was cancelled.",
+  "auth/popup-blocked": "Your browser blocked the sign-in window. Allow pop-ups or use email and password.",
   "auth/account-exists-with-different-credential":
     "An account with this email already exists using a different sign-in method.",
   "auth/missing-email": "Please enter your email address.",

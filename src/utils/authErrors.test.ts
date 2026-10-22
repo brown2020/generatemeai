@@ -8,6 +8,9 @@ describe("mapAuthError", () => {
       /Invalid email or password/i
     );
     expect(mapAuthError({ code: "auth/weak-password", message: "raw" })).toMatch(/too weak/i);
+    expect(mapAuthError({ code: "auth/popup-blocked", message: "raw" })).toMatch(
+      /blocked the sign-in window/i
+    );
     expect(authErrorCode({ code: "auth/user-not-found", message: "x" })).toBe(
       "auth/user-not-found"
     );
