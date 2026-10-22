@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.53",
-    "@stripe/react-stripe-js": "^6.2.0",
-    "@stripe/stripe-js": "^9.3.0",
+    "@stripe/react-stripe-js": "^7.0.0",
+    "@stripe/stripe-js": "^10.1.0",
     "@types/dom-to-image": "^2.6.7",
     "ai": "^6.0.168",
     "clsx": "^2.1.1",
@@ -40,7 +40,7 @@
     "react-spinners": "^0.17.0",
     "react-textarea-autosize": "^8.5.9",
     "replicate": "^1.4.0",
-    "stripe": "^22.0.2",
+    "stripe": "^23.0.0",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"

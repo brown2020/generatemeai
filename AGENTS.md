@@ -29,7 +29,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 - **State**: Zustand 5
 - **Backend**: Firebase 13 client SDK + Firebase Admin 14 (modular imports only) (Auth, Firestore, Storage)
 - **AI**: Vercel AI SDK 6 (`ai`, `@ai-sdk/openai`), Replicate SDK, plus direct REST calls (Stability, Ideogram, D-ID, RunwayML, Bria)
-- **Payments**: Stripe 22 (`stripe`, `@stripe/react-stripe-js`, `@stripe/stripe-js`)
+- **Payments**: Stripe 23 (`stripe`, `@stripe/react-stripe-js` 7, `@stripe/stripe-js` 10), API version pinned to `2026-09-30.endive` in `src/lib/stripe.ts`
 - **Validation**: Zod 4
 - **Media**: `fluent-ffmpeg` + `ffmpeg-static` (GIF), `dom-to-image`; `sharp` arrives as a Next.js optional dependency
 - **Lint**: ESLint 10 (flat config `eslint.config.mjs`, `eslint-config-next`)
