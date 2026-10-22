@@ -23,7 +23,7 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 | UI | React ^19.2.5, Tailwind CSS ^4.2.4, Framer Motion, Lucide / react-icons |
 | Language | TypeScript ^6.0.3 |
 | State | Zustand ^5.0.12 |
-| Backend | Firebase client ^12.12.1 + Firebase Admin ^13.8.0 (Auth, Firestore, Storage) |
+| Backend | Firebase client ^13 + Firebase Admin ^14 (Auth, Firestore, Storage) |
 | AI | Vercel AI SDK (`ai` ^6, `@ai-sdk/openai`), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
 | Payments | Stripe ^22 + `@stripe/react-stripe-js` |
 | Validation | Zod ^4.3.6 |
