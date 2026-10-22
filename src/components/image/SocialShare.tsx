@@ -2,13 +2,13 @@
 
 import {
   FacebookShareButton,
-  TwitterShareButton,
+  XShareButton,
   LinkedinShareButton,
   EmailShareButton,
-  FacebookIcon,
-  TwitterIcon,
-  LinkedinIcon,
-  EmailIcon,
+  FacebookLegacyIcon,
+  XLegacyIcon,
+  LinkedinLegacyIcon,
+  EmailLegacyIcon,
 } from "react-share";
 import { ComponentType, ReactNode } from "react";
 
@@ -23,10 +23,10 @@ interface ShareButtonConfig {
 }
 
 const SHARE_BUTTONS: ShareButtonConfig[] = [
-  { Button: FacebookShareButton, Icon: FacebookIcon, label: "Facebook" },
-  { Button: TwitterShareButton, Icon: TwitterIcon, label: "Twitter" },
-  { Button: LinkedinShareButton, Icon: LinkedinIcon, label: "LinkedIn" },
-  { Button: EmailShareButton, Icon: EmailIcon, label: "Email" },
+  { Button: FacebookShareButton, Icon: FacebookLegacyIcon, label: "Facebook" },
+  { Button: XShareButton, Icon: XLegacyIcon, label: "X" },
+  { Button: LinkedinShareButton, Icon: LinkedinLegacyIcon, label: "LinkedIn" },
+  { Button: EmailShareButton, Icon: EmailLegacyIcon, label: "Email" },
 ];
 
 const ICON_SIZE = 40;
