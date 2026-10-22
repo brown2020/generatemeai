@@ -232,12 +232,13 @@ describe("critical routes", () => {
     expect(memory.docs.get(FirestorePaths.profileCover("user-a", coverId))?.style).toBe("oil");
   });
 
-  it("caps models that only generate one image and ignores the client credit balance", async () => {
+  it("rejects a hidden model before charging or calling the provider", async () => {
     seedProfile(100);
-    const events = await readEvents(await generateImage(imageForm("flux-schnell", 4)));
-    expect(events.at(-1)?.status).toBe("complete");
-    expect(strategyCall.calls[0]?.imageCount).toBe(1);
-    expect(memory.docs.get(profilePath)?.credits).toBe(96);
+    const events = await readEvents(await generateImage(imageForm("flux-schnell", 1)));
+    expect(events.at(-1)).toMatchObject({ status: "error", code: "VALIDATION_ERROR" });
+    expect(strategyCall.calls).toHaveLength(0);
+    expect(memory.docs.get(profilePath)?.credits).toBe(100);
+    expect(coverPaths()).toHaveLength(0);
   });
 
   it("does not charge a BYOK generation", async () => {

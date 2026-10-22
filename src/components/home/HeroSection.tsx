@@ -75,7 +75,7 @@ export function HeroSection({ isLoggedIn, displayName }: HeroSectionProps) {
           >
             {isLoggedIn
               ? "Describe an idea, pick a model and style, and get images in seconds."
-              : "Create beautiful AI-generated images with GPT Image, Stability SD3.5 Turbo, FLUX, and more. No design skills required."}
+              : "Create beautiful AI-generated images with OpenAI's GPT Image and dozens of artistic styles. No design skills required."}
           </m.p>
 
           {/* CTA Buttons */}

@@ -62,6 +62,8 @@ export interface ModelConfig {
   capabilities: ModelCapabilities;
   /** Strategy is loaded lazily to avoid circular dependencies */
   strategyKey?: string;
+  /** Kept registered so saved images still resolve, but not offered or accepted for new generations. */
+  hidden?: boolean;
 }
 
 /**
@@ -112,6 +114,7 @@ export const MODEL_REGISTRY = {
     apiKey: { envKey: "STABILITY_API_KEY", formDataKey: "stabilityAPIKey" },
     capabilities: { ...IMAGE_ONLY_CAPABILITIES, supportsNegativePrompt: true },
     strategyKey: "stability",
+    hidden: true,
   },
   "flux-schnell": {
     id: 6,
@@ -122,6 +125,7 @@ export const MODEL_REGISTRY = {
     apiKey: { envKey: "REPLICATE_API_KEY", formDataKey: "replicateAPIKey" },
     capabilities: { ...NO_UPLOAD_CAPABILITIES, maxImages: 1 },
     strategyKey: "replicate",
+    hidden: true,
   },
   "ideogram-ai": {
     id: 9,
@@ -132,6 +136,7 @@ export const MODEL_REGISTRY = {
     apiKey: { envKey: "IDEOGRAM_API_KEY", formDataKey: "ideogramAPIKey" },
     capabilities: { ...NO_UPLOAD_CAPABILITIES, supportsNegativePrompt: true, maxImages: 1 },
     strategyKey: "ideogram",
+    hidden: true,
   },
   "d-id": {
     id: 7,
@@ -230,8 +235,14 @@ export const getModelsByType = (
  * Get image generation models (for UI).
  */
 export const getImageModels = (): ModelConfig[] => {
-  return getModelsByType(["image", "both"]);
+  return getModelsByType(["image", "both"]).filter((m) => !m.hidden);
 };
+
+/**
+ * True when a new image generation may use this model.
+ */
+export const isSelectableImageModel = (value: string): value is Model =>
+  getImageModels().some((m) => m.value === value);
 
 /**
  * Get video generation models (for UI).

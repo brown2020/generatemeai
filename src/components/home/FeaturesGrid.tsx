@@ -13,9 +13,9 @@ import {
 const features = [
   {
     icon: Palette,
-    title: "Multiple AI Models",
+    title: "GPT Image by OpenAI",
     description:
-      "Access GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and more. Choose the perfect model for your creative vision.",
+      "Generate with OpenAI's GPT Image model, using platform credits or your own OpenAI API key.",
   },
   {
     icon: Sparkles,

@@ -35,7 +35,7 @@ export const SelectableCard = memo(function SelectableCard({
   return (
     <button
       type="button"
-      className={`relative flex min-h-14 flex-col items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-colors
+      className={`relative flex min-h-14 flex-col items-center justify-center rounded-lg ${showPreview ? "p-2" : "px-6 py-2"} border-2 cursor-pointer transition-colors
         ${
           isSelected
             ? "border-blue-600 bg-blue-50"

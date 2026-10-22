@@ -19,6 +19,7 @@ import { GeneratedImagePreview, GenerationSettings } from "@/components/generate
 import { Button } from "@/components/ui";
 
 const imageModels = getImageModels();
+const hasModelChoice = imageModels.length > 1;
 
 interface GenerationOptionsProps {
   loading: boolean;
@@ -98,43 +99,55 @@ export function GenerationOptions({
     [updateField]
   );
 
+  const styleGrid = (className: string) => (
+    <div className="space-y-4">
+      <p className="text-sm font-medium text-gray-700">Artistic Style</p>
+      <PaginatedGrid<{ value: string; label: string }>
+        items={artStyles}
+        itemsPerPage={8}
+        className={className}
+        renderItem={(style) => (
+          <StyleCard
+            key={style.value}
+            item={style}
+            isSelected={formState.imageStyle === style.value}
+            onClick={() => handleStyleSelect(style.value)}
+          />
+        )}
+      />
+    </div>
+  );
+
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <p className="text-sm font-medium text-gray-700">AI Model</p>
-          <PaginatedGrid
-            items={imageModels}
-            itemsPerPage={8}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-4"
-            renderItem={(modelOption) => (
-              <ModelCard
-                key={modelOption.value}
-                item={modelOption}
-                isSelected={formState.model === modelOption.value}
-                onClick={() => handleModelSelect(modelOption.value)}
-              />
-            )}
-          />
+      {hasModelChoice ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-gray-700">AI Model</p>
+            <PaginatedGrid
+              items={imageModels}
+              itemsPerPage={8}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+              renderItem={(modelOption) => (
+                <ModelCard
+                  key={modelOption.value}
+                  item={modelOption}
+                  isSelected={formState.model === modelOption.value}
+                  onClick={() => handleModelSelect(modelOption.value)}
+                />
+              )}
+            />
+          </div>
+          {styleGrid("grid grid-cols-2 sm:grid-cols-4 gap-4")}
         </div>
-
-        <div className="space-y-4">
-          <p className="text-sm font-medium text-gray-700">Artistic Style</p>
-          <PaginatedGrid<{ value: string; label: string }>
-            items={artStyles}
-            itemsPerPage={8}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-4"
-            renderItem={(style) => (
-              <StyleCard
-                key={style.value}
-                item={style}
-                isSelected={formState.imageStyle === style.value}
-                onClick={() => handleStyleSelect(style.value)}
-              />
-            )}
-          />
-        </div>
-      </div>
+      ) : (
+        <>
+          <p className="text-sm text-gray-600">
+            Model: <span className="font-medium text-gray-900">{imageModels[0]?.label}</span>
+          </p>
+          {styleGrid("grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4")}
+        </>
+      )}
 
       {showNegativePrompt && (
         <div className="space-y-1">

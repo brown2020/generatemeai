@@ -146,8 +146,7 @@ npm run lint && npx tsc --noEmit && npm test && npm run build
 - Tailwind utilities + `cn()` from `src/utils/cn.ts`. Tailwind 4 syntax (`bg-linear-to-r`, not `bg-gradient-to-r`). Reference `src/styles/tokens.ts`.
 - UI primitives live in `src/components/ui`: `Button`/`buttonClassName` for every button and button-styled `Link` (never nest a `Button` inside a `Link`), and `Modal` (native `<dialog>` with `showModal()`, which provides focus trapping, Escape, and a labelled dialog) for every overlay; destructive actions confirm through `DeleteConfirmModal`. `globals.css` keeps only base styles and the few app-wide utilities; there are no `btn-*` or `form-*` classes.
 - Model cards are text-only; don't reintroduce shared placeholder images under `public/previews/models`.
-- UI primitives live in `src/components/ui`: `Button`/`buttonClassName` for every button and button-styled `Link` (never nest a `Button` inside a `Link`), and `Modal` (native `<dialog>` with `showModal()`, which provides focus trapping, Escape, and a labelled dialog) for every overlay; destructive actions confirm through `DeleteConfirmModal`. `globals.css` keeps only base styles and the few app-wide utilities; there are no `btn-*` or `form-*` classes.
-- Model cards are text-only; don't reintroduce shared placeholder images under `public/previews/models`.
+- Only GPT Image is offered today. Stability, FLUX (Replicate), and Ideogram carry `hidden: true` in `MODEL_REGISTRY`; `getImageModels`/`isSelectableImageModel` gate the UI, URL sync, and the image route. Remove the flag (and restore the key field in `src/constants/apiKeys.ts`) only after the provider works end to end.
 - Reuse before creating: search for an existing util/hook/component/type first.
 - No single-use wrappers or speculative abstractions. Inline simple logic.
 - Comments explain **why**, never restate **what**. Don't narrate edits in comments.

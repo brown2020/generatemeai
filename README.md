@@ -4,7 +4,7 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 
 ## Features
 
-- **Multi-provider image generation** — GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), Ideogram 3.0
+- **Image generation** — GPT Image (OpenAI). Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), and Ideogram 3.0 stay registered but are hidden (`hidden: true` in `MODEL_REGISTRY`) until their integrations are fixed
 - **Style controls** — art style, color, lighting, perspective, composition, medium, mood; aspect ratios; negative prompt (where supported); multi-image counts
 - **Image-to-image** reference upload for supported models
 - **Video** — D-ID talking avatars and RunwayML image-to-video; GIF conversion via FFmpeg
@@ -108,9 +108,9 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 | `NEXT_PUBLIC_COOKIE_NAME` | Name of the auth ID-token cookie | Choose a stable cookie name |
 | `OPENAI_API_KEY` | OpenAI / GPT Image + prompt/tag helpers | [platform.openai.com](https://platform.openai.com) |
 | `OPENAI_ORG_ID` | OpenAI org id (optional) | Same |
-| `STABILITY_API_KEY` | Stability SD3.5 Turbo | [platform.stability.ai](https://platform.stability.ai) |
-| `REPLICATE_API_KEY` | FLUX via Replicate | [replicate.com](https://replicate.com) |
-| `IDEOGRAM_API_KEY` | Ideogram 3.0 | [ideogram.ai](https://ideogram.ai) |
+| `STABILITY_API_KEY` | Stability SD3.5 Turbo (model hidden) | [platform.stability.ai](https://platform.stability.ai) |
+| `REPLICATE_API_KEY` | FLUX via Replicate (model hidden) | [replicate.com](https://replicate.com) |
+| `IDEOGRAM_API_KEY` | Ideogram 3.0 (model hidden) | [ideogram.ai](https://ideogram.ai) |
 | `DID_API_KEY` | D-ID video | [d-id.com](https://www.d-id.com) |
 | `RUNWAYML_API_SECRET` | RunwayML video | [runwayml.com](https://runwayml.com) |
 | `BRIA_AI_API_KEY` | Background removal | [bria.ai](https://bria.ai) |

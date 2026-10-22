@@ -14,9 +14,6 @@ export interface ApiKeyConfig {
  */
 export const API_KEY_CONFIGS: ApiKeyConfig[] = [
   { key: "openai_api_key", label: "OpenAI API Key" },
-  { key: "stability_api_key", label: "Stability API Key" },
-  { key: "replicate_api_key", label: "Replicate API Key" },
-  { key: "ideogram_api_key", label: "Ideogram API Key" },
   { key: "bria_api_key", label: "Bria API Key" },
   { key: "did_api_key", label: "D-ID API Key" },
   { key: "runway_ml_api_key", label: "Runway ML API Key" },

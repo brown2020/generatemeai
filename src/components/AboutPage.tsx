@@ -24,12 +24,8 @@ export default function AboutPage() {
           brings your imagination to life through cutting-edge AI models.
           Whether you&apos;re an artist, a creator, or simply someone with a
           spark of inspiration, Generate.me empowers you to describe your vision
-          and watch it materialize as stunning images. With multiple
-          state-of-the-art AI engines like{" "}
-          <strong>
-            GPT Image, Stability SD3.5 Turbo, FLUX, and Ideogram
-          </strong>{" "}
-          integrated into the platform, the possibilities are endless.
+          and watch it materialize as stunning images, powered by
+          OpenAI&apos;s <strong>GPT Image</strong> model.
         </p>
         <p className="mt-4 text-lg text-gray-700">
           <span className="font-bold">Explore Artistic Styles:</span>{" "}
@@ -68,10 +64,8 @@ export default function AboutPage() {
             are, the better the AI can understand your vision.
           </li>
           <li>
-            <strong>Choose Your Model:</strong> Select from a variety of
-            advanced AI models including GPT Image, Stability SD3.5 Turbo,
-            FLUX, and Ideogram. Each model has its own strengths
-            in terms of style and detail.
+            <strong>Set the Format:</strong> Pick an aspect ratio and how
+            many images you want from GPT Image in one run.
           </li>
           <li>
             <strong>Select Artistic Style:</strong> Add an artistic flair by
@@ -137,12 +131,12 @@ const faqData = [
   {
     question: "What is Generate.me?",
     answer:
-      "Generate.me is a powerful AI-based platform that allows users to create images from text descriptions using models like GPT Image, Stability SD3.5 Turbo, FLUX, Ideogram, and others.",
+      "Generate.me is a powerful AI-based platform that allows users to create images from text descriptions using OpenAI's GPT Image model.",
   },
   {
     question: "How do I generate an image?",
     answer:
-      'Simply describe the image you want to create, select an AI model, choose an artistic style, and click "Generate". The AI will then produce an image based on your input.',
+      'Simply describe the image you want to create, choose an artistic style, and click "Generate". The AI will then produce an image based on your input.',
   },
   {
     question: "Can I manage the images I've generated?",
@@ -165,9 +159,9 @@ const faqData = [
       "Yes, you can download any image you create in high resolution directly to your device.",
   },
   {
-    question: "Are there any limitations to the models?",
+    question: "Which AI model does Generate.me use?",
     answer:
-      "Each AI model has its own strengths and limitations. Some models may excel at realism while others are better at abstract or artistic styles. We recommend experimenting to find the best model for your needs.",
+      "Images are generated with OpenAI's GPT Image model. It handles both realistic and stylized prompts, so try different artistic styles and settings to steer the result.",
   },
   {
     question: "Is there a limit to the number of images I can generate?",

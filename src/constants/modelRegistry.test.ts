@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { MODEL_REGISTRY, isValidModel } from "./modelRegistry";
+import { MODEL_REGISTRY, getImageModels, isSelectableImageModel, isValidModel } from "./modelRegistry";
 
 const readEnvExampleKeys = (): Set<string> => {
   const envExample = readFileSync(join(process.cwd(), ".env.example"), "utf8");
@@ -45,6 +45,16 @@ describe("isValidModel", () => {
     expect(Object.keys(MODEL_REGISTRY).every(isValidModel)).toBe(true);
     for (const name of ["playground-v2", "stable-diffusion-xl", "constructor", "toString", ""]) {
       expect(isValidModel(name)).toBe(false);
+    }
+  });
+});
+
+describe("isSelectableImageModel", () => {
+  it("offers only visible image models for new generations", () => {
+    expect(getImageModels().map((m) => m.value)).toEqual(["dall-e"]);
+    expect(isSelectableImageModel("dall-e")).toBe(true);
+    for (const name of ["stability-sd3-turbo", "flux-schnell", "ideogram-ai", "d-id", "bria.ai", "playground-v2"]) {
+      expect(isSelectableImageModel(name)).toBe(false);
     }
   });
 });

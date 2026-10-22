@@ -47,7 +47,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 ### Current feature inventory
 
 **Image generation**
-- Models (image): DALL·E / GPT Image (OpenAI), Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), Ideogram 3.0. **(inferred: the registry is the source of truth; older Playground V2/V2.5, Fireworks SDXL, and FLUX Kontext Pro entries are no longer registered.)**
+- Models (image): GPT Image (OpenAI) is the only model offered. Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), and Ideogram 3.0 are registered with `hidden: true`: they don't appear on the generate page, `?model=` links fall back to GPT Image, `/api/generate/image` rejects them before charging, and their API-key fields are hidden on the profile page (saved keys are kept). Unhide each one once its provider integration works again. **(inferred: the registry is the source of truth; older Playground V2/V2.5, Fireworks SDXL, and FLUX Kontext Pro entries are no longer registered.)**
 - Prompt enrichment via style, color scheme, lighting, perspective, composition, medium, mood (Factory-pattern option sets).
 - Aspect-ratio selection, negative prompts, and multi-image counts — gated per-model by `MODEL_REGISTRY` capabilities (`supportsAspectRatio`, `supportsNegativePrompt`, `maxImages`).
 - Image-to-image reference upload for models that support it.

@@ -3,7 +3,7 @@ import { useSearchParams } from "next/navigation";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
 import { findColorByValue, findColorByLabel } from "@/constants/colors";
 import { findLightingByValue, findLightingByLabel } from "@/constants/lightings";
-import { isValidModel } from "@/constants/modelRegistry";
+import { isSelectableImageModel } from "@/constants/modelRegistry";
 
 /**
  * Syncs URL search parameters to the generation store.
@@ -40,7 +40,7 @@ export const useUrlSync = () => {
     // Apply params to store
     if (params.freestyle) updateField("imagePrompt", params.freestyle);
     if (params.style) updateField("imageStyle", params.style);
-    if (params.model && isValidModel(params.model)) updateField("model", params.model);
+    if (params.model && isSelectableImageModel(params.model)) updateField("model", params.model);
 
     // Handle color with value/label lookup
     if (params.color) {

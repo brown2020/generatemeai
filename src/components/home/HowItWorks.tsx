@@ -16,7 +16,7 @@ const steps = [
     icon: Wand2,
     title: "Choose Your Style",
     description:
-      "Select an AI model, art style, color scheme, and other settings to match your creative direction.",
+      "Pick an art style, color scheme, and other settings to match your creative direction.",
   },
   {
     number: "03",

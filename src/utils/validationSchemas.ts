@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { isValidModel } from "@/constants/modelRegistry";
+import { isSelectableImageModel } from "@/constants/modelRegistry";
 
 /**
  * Image generation request schema.
@@ -15,8 +15,8 @@ export const imageGenerationSchema = z.object({
     .min(1, "Prompt is required")
     .max(2000, "Prompt must be less than 2000 characters"),
   uid: z.string().min(1, "User ID is required"),
-  model: z.string().refine(isValidModel, {
-    message: "Invalid model selected",
+  model: z.string().refine(isSelectableImageModel, {
+    message: "This model isn't available right now. Choose another model.",
   }),
   useCredits: z.boolean(),
   credits: z.number().min(0, "Credits cannot be negative"),
