@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState, useCallback } from "react";
+import { memo, useState, useCallback } from "react";
 import { normalizeValue } from "@/utils/imageUtils";
 
 interface SelectableCardProps {
@@ -106,13 +106,13 @@ export const SelectableCard = memo(function SelectableCard({
 // ============================================================================
 
 interface ItemCardProps {
-  item: { value: string; label: string; hasPreview?: boolean };
+  item: { value: string; label: string };
   isSelected: boolean;
   onClick: () => void;
 }
 
 /**
- * Preview URL for a style that ships a sample image.
+ * Preview URL for a style's sample image.
  */
 const getStylePreviewUrl = (value: string): string =>
   `/previews/styles/${normalizeValue(value)}/1.jpg`;
@@ -143,15 +143,10 @@ export const StyleCard = memo(function StyleCard({
   isSelected,
   onClick,
 }: ItemCardProps) {
-  const previewUrl = useMemo(
-    () => (item.hasPreview ? getStylePreviewUrl(item.value) : undefined),
-    [item.hasPreview, item.value]
-  );
-
   return (
     <SelectableCard
       label={item.label}
-      previewUrl={previewUrl}
+      previewUrl={getStylePreviewUrl(item.value)}
       isSelected={isSelected}
       onClick={onClick}
     />

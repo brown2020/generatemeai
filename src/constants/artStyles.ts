@@ -1,15 +1,15 @@
 import { createOptionSet } from "./optionFactory";
 
-// `hasPreview` styles ship public/previews/styles/<value without spaces>/1.jpg.
-const artStyleOptions: Array<{ value: string; label: string; hasPreview?: boolean }> = [
-  { value: "Prehistoric Art", label: "Prehistoric Art", hasPreview: true },
-  { value: "Ancient Egyptian Art", label: "Ancient Egyptian Art", hasPreview: true },
-  { value: "Ancient Greek Art", label: "Ancient Greek Art", hasPreview: true },
-  { value: "Renaissance Art", label: "Renaissance Art", hasPreview: true },
-  { value: "Haida Art", label: "Haida Art", hasPreview: true },
-  { value: "Ukiyo-e Art", label: "Ukiyo-e Art", hasPreview: true },
-  { value: "Impressionism", label: "Impressionism", hasPreview: true },
-  { value: "Cubism", label: "Cubism", hasPreview: true },
+// Every style ships public/previews/styles/<value without spaces>/1.jpg.
+const artStyleOptions: Array<{ value: string; label: string }> = [
+  { value: "Prehistoric Art", label: "Prehistoric Art" },
+  { value: "Ancient Egyptian Art", label: "Ancient Egyptian Art" },
+  { value: "Ancient Greek Art", label: "Ancient Greek Art" },
+  { value: "Renaissance Art", label: "Renaissance Art" },
+  { value: "Haida Art", label: "Haida Art" },
+  { value: "Ukiyo-e Art", label: "Ukiyo-e Art" },
+  { value: "Impressionism", label: "Impressionism" },
+  { value: "Cubism", label: "Cubism" },
   { value: "Surrealism", label: "Surrealism" },
   { value: "Abstract Expressionism", label: "Abstract Expressionism" },
   { value: "Minimalism", label: "Minimalism" },

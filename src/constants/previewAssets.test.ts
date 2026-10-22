@@ -10,15 +10,11 @@ const previewFile = (type: string, value: string) =>
   path.join(previewRoot, type, value, "1.jpg");
 
 describe("generate page preview images", () => {
-  it("marks exactly the art styles that ship a preview", () => {
-    const mismatched = artStyles
-      .filter(
-        (style) =>
-          Boolean(style.hasPreview) !==
-          existsSync(previewFile("styles", normalizeValue(style.value)))
-      )
-      .map((style) => style.value);
-    expect(mismatched).toEqual([]);
+  it("ships a sample image for every art style", () => {
+    const missing = artStyles
+      .map((style) => style.value)
+      .filter((value) => !existsSync(previewFile("styles", normalizeValue(value))));
+    expect(missing).toEqual([]);
   });
 
   it("lists exactly the option preview folders that ship, with their image counts", () => {
