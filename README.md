@@ -79,7 +79,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Deploy Firestore and Storage rules from this repo (`firestore.rules`, `storage.rules`) to your Firebase project before relying on production-like security.
+Deploy Firestore and Storage rules from this repo (`firebase.json` points at `firestore.rules` and `storage.rules`) to your Firebase project before relying on production-like security.
 
 ## Environment variables
 
@@ -144,7 +144,7 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 ## Firebase / services setup
 
 1. Enable Email/Password, Google, and Email link auth as needed.
-2. Deploy `firestore.rules` and `storage.rules` (the browser only uses Firebase Auth; gallery reads and all writes go through API routes with the Admin SDK).
+2. Deploy `firestore.rules` and `storage.rules` from `firebase.json` (the browser only uses Firebase Auth; gallery reads and all writes go through API routes with the Admin SDK).
 3. Configure Storage CORS if browsers upload/download across origins (`cors.json` / `firebase-cors.json` are included as references).
 4. Wire Stripe products/prices to match your credit packs (`src/constants/creditPack.ts`).
 
