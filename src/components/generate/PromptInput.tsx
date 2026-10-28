@@ -15,6 +15,8 @@ interface PromptInputProps {
   value: string;
   onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   onOptimize: () => void;
+  /** Shown on the enhance control when platform credits will be charged. */
+  optimizeCreditCost?: number;
   onUpload: (e: ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
   onToggleRecording: () => void;
@@ -31,6 +33,7 @@ export const PromptInput = ({
   value,
   onChange,
   onOptimize,
+  optimizeCreditCost,
   onUpload,
   onRemoveImage,
   onToggleRecording,
@@ -134,8 +137,16 @@ export const PromptInput = ({
                   ? "bg-gray-100 cursor-not-allowed"
                   : "bg-purple-50 hover:bg-purple-100 border border-purple-200"
               }`}
-            title="Enhance prompt with AI"
-            aria-label="Enhance prompt with AI"
+            title={
+              optimizeCreditCost
+                ? `Enhance prompt with AI (${optimizeCreditCost} credits)`
+                : "Enhance prompt with AI"
+            }
+            aria-label={
+              optimizeCreditCost
+                ? `Enhance prompt with AI, ${optimizeCreditCost} credits`
+                : "Enhance prompt with AI"
+            }
           >
             {isOptimizing ? (
               <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />

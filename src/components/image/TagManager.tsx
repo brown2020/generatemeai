@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Plus, Sparkle, Tag } from "lucide-react";
 import toast from "react-hot-toast";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import { suggestTags } from "@/actions/suggestTags";
 import { updateImageTags } from "@/actions/imageActions";
 import { ImageData } from "@/types/image";
@@ -172,7 +173,7 @@ export const TagManager = ({
               hover:bg-purple-100 transition-colors flex items-center gap-2"
           >
             <Sparkle className="w-5 h-5" />
-            Suggestions
+            {useCredits ? `Suggestions · ${creditsToMinus("chatgpt")} credits` : "Suggestions"}
           </button>
         </div>
       </div>

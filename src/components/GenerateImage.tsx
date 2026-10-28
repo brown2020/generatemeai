@@ -4,12 +4,10 @@ import { useEffect, useRef, useCallback, ChangeEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import toast from "react-hot-toast";
 import { RotateCcw } from "lucide-react";
-import { supportsImageUpload } from "@/constants/modelRegistry";
-import { suggestTags } from "@/actions/suggestTags";
+import { creditsToMinus, supportsImageUpload } from "@/constants/modelRegistry";
 import { optimizePrompt } from "@/utils/promptOptimizer";
 
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { useUrlSync } from "@/hooks/useUrlSync";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { useGenerationStore } from "@/zustand/useGenerationStore";
@@ -29,7 +27,6 @@ function GenerateImage() {
     useShallow((s) => ({
       openAPIKey: s.profile.openai_api_key,
       useCredits: s.profile.useCredits,
-      credits: s.profile.credits,
     }))
   );
 
@@ -47,15 +44,7 @@ function GenerateImage() {
   const formState = useGenerationStore(
     useShallow((s) => ({
       imagePrompt: s.imagePrompt,
-      negativePrompt: s.negativePrompt,
-      imageStyle: s.imageStyle,
       model: s.model,
-      aspectRatio: s.aspectRatio,
-      imageCount: s.imageCount,
-      colorScheme: s.colorScheme,
-      lighting: s.lighting,
-      selectedCategory: s.selectedCategory,
-      tags: s.tags,
       uploadedImage: s.uploadedImage,
     }))
   );
@@ -101,44 +90,11 @@ function GenerateImage() {
     };
   }, [uiState.previewType, storeActions]);
 
-  // Tag suggestion handler
-  const handleTagSuggestions = useCallback(
-    async (prompt: string) => {
-      if (!prompt.trim()) return;
-
-      const result = await suggestTags(
-        prompt,
-        formState.colorScheme,
-        formState.lighting,
-        formState.imageStyle,
-        formState.selectedCategory,
-        formState.tags,
-        profileData.openAPIKey,
-        profileData.useCredits,
-        profileData.credits
-      );
-
-      if (!result.success) return;
-
-      const suggestionList = result.data.split(",").map((s) => s.trim());
-      if (suggestionList.length >= 1) {
-        storeActions.updateField("suggestedTags", suggestionList);
-      }
-    },
-    [formState, profileData, storeActions]
-  );
-
-  const debouncedTagSuggestions = useDebouncedCallback(
-    handleTagSuggestions,
-    500
-  );
-
   const handlePromptChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
       storeActions.updateField("imagePrompt", e.target.value);
-      debouncedTagSuggestions(e.target.value);
     },
-    [storeActions, debouncedTagSuggestions]
+    [storeActions]
   );
 
   const handleClearAll = useCallback(() => {
@@ -155,6 +111,7 @@ function GenerateImage() {
         profileData.openAPIKey
       );
       storeActions.updateField("imagePrompt", optimizedPrompt);
+      await useProfileStore.getState().fetchProfile();
       toast.success("Prompt optimized!");
     } catch (error) {
       toast.error("Failed to optimize prompt. Please try again.");
@@ -210,6 +167,9 @@ function GenerateImage() {
           value={formState.imagePrompt}
           onChange={handlePromptChange}
           onOptimize={handleOptimizePrompt}
+          optimizeCreditCost={
+            profileData.useCredits ? creditsToMinus("chatgpt") : undefined
+          }
           onUpload={handleImageUpload}
           onRemoveImage={handleRemoveImage}
           onToggleRecording={toggleRecording}

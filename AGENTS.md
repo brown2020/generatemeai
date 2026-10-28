@@ -27,7 +27,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 - **React**: 19
 - **Styling**: Tailwind CSS 4 (`@tailwindcss/postcss`, no `tailwind.config.ts` — config is CSS-first in `globals.css`), Framer Motion
 - **State**: Zustand 5
-- **Backend**: Firebase 13 client SDK + Firebase Admin 13 (modular imports only) (Auth, Firestore, Storage). Admin is held at 13: Admin 14 pulls jwks-rsa 4, which `require()`s ESM-only jose 6 and crashes every authenticated API route on Vercel with `ERR_REQUIRE_ESM`. Re-test `/api/profile` on a preview deploy before upgrading.
+- **Backend**: Firebase 13 client SDK + Firebase Admin 14 (modular imports only) (Auth, Firestore, Storage). Admin 14 pulls `jwks-rsa` 4, which depends on ESM-only `jose` 6. `package.json` overrides `jwks-rsa`'s `jose` to `5.10.0` so `require('firebase-admin/auth')` stays CommonJS. Keep that override. Re-test `/api/profile` on a preview deploy after any Admin upgrade.
 - **AI**: Vercel AI SDK 7 (`ai`, `@ai-sdk/openai` 4; prompts use `instructions`, not the deprecated `system`), Replicate SDK, plus direct REST calls (Stability, Ideogram, D-ID, RunwayML, Bria)
 - **Payments**: Stripe 23 (`stripe`, `@stripe/react-stripe-js` 7, `@stripe/stripe-js` 10), API version pinned to `2026-09-30.endive` in `src/lib/stripe.ts`
 - **Validation**: Zod 4

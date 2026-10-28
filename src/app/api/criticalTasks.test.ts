@@ -247,6 +247,56 @@ describe("critical routes", () => {
     expect(memory.docs.get(FirestorePaths.profileCover("user-a", coverId))?.style).toBe("oil");
   });
 
+  it("stores a video on a new cover so it can be turned into a GIF", async () => {
+    const videoUrl =
+      "https://storage.googleapis.com/demo-bucket/video-generation/user-a/clip.mp4";
+    const saved = await saveHistory(
+      jsonPost("http://localhost/api/history", {
+        freestyle: "boat",
+        style: "oil",
+        downloadUrl: ownedMediaUrl,
+        videoDownloadUrl: videoUrl,
+        model: "d-id",
+        prompt: "a red boat",
+        tags: [],
+        imageCategory: "",
+        lighting: "",
+        colorScheme: "",
+        imageReference: "",
+        perspective: "",
+        composition: "",
+        medium: "",
+        mood: "",
+      })
+    );
+    const body = await saved.json();
+    expect(saved.status).toBe(200);
+    expect(memory.docs.get(FirestorePaths.profileCover("user-a", body.data.id))?.videoDownloadUrl).toBe(
+      videoUrl
+    );
+
+    const rejected = await saveHistory(
+      jsonPost("http://localhost/api/history", {
+        freestyle: "boat",
+        style: "oil",
+        downloadUrl: ownedMediaUrl,
+        videoDownloadUrl: "https://example.com/clip.mp4",
+        model: "d-id",
+        prompt: "a red boat",
+        tags: [],
+        imageCategory: "",
+        lighting: "",
+        colorScheme: "",
+        imageReference: "",
+        perspective: "",
+        composition: "",
+        medium: "",
+        mood: "",
+      })
+    );
+    expect(rejected.status).toBe(400);
+  });
+
   it("rejects a hidden model before charging or calling the provider", async () => {
     seedProfile(100);
     const events = await readEvents(await generateImage(imageForm("flux-schnell", 1)));

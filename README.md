@@ -7,8 +7,8 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 - **Image generation** — GPT Image (OpenAI). Stability SD3.5 Turbo, FLUX.2 Pro (Replicate), and Ideogram 3.0 stay registered but are hidden (`hidden: true` in `MODEL_REGISTRY`) until their integrations are fixed
 - **Style controls** — art style, color, lighting, perspective, composition, medium, mood; aspect ratios; negative prompt (where supported); multi-image counts
 - **Image-to-image** reference upload for supported models
-- **Video** — D-ID talking avatars and RunwayML image-to-video; GIF conversion via FFmpeg
-- **Utilities** — AI prompt optimization, AI tag suggestions (OpenAI), background removal (Bria AI), voice prompt input (Web Speech API)
+- **Video** — D-ID talking avatars and RunwayML image-to-video. The finished video is saved on a gallery cover, and that page can turn it into a GIF with FFmpeg
+- **Utilities** — AI prompt optimization, AI tag suggestions (OpenAI), and background removal (Bria AI). Each of those shows its credit cost before it runs. Typing a prompt does not spend credits. Voice prompt input uses the Web Speech API
 - **Gallery** — personal history with tag filtering and per-image detail pages
 - **Sharing** — publish to a public URL (optional non-secret password), social share, download
 - **Profile** — credit balance, per-provider BYOK keys, payment history
@@ -19,14 +19,14 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 
 | Layer | Tech |
 | --- | --- |
-| Framework | Next.js ^16.3.6 (App Router, Turbopack dev) |
-| UI | React ^19.2.5, Tailwind CSS ^4.2.4, Framer Motion, Lucide / react-icons |
-| Language | TypeScript ^6.0.3 |
-| State | Zustand ^5.0.12 |
-| Backend | Firebase client ^13 + Firebase Admin ^13 (Auth, Firestore, Storage) |
-| AI | Vercel AI SDK (`ai` ^7, `@ai-sdk/openai` ^4), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
+| Framework | Next.js ^16.4.3 (App Router, Turbopack dev) |
+| UI | React ^19.3.1, Tailwind CSS ^4.3.3, Framer Motion ^14, Lucide, react-icons |
+| Language | TypeScript ^6.0.3 (lint cannot run on TypeScript 7 yet) |
+| State | Zustand ^5.0.16 |
+| Backend | Firebase client ^13.1.0 + Firebase Admin ^14.5.0 (Auth, Firestore, Storage). `jwks-rsa` is pinned to `jose` 5.10.0 |
+| AI | Vercel AI SDK (`ai` ^7.0.156, `@ai-sdk/openai` ^4), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
 | Payments | Stripe ^23 (API `2026-09-30.endive`) + `@stripe/react-stripe-js` ^7 |
-| Validation | Zod ^4.3.6 |
+| Validation | Zod ^4.6.7 |
 | Media | `fluent-ffmpeg` + `ffmpeg-static`, `dom-to-image` (`sharp` comes with Next.js for self-hosted image optimization) |
 | Tests / quality | Vitest ^5 (with Vite ^8 as its peer), ESLint 10, React Doctor |
 
@@ -118,7 +118,14 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 | `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret. Optional: when unset, `POST /api/payments/webhook` returns 503 and does not change balances | Stripe Dashboard → Webhooks |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Display name for credit product | Your choice / Stripe product |
-| `NEXT_PUBLIC_CREDITS_PER_*` | Per-model credit costs (see `.env.example`) | Tune for your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE` | Credits charged per GPT Image | Your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_STABILITY_SD3_TURBO_IMAGE` | Credits charged per Stability image (model hidden) | Your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL` | Credits charged per FLUX image (model hidden) | Your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_IDEOGRAM` | Credits charged per Ideogram image (model hidden) | Your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_D_ID` | Credits charged per D-ID video | Your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_RUNWAY` | Credits charged per RunwayML video | Your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_BRIA_IMAGE` | Credits charged per background removal | Your pricing |
+| `NEXT_PUBLIC_CREDITS_PER_CHATGPT` | Credits charged per prompt optimization or tag suggestion | Your pricing |
 | `NEXT_PUBLIC_ENABLE_PREVIEW_MARKING` | Toggle preview sample saving | `true` / `false` |
 | `PREVIEW_ADMIN_UIDS` | Comma-separated Firebase uids allowed to save preview samples. When unset, nobody can | Your admin uid |
 

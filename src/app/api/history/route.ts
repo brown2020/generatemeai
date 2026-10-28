@@ -25,6 +25,7 @@ const historySchema = z.object({
   composition: z.string(),
   medium: z.string(),
   mood: z.string(),
+  videoDownloadUrl: z.string().optional(),
 });
 
 /**
@@ -46,6 +47,7 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
   }
   assertOwnedMedia(fields.downloadUrl, uid, "Media URL");
   assertOwnedMedia(fields.imageReference, uid, "Reference URL");
+  assertOwnedMedia(fields.videoDownloadUrl ?? "", uid, "Video URL");
 
   if (id) {
     const docRef = adminDb.doc(FirestorePaths.profileCover(uid, id));
