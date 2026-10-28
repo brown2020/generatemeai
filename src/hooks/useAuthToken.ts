@@ -1,11 +1,12 @@
 import { useEffect, useCallback, useRef } from "react";
 import { getIdToken } from "firebase/auth";
-import { deleteCookie, setCookie } from "cookies-next";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth } from "@/firebase/firebaseClient";
 import { STORAGE_KEYS } from "@/constants/storage";
 import { syncAuthToFirestoreServer } from "@/actions/syncAuth";
+import { authCookieName } from "@/constants/authCookie";
+import { clearAuthSession, establishAuthSession } from "@/actions/authSession";
 
 const REFRESH_INTERVAL = 50 * 60 * 1000;
 const DEBOUNCE_DELAY = 1000;
@@ -14,7 +15,8 @@ const DEBOUNCE_DELAY = 1000;
  * Auth cookie + store sync. Only mount when Firebase client config is present
  * (see ClientProvider AuthReadyProvider).
  */
-const useAuthToken = (cookieName = "authToken") => {
+const useAuthToken = () => {
+  const cookieName = authCookieName();
   const [user, loading, error] = useAuthState(auth);
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
 
@@ -29,19 +31,16 @@ const useAuthToken = (cookieName = "authToken") => {
       if (!auth.currentUser) throw new Error("No user found");
       const idTokenResult = await getIdToken(auth.currentUser, true);
       if (!isMountedRef.current) return;
-      setCookie(cookieName, idTokenResult, {
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-      });
+      const established = await establishAuthSession(idTokenResult);
+      if (!established) throw new Error("Session cookie was not set");
       if (typeof window !== "undefined" && !window.ReactNativeWebView) {
         window.localStorage.setItem(lastTokenRefreshKey, Date.now().toString());
       }
     } catch {
       if (!isMountedRef.current) return;
-      deleteCookie(cookieName, { path: "/" });
+      await clearAuthSession();
     }
-  }, [cookieName, lastTokenRefreshKey]);
+  }, [lastTokenRefreshKey]);
 
   const scheduleTokenRefresh = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -77,11 +76,8 @@ const useAuthToken = (cookieName = "authToken") => {
         try {
           const token = await getIdToken(user);
           if (!isMountedRef.current || !isCurrentUser) return;
-          setCookie(cookieName, token, {
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-          });
+          const established = await establishAuthSession(token);
+          if (!established) throw new Error("Session cookie was not set");
           scheduleTokenRefresh();
           setAuthDetails({
             uid: user.uid,
@@ -100,7 +96,7 @@ const useAuthToken = (cookieName = "authToken") => {
           });
         } catch {
           if (!isMountedRef.current || !isCurrentUser) return;
-          deleteCookie(cookieName, { path: "/" });
+          await clearAuthSession();
           setAuthDetails({
             uid: "",
             authEmail: "",
@@ -125,8 +121,8 @@ const useAuthToken = (cookieName = "authToken") => {
       authReady: true,
       authPending: false,
     });
-    deleteCookie(cookieName, { path: "/" });
-  }, [cookieName, loading, setAuthDetails, user, scheduleTokenRefresh]);
+    void clearAuthSession();
+  }, [loading, setAuthDetails, user, scheduleTokenRefresh]);
 
   useEffect(() => {
     isMountedRef.current = true;

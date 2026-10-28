@@ -3,7 +3,15 @@
  * Provides a unified interface for saving files to Firebase Storage.
  */
 
+import { randomUUID } from "crypto";
 import { adminBucket } from "@/firebase/firebaseAdmin";
+import {
+  fetchChecked,
+  isUserMediaUrl,
+  MAX_VIDEO_BYTES,
+  storageObjectPath,
+  isSafeRemoteUrl,
+} from "@/utils/storageUrl";
 
 /**
  * Options for saving files to storage.
@@ -89,39 +97,39 @@ export async function saveToStorage({
  * Creates a storage path for generated images.
  */
 export const createGeneratedImagePath = (uid: string): string =>
-  `generated/${uid}/${Date.now()}.jpg`;
+  `generated/${uid}/${randomUUID()}.jpg`;
 
 /**
  * Creates a storage path for reference images.
  */
 export const createReferenceImagePath = (uid: string): string =>
-  `image-references/${uid}/${Date.now()}.jpg`;
+  `image-references/${uid}/${randomUUID()}.jpg`;
 
 /**
  * Creates a storage path for generated videos.
  */
-export const createVideoPath = (): string =>
-  `video-generation/${Date.now()}.mp4`;
+export const createVideoPath = (uid: string): string =>
+  `video-generation/${uid}/${randomUUID()}.mp4`;
 
 /**
  * Creates a storage path for generated GIFs.
  */
-export const createGifPath = (): string => `video-generation/${Date.now()}.gif`;
+export const createGifPath = (uid: string): string =>
+  `video-generation/${uid}/${randomUUID()}.gif`;
 
 /**
  * Saves a video from URL to Firebase Storage.
  * Fetches the video, converts to buffer, and saves.
  */
-export async function saveVideoFromUrl(videoUrl: string): Promise<string> {
-  const response = await fetch(videoUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch video: ${response.status} ${response.statusText}`);
-  }
-  const buffer = Buffer.from(await response.arrayBuffer());
+export async function saveVideoFromUrl(videoUrl: string, uid: string): Promise<string> {
+  const buffer = await fetchChecked(videoUrl, {
+    maxBytes: MAX_VIDEO_BYTES,
+    allow: isSafeRemoteUrl,
+  });
 
   return saveToStorage({
     data: buffer,
-    path: createVideoPath(),
+    path: createVideoPath(uid),
     contentType: "video/mp4",
   });
 }
@@ -129,10 +137,39 @@ export async function saveVideoFromUrl(videoUrl: string): Promise<string> {
 /**
  * Saves a GIF buffer to Firebase Storage.
  */
-export async function saveGif(gifBuffer: Buffer): Promise<string> {
+export async function saveGif(gifBuffer: Buffer, uid: string): Promise<string> {
   return saveToStorage({
     data: gifBuffer,
-    path: createGifPath(),
+    path: createGifPath(uid),
     contentType: "image/gif",
   });
+}
+
+/** Deletes one object when the URL is an object this account owns. */
+export async function deleteOwnedObject(url: unknown, uid: string): Promise<void> {
+  if (typeof url !== "string" || !isUserMediaUrl(url, uid)) return;
+  const objectPath = storageObjectPath(url);
+  if (!objectPath) return;
+  await adminBucket.file(objectPath).delete({ ignoreNotFound: true });
+}
+
+/**
+ * Deletes this account's storage prefixes, plus legacy `video-generation/{file}`
+ * objects referenced by the account's own gallery URLs.
+ */
+export async function deleteUserStorage(uid: string, urls: string[]): Promise<void> {
+  const prefixes = [
+    `generated/${uid}/`,
+    `image-references/${uid}/`,
+    `video-generation/${uid}/`,
+  ];
+  for (const prefix of prefixes) {
+    await adminBucket.deleteFiles({ prefix, force: true });
+  }
+
+  for (const url of urls) {
+    const objectPath = storageObjectPath(url);
+    if (!objectPath || !/^video-generation\/[^/]+$/.test(objectPath)) continue;
+    await adminBucket.file(objectPath).delete({ ignoreNotFound: true });
+  }
 }

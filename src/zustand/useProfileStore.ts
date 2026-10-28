@@ -72,7 +72,7 @@ const createProfileFromAuth = (
     contactEmail: (baseProfile.contactEmail || authEmail || "") as string,
     displayName: (baseProfile.displayName || authDisplayName || "") as string,
     photoUrl: (baseProfile.photoUrl || authPhotoUrl || "") as string,
-    emailVerified: (authEmailVerified || baseProfile.emailVerified || false) as boolean,
+    emailVerified: Boolean(authEmailVerified),
   };
 };
 
@@ -104,7 +104,6 @@ const useProfileStore = create<ProfileState>((set, get) => ({
         contactEmail: newProfile.contactEmail,
         displayName: newProfile.displayName,
         photoUrl: newProfile.photoUrl,
-        emailVerified: newProfile.emailVerified,
       });
 
       set({ profile: newProfile });

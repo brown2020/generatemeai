@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  getIdToken,
   isSignInWithEmailLink,
   signInWithEmailLink,
   updateProfile as updateFirebaseProfile,
 } from "firebase/auth";
+import { establishAuthSession } from "@/actions/authSession";
 import { auth } from "@/firebase/firebaseClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,6 +59,9 @@ export default function LoginFinishPage() {
         if (selectedName && user.displayName !== selectedName) {
           await updateFirebaseProfile(user, { displayName: selectedName });
         }
+        const token = await getIdToken(user, true);
+        const established = await establishAuthSession(token);
+        if (!established) throw new Error("Session cookie was not set");
         if (ignore) return;
 
         toast.success("Successfully signed in!");

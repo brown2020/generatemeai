@@ -2,12 +2,9 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { z } from "zod";
-import { normalizeValue } from "@/utils/imageUtils";
-import { isAllowedStorageUrl } from "@/utils/storageUrl";
-import { adminAuth } from "@/firebase/firebaseAdmin";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const COOKIE_NAME = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
+import { getAuthContext } from "@/utils/serverAuth";
+import { fetchChecked, isAllowedStorageUrl, MAX_IMAGE_BYTES } from "@/utils/storageUrl";
+import { previewAdminUids, previewDirectory } from "@/utils/previewPath";
 
 const previewSchema = z.object({
   imageUrl: z.string().url(),
@@ -23,24 +20,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Authenticate the request
-  const cookieHeader = request.headers.get("cookie") || "";
-  const cookies = Object.fromEntries(
-    cookieHeader.split(";").map((c) => {
-      const [key, ...val] = c.trim().split("=");
-      return [key, val.join("=")];
-    })
-  );
-  const token = cookies[COOKIE_NAME];
-
-  if (!token) {
+  let uid: string;
+  try {
+    uid = (await getAuthContext()).uid;
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    await adminAuth.verifyIdToken(token);
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  if (!previewAdminUids().includes(uid)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -63,29 +51,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const sanitizedType = type.replace(/[^a-zA-Z]/g, "");
-    if (!sanitizedType) {
+    const previewDir = previewDirectory(type, value);
+    if (!previewDir) {
       return NextResponse.json(
-        { error: "Invalid type" },
+        { error: "Invalid path" },
         { status: 400 }
       );
     }
 
-    const normalizedValue = normalizeValue(value);
-    const previewDir = path.join(
-      process.cwd(),
-      "public",
-      "previews",
-      sanitizedType,
-      normalizedValue
-    );
-
-    // Ensure the resolved path is within the expected directory
-    const expectedBase = path.join(process.cwd(), "public", "previews");
-    if (!previewDir.startsWith(expectedBase)) {
+    let buffer: Buffer;
+    try {
+      buffer = await fetchChecked(imageUrl, {
+        maxBytes: MAX_IMAGE_BYTES,
+        allow: isAllowedStorageUrl,
+      });
+    } catch {
       return NextResponse.json(
-        { error: "Invalid path" },
-        { status: 400 }
+        { error: "Failed to fetch image" },
+        { status: 502 }
       );
     }
 
@@ -95,32 +78,11 @@ export async function POST(request: Request) {
 
     fs.mkdirSync(previewDir, { recursive: true });
 
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: "Failed to fetch image" },
-        { status: 502 }
-      );
-    }
-
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && parseInt(contentLength, 10) > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "Image too large" },
-        { status: 400 }
-      );
-    }
-
-    const buffer = await response.arrayBuffer();
-    if (buffer.byteLength > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "Image too large" },
-        { status: 400 }
-      );
-    }
-
     const filePath = path.join(previewDir, "1.jpg");
-    fs.writeFileSync(filePath, Buffer.from(buffer));
+    fs.writeFileSync(filePath, buffer);
+
+    const normalizedValue = path.basename(previewDir);
+    const sanitizedType = path.basename(path.dirname(previewDir));
 
     return NextResponse.json({
       success: true,
@@ -133,4 +95,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

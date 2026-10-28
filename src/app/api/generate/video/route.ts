@@ -10,6 +10,8 @@ import {
 import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
 import { pollWithTimeout } from "@/utils/polling";
 import { saveVideoFromUrl } from "@/utils/storage";
+import { isUserMediaUrl } from "@/utils/storageUrl";
+import { assertGenerationAccess } from "@/utils/generationGuard";
 import { ValidationError } from "@/utils/errors";
 
 export const runtime = "nodejs";
@@ -193,6 +195,14 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
   const { videoModel, imageUrl, scriptPrompt, audio, animationType } =
     validatedInput;
 
+  if (!isUserMediaUrl(imageUrl, uid)) {
+    return jsonError(
+      "Image URL must point at this account's storage object.",
+      "VALIDATION_ERROR",
+      400
+    );
+  }
+
   if (!animationType && (!scriptPrompt || !audio)) {
     return jsonError(
       "Script prompt with audio or animation type is required.",
@@ -202,6 +212,7 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
   }
 
   const { useCredits } = await assertSufficientCreditsServer(uid, videoModel);
+  await assertGenerationAccess(uid, useCredits);
   const userApiKey =
     videoModel === "d-id"
       ? validatedInput.didAPIKey
@@ -240,7 +251,7 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
       throw new ValidationError(`Unsupported video model: ${videoModel}`);
     }
 
-    const savedVideoUrl = await saveVideoFromUrl(videoUrl);
+    const savedVideoUrl = await saveVideoFromUrl(videoUrl, uid);
     chargedAmount = 0;
     return jsonOk({ videoUrl: savedVideoUrl });
   } catch (error) {

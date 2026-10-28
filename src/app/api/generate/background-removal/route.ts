@@ -7,7 +7,9 @@ import {
   refundCreditsServer,
 } from "@/utils/creditValidator";
 import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
-import { isAllowedStorageUrl } from "@/utils/storageUrl";
+import { fetchChecked, isUserMediaUrl, MAX_IMAGE_BYTES, isSafeRemoteUrl } from "@/utils/storageUrl";
+import { createGeneratedImagePath, saveToStorage } from "@/utils/storage";
+import { assertGenerationAccess } from "@/utils/generationGuard";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,11 +30,12 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
   const { imageUrl, briaApiKey } = await parseJsonBody(request, bodySchema);
 
   // Only fetch the user's own Storage media — blocks SSRF to internal hosts.
-  if (!isAllowedStorageUrl(imageUrl)) {
+  if (!isUserMediaUrl(imageUrl, uid)) {
     return jsonError("Unsupported image URL.", "VALIDATION_ERROR", 400);
   }
 
   const { useCredits } = await assertSufficientCreditsServer(uid, "bria.ai");
+  await assertGenerationAccess(uid, useCredits);
   const apiKey = resolveApiKey("bria.ai", useCredits, briaApiKey);
   if (!apiKey) {
     return jsonError("Bria API key is required.", "INVALID_API_KEY", 400);
@@ -57,12 +60,11 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
       chargedAmount = cost;
     }
 
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      await refundCharge();
-      return jsonError("Failed to fetch source image.", "GENERATION_FAILED", 502);
-    }
-    const imageBlob = await imageResponse.blob();
+    const imageBytes = await fetchChecked(imageUrl, {
+      maxBytes: MAX_IMAGE_BYTES,
+      allow: (candidate) => isUserMediaUrl(candidate, uid),
+    });
+    const imageBlob = new Blob([new Uint8Array(imageBytes)]);
 
     const formData = new FormData();
     formData.append("file", imageBlob, "image.png");
@@ -94,8 +96,16 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
       await response.json();
 
     if (result.result_url) {
+      const cutout = await fetchChecked(result.result_url, {
+        maxBytes: MAX_IMAGE_BYTES,
+        allow: isSafeRemoteUrl,
+      });
+      const storedUrl = await saveToStorage({
+        data: cutout,
+        path: createGeneratedImagePath(uid),
+      });
       chargedAmount = 0;
-      return jsonOk({ result_url: result.result_url });
+      return jsonOk({ result_url: storedUrl });
     }
 
     await refundCharge();

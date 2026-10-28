@@ -9,6 +9,7 @@ import {
   refundCreditsServer,
 } from "@/utils/creditValidator";
 import { creditsToMinus, resolveApiKey } from "@/constants/modelRegistry";
+import { assertGenerationAccess } from "@/utils/generationGuard";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -33,6 +34,7 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
     parseJsonBody(request, bodySchema),
     assertSufficientCreditsServer(uid, "chatgpt"),
   ]);
+  await assertGenerationAccess(uid, useCredits);
   const apiKey = resolveApiKey("chatgpt", useCredits, userApiKey);
 
   if (!apiKey) {

@@ -20,7 +20,8 @@ import {
   createGeneratedImagePath,
   createReferenceImagePath,
 } from "@/utils/storage";
-import { authenticateAction } from "@/utils/serverAuth";
+import { getAuthContext } from "@/utils/serverAuth";
+import { assertGenerationAccess } from "@/utils/generationGuard";
 import {
   AuthenticationError,
   ValidationError,
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       let chargedAmount = 0;
 
       try {
-        const uid = await authenticateAction();
+        const { uid } = await getAuthContext();
         actorId = uid;
         emit({ status: "started" });
 
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
 
         const { useCredits, imageCount: boundedCount } =
           await assertSufficientCreditsServer(uid, modelName, imageCount);
+        await assertGenerationAccess(uid, useCredits);
         const creditCost = generationCreditCost(modelName, imageCount);
 
         const strategy = getStrategy(modelName);
@@ -129,7 +131,6 @@ export async function POST(request: NextRequest) {
             error: `API key not configured for model: ${modelName}`,
             code: "INVALID_API_KEY",
           });
-          controller.close();
           return;
         }
 

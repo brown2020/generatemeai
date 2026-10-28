@@ -3,6 +3,8 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Check, LogOut } from "lucide-react";
+import { sendEmailVerification } from "firebase/auth";
+import { auth, hasClientConfig } from "@/firebase/firebaseClient";
 
 import PaymentsPage from "./PaymentsPage";
 import DeleteConfirmModal from "./DeleteConfirmModal";
@@ -14,6 +16,7 @@ import { API_KEY_CONFIGS, getApiKeyValue } from "@/constants/apiKeys";
 import { ApiKeyInput } from "./profile/ApiKeyInput";
 import { deleteAccountServer } from "@/actions/profileActions";
 import toast from "react-hot-toast";
+import { Button } from "@/components/ui";
 
 export default function Profile() {
   const profile = useProfileStore((state) => state.profile);
@@ -110,6 +113,22 @@ export default function Profile() {
                 <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
                   {authEmail || "Not set"}
                 </div>
+                {!profile.emailVerified && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      if (!hasClientConfig || !auth.currentUser) return;
+                      void sendEmailVerification(auth.currentUser)
+                        .then(() => toast.success("Verification email sent."))
+                        .catch(() => toast.error("Could not send the verification email."));
+                    }}
+                  >
+                    Resend verification email
+                  </Button>
+                )}
               </div>
 
               <div>

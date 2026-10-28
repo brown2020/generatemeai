@@ -4,6 +4,8 @@ import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { FirestorePaths } from "@/firebase/paths";
 import { jsonError, jsonOk, parseJsonBody, withAuth } from "@/lib/api/server";
+import { isUserMediaUrl } from "@/utils/storageUrl";
+import { ValidationError } from "@/utils/errors";
 
 export const runtime = "nodejs";
 
@@ -29,9 +31,21 @@ const historySchema = z.object({
  * POST /api/history
  * Persists a generation record to the user's covers subcollection.
  */
+function assertOwnedMedia(url: string, uid: string, label: string) {
+  if (!url) return;
+  if (!isUserMediaUrl(url, uid)) {
+    throw new ValidationError(`${label} must point at this account's storage object.`);
+  }
+}
+
 export const POST = withAuth(async (uid, request: NextRequest) => {
   const params = await parseJsonBody(request, historySchema);
   const { id, ...fields } = params;
+  if (!fields.downloadUrl) {
+    throw new ValidationError("Media URL must point at this account's storage object.");
+  }
+  assertOwnedMedia(fields.downloadUrl, uid, "Media URL");
+  assertOwnedMedia(fields.imageReference, uid, "Reference URL");
 
   if (id) {
     const docRef = adminDb.doc(FirestorePaths.profileCover(uid, id));

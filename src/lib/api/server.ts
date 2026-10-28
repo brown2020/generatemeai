@@ -57,9 +57,8 @@ export function errorToResponse(error: unknown): NextResponse<ApiEnvelope<never>
   if (error instanceof AppError) {
     return jsonError(error.message, error.code as ErrorCode, error.statusCode);
   }
-  const message = getErrorMessage(error);
-  console.error("[api]", message);
-  return jsonError(message, "GENERATION_FAILED", 500);
+  console.error("[api]", getErrorMessage(error));
+  return jsonError("Something went wrong. Please try again.", "GENERATION_FAILED", 500);
 }
 
 /**

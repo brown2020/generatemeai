@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { signOut } from "firebase/auth";
 import toast from "react-hot-toast";
-import { deleteCookie } from "cookies-next";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { auth, hasClientConfig } from "@/firebase/firebaseClient";
 import { mapAuthError } from "@/utils/authErrors";
-
-const COOKIE_NAME = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
+import { clearAuthSession } from "@/actions/authSession";
 
 /**
  * Modal account shell helpers. Email/password auth lives on /login, /signup,
@@ -39,7 +37,7 @@ export const useAuthLogic = () => {
   const handleSignOut = async () => {
     setAuthBusy(true);
     try {
-      deleteCookie(COOKIE_NAME, { path: "/" });
+      await clearAuthSession();
       if (hasClientConfig) {
         await signOut(auth);
       }

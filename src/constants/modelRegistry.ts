@@ -268,14 +268,41 @@ const parseEnvVarToNumber = (
 };
 
 /**
+ * Static `process.env.NEXT_PUBLIC_*` reads so the client bundle inlines the
+ * same prices the server charges. A computed `process.env[key]` stays empty
+ * in the browser and would show the fallback instead.
+ */
+function readCreditEnv(envKey: string): string | undefined {
+  switch (envKey) {
+    case "NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE;
+    case "NEXT_PUBLIC_CREDITS_PER_STABILITY_SD3_TURBO_IMAGE":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_STABILITY_SD3_TURBO_IMAGE;
+    case "NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_FLUX_SCHNELL;
+    case "NEXT_PUBLIC_CREDITS_PER_IDEOGRAM":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_IDEOGRAM;
+    case "NEXT_PUBLIC_CREDITS_PER_D_ID":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_D_ID;
+    case "NEXT_PUBLIC_CREDITS_PER_RUNWAY":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_RUNWAY;
+    case "NEXT_PUBLIC_CREDITS_PER_BRIA_IMAGE":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_BRIA_IMAGE;
+    case "NEXT_PUBLIC_CREDITS_PER_CHATGPT":
+      return process.env.NEXT_PUBLIC_CREDITS_PER_CHATGPT;
+    default:
+      return undefined;
+  }
+}
+
+/**
  * Returns the number of credits to deduct for a given model.
  */
 export const creditsToMinus = (modelName: string): number => {
   const config = getModelConfig(modelName);
   if (!config) return DEFAULT_CREDITS;
 
-  const envValue = process.env[config.credits.envKey];
-  return parseEnvVarToNumber(envValue, config.credits.fallback);
+  return parseEnvVarToNumber(readCreditEnv(config.credits.envKey), config.credits.fallback);
 };
 
 // ============================================================================

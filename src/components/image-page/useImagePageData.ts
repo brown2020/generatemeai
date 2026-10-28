@@ -28,6 +28,7 @@ interface UseImagePageDataReturn extends ImagePageDataState {
   setBackgroundColor: (color: string) => void;
   setIsPasswordProtected: (value: boolean) => void;
   refreshData: () => void;
+  revealImage: (data: ImageData) => void;
 }
 
 /**
@@ -50,8 +51,8 @@ const applyImageData = (
   setters.setTags(data?.tags ?? []);
   setters.setCaption(data?.caption ?? "");
   setters.setBackgroundColor(data?.backgroundColor || "#ffffff");
-  if (setters.setIsPasswordProtected && data?.password) {
-    setters.setIsPasswordProtected(true);
+  if (setters.setIsPasswordProtected) {
+    setters.setIsPasswordProtected(Boolean(data.locked));
   }
 };
 
@@ -116,6 +117,18 @@ export const useImagePageData = ({
 
   const refreshData = useCallback(() => setRefreshCounter((c) => c + 1), []);
 
+  const revealImage = useCallback((data: ImageData) => {
+    applyImageData({ ...data, locked: false }, id, {
+      setImageData,
+      setIsSharable,
+      setTags,
+      setCaption,
+      setBackgroundColor,
+      setIsPasswordProtected,
+    });
+    setIsPasswordProtected(false);
+  }, [id]);
+
   return {
     imageData,
     isOwner,
@@ -130,5 +143,6 @@ export const useImagePageData = ({
     setBackgroundColor,
     setIsPasswordProtected,
     refreshData,
+    revealImage,
   };
 };

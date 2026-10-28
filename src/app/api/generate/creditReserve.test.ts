@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { memory } from "@/test/memoryFirestore";
 import { FirestorePaths } from "@/firebase/paths";
 
-const testAuth = vi.hoisted(() => ({ uid: "user-a" }));
+const testAuth = vi.hoisted(() => ({ uid: "user-a", emailVerified: true }));
 const providers = vi.hoisted(() => ({
   videoFails: false,
   tagsFail: false,
@@ -26,10 +26,21 @@ vi.mock("@/utils/serverAuth", () => ({
     }
     return testAuth.uid;
   },
+  getAuthContext: async () => {
+    if (!testAuth.uid) {
+      const { AuthenticationError } = await import("@/utils/errors");
+      throw new AuthenticationError("Authentication required. Please sign in.");
+    }
+    return { uid: testAuth.uid, emailVerified: testAuth.emailVerified !== false };
+  },
 }));
 
 vi.mock("@/utils/storage", () => ({
-  saveVideoFromUrl: async () => "https://storage.googleapis.com/bucket/video.mp4",
+  saveVideoFromUrl: async () =>
+    "https://storage.googleapis.com/bucket/video-generation/user-a/video.mp4",
+  saveToStorage: async () =>
+    "https://storage.googleapis.com/bucket/generated/user-a/cut.png",
+  createGeneratedImagePath: (uid: string) => `generated/${uid}/cut.png`,
 }));
 
 vi.mock("ai", () => ({
@@ -54,7 +65,8 @@ import { POST as removeBackground } from "@/app/api/generate/background-removal/
 import { generationCreditCost } from "@/utils/creditCost";
 
 const profilePath = FirestorePaths.userProfile("user-a");
-const sourceUrl = "https://storage.googleapis.com/bucket/source.png";
+const sourceUrl = "https://storage.googleapis.com/bucket/generated/user-a/source.png";
+const cutoutUrl = "https://example.com/cut.png";
 
 function asRequest(request: Request): NextRequest {
   return request as NextRequest;
@@ -71,7 +83,7 @@ function credits(): number {
 function videoRequest() {
   const body = new FormData();
   body.set("videoModel", "d-id");
-  body.set("imageUrl", "https://example.com/source.png");
+  body.set("imageUrl", sourceUrl);
   body.set("useCredits", "true");
   body.set("credits", "99999");
   body.set("scriptPrompt", "hello");
@@ -141,15 +153,22 @@ describe("credit reservation", () => {
         if (href.includes("/talks/")) {
           return { ok: true, json: async () => ({ result_url: "https://cdn.example/video.mp4" }) };
         }
-        if (href === sourceUrl) {
-          if (providers.sourceFails) return { ok: false, blob: async () => new Blob() };
-          return { ok: true, blob: async () => new Blob(["png"]) };
+        if (href === sourceUrl || href === cutoutUrl) {
+          if (providers.sourceFails && href === sourceUrl) {
+            return { ok: false, status: 404, headers: { get: (): string | null => null } };
+          }
+          return {
+            ok: true,
+            status: 200,
+            headers: { get: (): string | null => null },
+            arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+          };
         }
         if (href.includes("bria-api.com")) {
           if (providers.briaFails) {
             return { ok: false, json: async () => ({ message: "bria failed" }) };
           }
-          return { ok: true, json: async () => ({ result_url: "https://example.com/cut.png" }) };
+          return { ok: true, json: async () => ({ result_url: cutoutUrl }) };
         }
         throw new Error(`unexpected fetch ${href}`);
       })

@@ -65,7 +65,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 **Gallery & sharing**
 - Private gallery of generated media with a paginated grid and tag filtering, loaded newest-first from `GET /api/images`; a failed load shows a retryable error instead of an empty gallery.
 - Per-image detail page: metadata, tags (CRUD), caption, background color, download.
-- Public sharing: copy an image into `publicImages/{id}` with optional password and social-share buttons. The home page shows recent unprotected public images from a tagged cache; sharing, unsharing, editing, or deleting expires that cache so changes appear on the next request.
+- Public sharing: copy an image into `publicImages/{id}` with an optional password and social-share buttons. A locked public image is returned without its media URLs or password; `POST /api/images/:id/access` checks the password and then returns the media. The home page shows recent unprotected public images from a tagged cache; sharing, unsharing, editing, deleting, or deleting the account expires that cache so changes appear on the next request.
 
 **Accounts, profile & payments**
 - Firebase auth: Google, email/password on dedicated `/login` and `/signup` pages, `/forgot-password`, and passwordless email link, with mapped inline errors and a show/hide password control. A signed-out visit to a protected page goes to `/login` and returns there after sign-in.
@@ -74,7 +74,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 
 ### Current user flows
 
-- **Auth flow**: `/login`, `/signup`, and `/forgot-password` (`AuthPageForm`) → Firebase sign-in → the form writes the ID-token cookie, then does a full-page navigation (so router-cache redirects prefetched while signed out are discarded) → returns to the `?redirect=` page the proxy set, or `/generate` → `proxy.ts` allows protected routes → API routes verify the token with Admin SDK. `/api/auth/sync` stores sign-in metadata only.
+- **Auth flow**: `/login`, `/signup`, and `/forgot-password` (`AuthPageForm`) → Firebase sign-in → `POST /api/auth/session` verifies the ID token and sets an HttpOnly cookie, then the form does a full-page navigation (so router-cache redirects prefetched while signed out are discarded) → returns to the `?redirect=` page the proxy set, or `/generate` → `proxy.ts` allows protected routes → API routes verify the token with Admin SDK. `/api/auth/sync` stores sign-in metadata only. Email/password signup sends a verification email; platform-credit generation requires `email_verified` on the token.
 - **Generate flow**: `useImageGenerator` builds a prompt (the description plus chosen option labels; options left at None add nothing) + FormData → streams `/api/generate/image`. The route reserves `creditsToMinus(model) × bounded imageCount` before the provider call, refunds that reserve if generation or upload fails, stores the media, and writes the gallery cover before `complete`. The client then refreshes profile credits and fills style metadata on that same cover. Video, tag suggestions, and background removal reserve their model cost before the provider call and refund it if that work fails. A refunded image failure ends with "Your credits were refunded." in the error event, and an unaffordable request fails as `INSUFFICIENT_CREDITS` (402 on JSON routes) before any charge.
 - **Image detail flow**: `useImagePageData` loads owner data (falls back to public copy) → owner actions (share/delete/tags/caption/background/video) call `/api/images/[id]*`. Delete and background removal ask for confirmation in a native `<dialog>` first.
 - **Payment flow**: create a PaymentIntent for the published pack only (`9999` cents → `10000` credits), bound to the signed-in uid → Stripe Elements → process/validate. Process grants credits once, inside a transaction keyed by the PaymentIntent id.
@@ -88,9 +88,9 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Ide
 - **Next.js 16 App Router**, Node-runtime API routes do all privileged work; `src/proxy.ts` is a soft auth gate (cookie presence only). No `middleware.ts`.
 - **Client → `src/actions/*` (client wrappers) → `src/lib/api/client.ts` → `/api/*` route → Firebase Admin.** Uniform `ActionResult<T>` envelope; image generation streams NDJSON.
 - **Strategy Pattern** for image providers (`src/strategies`), **Model Registry** as single source of truth (`src/constants/modelRegistry.ts`), **Factory Pattern** for option sets.
-- **Server-side credits** (`creditValidator.ts`, transactional deduction of per-image cost times bounded image count, refunded if the provider call fails); client profile updates are sanitized server-side (`PATCH /api/profile` strips `credits`) and image mutations are owner-scoped before touching the public mirror; credit purchases accept only the published pack and grant it once per PaymentIntent; **Zod** validation at every boundary; **typed errors** + `ActionResult`.
+- **Server-side credits** (`creditValidator.ts`, transactional deduction of per-image cost times bounded image count, refunded if the provider call fails); client profile updates are an allowlist (`PATCH /api/profile` drops `credits`, `emailVerified`, and unknown fields) and image mutations are owner-scoped before touching the public mirror; credit purchases accept only the published pack and grant it once per PaymentIntent, including from a signed `payment_intent.succeeded` webhook when `STRIPE_WEBHOOK_SECRET` is set; generation is capped at 20 attempts per minute; **Zod** validation at every boundary; **typed errors** + `ActionResult`.
 - **Zustand** stores for auth/profile/generation/payments.
-- **Data model (Firestore)**: `users/{uid}` (auth metadata), `users/{uid}/profile/userData` (credits, keys, settings), `users/{uid}/payments/{id}`, `profiles/{uid}/covers/{id}` (gallery), `publicImages/{id}` (shared copies). Media in Storage under `generated/{uid}/*`, `image-references/{uid}/*`, served via signed URLs.
+- **Data model (Firestore)**: `users/{uid}` (auth metadata), `users/{uid}/profile/userData` (credits, keys, settings), `users/{uid}/payments/{id}`, `users/{uid}/rateLimit/generation`, `profiles/{uid}/covers/{id}` (gallery), `publicImages/{id}` (shared copies). Media in Storage under `generated/{uid}/*`, `image-references/{uid}/*`, and `video-generation/{uid}/*`, served via signed URLs. The client SDK cannot write those objects.
 
 ### Existing technical constraints
 
@@ -103,7 +103,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Ide
 ### Known limitations
 
 - **Route-level tests, no browser end-to-end suite.** Vitest covers the critical API routes (generate, gallery, share, delete, payments, credits), route protection, prompt assembly, and preview assets; the Firestore rules suite runs in the emulator. GitHub Actions runs lint, typecheck, tests, React Doctor, build, and the rules job on `dev` and `main`. UI flows are verified manually.
-- **Public-image password is stored in plaintext** in the public doc — it deters casual access only and is not a real secret (documented in `README.md` and `firestore.rules`).
+- **Public-image password is stored in plaintext** in the public doc and checked on the server. It is not returned to the client and it is not a real secret (documented in `README.md` and `firestore.rules`).
 - **Gallery has tag filtering and pagination but no free-text prompt search and no bulk operations.** **(inferred.)**
 - **No cost/credit preview before generating** — users don't see what an action will cost until after. **(inferred.)**
 - **No reproducibility controls** (seed) and **no upscaling** — both are table stakes for the category.
