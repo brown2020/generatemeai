@@ -1,6 +1,10 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import ffmpeg from "fluent-ffmpeg";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { PassThrough } from "node:stream";
 import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/firebase/firebaseAdmin";
@@ -12,7 +16,8 @@ import {
   withAuth,
 } from "@/lib/api/server";
 import { saveGif } from "@/utils/storage";
-import { isAllowedStorageUrl } from "@/utils/storageUrl";
+import { fetchChecked, isAllowedStorageUrl, isUserMediaUrl, MAX_VIDEO_BYTES } from "@/utils/storageUrl";
+import { assertGenerationAccess } from "@/utils/generationGuard";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -39,24 +44,40 @@ function getFfmpegPath(): string {
 ffmpeg.setFfmpegPath(getFfmpegPath());
 
 /**
- * Streams a video URL through ffmpeg and collects the GIF output into a
- * Buffer. Errors on either stream reject the promise.
+ * Writes the video to a temp file before ffmpeg so the converter cannot follow
+ * a redirect. The temp directory is removed when the conversion settles.
  */
-function convertToGif(videoUrl: string): Promise<Buffer> {
+function convertToGif(video: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const stream = new PassThrough();
-    const chunks: Buffer[] = [];
-
-    ffmpeg()
-      .input(videoUrl)
-      .outputFormat("gif")
-      .addOption("-loglevel", "quiet")
-      .on("error", (err: Error) => reject(new Error(err.message)))
-      .pipe(stream, { end: true });
-
-    stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-    stream.on("finish", () => resolve(Buffer.concat(chunks)));
-    stream.on("error", (err: Error) => reject(new Error(err.message)));
+    const dirPromise = mkdtemp(path.join(tmpdir(), "gif-"));
+    dirPromise.then(async (dir) => {
+      const inputPath = path.join(dir, `${randomUUID()}.bin`);
+      try {
+        await writeFile(inputPath, video);
+        const stream = new PassThrough();
+        const chunks: Buffer[] = [];
+        ffmpeg(inputPath)
+          .outputFormat("gif")
+          .addOption("-loglevel", "quiet")
+          .on("error", (err: Error) => {
+            void rm(dir, { recursive: true, force: true });
+            reject(new Error(err.message));
+          })
+          .pipe(stream, { end: true });
+        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+        stream.on("finish", () => {
+          void rm(dir, { recursive: true, force: true });
+          resolve(Buffer.concat(chunks));
+        });
+        stream.on("error", (err: Error) => {
+          void rm(dir, { recursive: true, force: true });
+          reject(new Error(err.message));
+        });
+      } catch (error) {
+        await rm(dir, { recursive: true, force: true });
+        reject(error);
+      }
+    }, reject);
   });
 }
 
@@ -67,14 +88,7 @@ function convertToGif(videoUrl: string): Promise<Buffer> {
  */
 export const POST = withAuth(async (uid, request: NextRequest) => {
   const { firebaseVideoUrl, id } = await parseJsonBody(request, bodySchema);
-
-  // Restrict ffmpeg's input to the user's own Storage media — blocks SSRF
-  // and file:// local-file reads via a crafted input URL.
-  if (!isAllowedStorageUrl(firebaseVideoUrl)) {
-    return jsonError("Unsupported video URL.", "VALIDATION_ERROR", 400);
-  }
-
-  const videoBuffer = await convertToGif(firebaseVideoUrl);
+  await assertGenerationAccess(uid, false);
 
   const docRef = adminDb.doc(FirestorePaths.profileCover(uid, id));
   const docSnap = await docRef.get();
@@ -83,8 +97,24 @@ export const POST = withAuth(async (uid, request: NextRequest) => {
   }
 
   const data = docSnap.data();
+  const savedVideo = data?.videoDownloadUrl;
+  const ownsObject = isUserMediaUrl(firebaseVideoUrl, uid);
+  const ownsSavedUrl =
+    typeof savedVideo === "string" &&
+    savedVideo === firebaseVideoUrl &&
+    isAllowedStorageUrl(savedVideo);
+  if (!ownsObject && !ownsSavedUrl) {
+    return jsonError("Unsupported video URL.", "VALIDATION_ERROR", 400);
+  }
+
+  const videoBytes = await fetchChecked(firebaseVideoUrl, {
+    maxBytes: MAX_VIDEO_BYTES,
+    allow: isAllowedStorageUrl,
+  });
+  const videoBuffer = await convertToGif(videoBytes);
+
   const cloneRef = adminDb.collection(FirestorePaths.profileCovers(uid)).doc();
-  const gifUrl = await saveGif(videoBuffer);
+  const gifUrl = await saveGif(videoBuffer, uid);
 
   await cloneRef.set({
     ...data,

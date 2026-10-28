@@ -9,6 +9,7 @@ type DocData = Record<string, unknown>;
 interface Snap {
   exists: boolean;
   id: string;
+  ref: DocRef;
   data: () => DocData | undefined;
 }
 
@@ -33,13 +34,15 @@ export function createMemoryFirestore() {
 
   const read = (path: string, overlay?: Map<string, PendingWrite>): Snap => {
     const pending = overlay?.get(path);
+    const id = path.split("/").pop() ?? path;
     if (pending?.type === "delete") {
-      return { exists: false, id: path.split("/").pop() ?? path, data: () => undefined };
+      return { exists: false, id, ref: ref(path), data: () => undefined };
     }
     const data = pending?.type === "set" ? pending.data : docs.get(path);
     return {
       exists: data !== undefined,
-      id: path.split("/").pop() ?? path,
+      id,
+      ref: ref(path),
       data: () => (data ? { ...data } : undefined),
     };
   };
@@ -66,9 +69,16 @@ export function createMemoryFirestore() {
   const adminDb = {
     doc: ref,
     collection(path: string) {
+      const children = () =>
+        [...docs.keys()]
+          .filter((key) => key.startsWith(`${path}/`) && !key.slice(path.length + 1).includes("/"))
+          .map((key) => read(key));
       return {
         doc(id?: string) {
           return ref(`${path}/${id ?? `gen-${++sequence}`}`);
+        },
+        async get() {
+          return { docs: children() };
         },
         orderBy(field: string, direction: "asc" | "desc" = "asc") {
           const sortKey = (data: DocData) => {
@@ -77,12 +87,11 @@ export function createMemoryFirestore() {
           };
           return {
             async get() {
-              const children = [...docs.keys()]
-                .filter((key) => key.startsWith(`${path}/`) && !key.slice(path.length + 1).includes("/"))
-                .map((key) => read(key))
-                .sort((a, b) => sortKey(a.data()!) - sortKey(b.data()!));
-              if (direction === "desc") children.reverse();
-              return { docs: children };
+              const docsInCollection = children().sort(
+                (a, b) => sortKey(a.data()!) - sortKey(b.data()!)
+              );
+              if (direction === "desc") docsInCollection.reverse();
+              return { docs: docsInCollection };
             },
           };
         },

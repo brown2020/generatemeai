@@ -79,7 +79,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Deploy Firestore and Storage rules from this repo (`firestore.rules`, `storage.rules`) to your Firebase project before relying on production-like security.
+Deploy Firestore and Storage rules from this repo (`firebase.json` points at `firestore.rules` and `storage.rules`) to your Firebase project before relying on production-like security.
 
 ## Environment variables
 
@@ -105,7 +105,7 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 | `NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID` | Messaging sender id | Same |
 | `NEXT_PUBLIC_FIREBASE_APPID` | App id | Same |
 | `NEXT_PUBLIC_FIREBASE_MEASUREMENTID` | Analytics measurement id (optional) | Same |
-| `NEXT_PUBLIC_COOKIE_NAME` | Name of the auth ID-token cookie | Choose a stable cookie name |
+| `NEXT_PUBLIC_COOKIE_NAME` | Name of the HttpOnly auth ID-token cookie. The server sets it from `POST /api/auth/session`; the fallback name is `generateAuthToken` | Choose a stable cookie name |
 | `OPENAI_API_KEY` | OpenAI / GPT Image + prompt/tag helpers | [platform.openai.com](https://platform.openai.com) |
 | `OPENAI_ORG_ID` | OpenAI org id (optional) | Same |
 | `STABILITY_API_KEY` | Stability SD3.5 Turbo (model hidden) | [platform.stability.ai](https://platform.stability.ai) |
@@ -116,9 +116,11 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 | `BRIA_AI_API_KEY` | Background removal | [bria.ai](https://bria.ai) |
 | `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key | Stripe Dashboard |
 | `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret. Optional: when unset, `POST /api/payments/webhook` returns 503 and does not change balances | Stripe Dashboard → Webhooks |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Display name for credit product | Your choice / Stripe product |
 | `NEXT_PUBLIC_CREDITS_PER_*` | Per-model credit costs (see `.env.example`) | Tune for your pricing |
-| `NEXT_PUBLIC_ENABLE_PREVIEW_MARKING` | Toggle preview watermarking | `true` / `false` |
+| `NEXT_PUBLIC_ENABLE_PREVIEW_MARKING` | Toggle preview sample saving | `true` / `false` |
+| `PREVIEW_ADMIN_UIDS` | Comma-separated Firebase uids allowed to save preview samples. When unset, nobody can | Your admin uid |
 
 ## Scripts
 
@@ -142,7 +144,7 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 ## Firebase / services setup
 
 1. Enable Email/Password, Google, and Email link auth as needed.
-2. Deploy `firestore.rules` and `storage.rules` (the browser only uses Firebase Auth; gallery reads and all writes go through API routes with the Admin SDK).
+2. Deploy `firestore.rules` and `storage.rules` from `firebase.json` (the browser only uses Firebase Auth; gallery reads and all writes go through API routes with the Admin SDK).
 3. Configure Storage CORS if browsers upload/download across origins (`cors.json` / `firebase-cors.json` are included as references).
 4. Wire Stripe products/prices to match your credit packs (`src/constants/creditPack.ts`).
 

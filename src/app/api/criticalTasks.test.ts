@@ -6,7 +6,7 @@ import { CREDIT_PACK } from "@/constants/creditPack";
 import { generationCreditCost, STARTING_CREDITS } from "@/utils/creditCost";
 import { FirestorePaths } from "@/firebase/paths";
 
-const testAuth = vi.hoisted(() => ({ uid: "user-a" }));
+const testAuth = vi.hoisted(() => ({ uid: "user-a", emailVerified: true }));
 const strategyCall = vi.hoisted(() => ({
   calls: [] as Array<{ imageCount?: number }>,
   impl: (async () => "png-bytes") as (
@@ -32,6 +32,13 @@ vi.mock("@/utils/serverAuth", () => ({
     }
     return testAuth.uid;
   },
+  getAuthContext: async () => {
+    if (!testAuth.uid) {
+      const { AuthenticationError } = await import("@/utils/errors");
+      throw new AuthenticationError("Authentication required. Please sign in.");
+    }
+    return { uid: testAuth.uid, emailVerified: testAuth.emailVerified !== false };
+  },
 }));
 
 vi.mock("@/lib/stripe", () => ({
@@ -53,25 +60,31 @@ vi.mock("@/strategies", () => ({
 vi.mock("next/cache", () => ({ revalidateTag: cacheMock.revalidateTag }));
 
 vi.mock("@/utils/storage", () => ({
-  saveToStorage: async () => "https://storage.example/generated/a.png",
+  saveToStorage: async () =>
+    "https://storage.googleapis.com/demo-bucket/generated/user-a/a.png",
   createGeneratedImagePath: () => "generated/user-a/a.png",
   createReferenceImagePath: () => "image-references/user-a/a.png",
+  deleteOwnedObject: async () => undefined,
 }));
 
 import { POST as generateImage } from "@/app/api/generate/image/route";
 import { POST as createIntent } from "@/app/api/payments/intent/route";
 import { POST as processPayment } from "@/app/api/payments/process/route";
 import { POST as validatePayment } from "@/app/api/payments/validate/route";
-import { GET as getImage, DELETE as deleteImage } from "@/app/api/images/[imageId]/route";
+import { GET as getImage, DELETE as deleteImage, PATCH as patchImage } from "@/app/api/images/[imageId]/route";
 import { GET as listImages } from "@/app/api/images/route";
 import { PUBLIC_IMAGES_TAG } from "@/constants/cacheTags";
 import { Timestamp } from "firebase-admin/firestore";
 import { POST as shareImage } from "@/app/api/images/[imageId]/share/route";
 import { GET as getProfile } from "@/app/api/profile/route";
 import { POST as saveHistory } from "@/app/api/history/route";
+import { POST as unlockImage, resetUnlockWindows } from "@/app/api/images/[imageId]/access/route";
+import { authCookieName } from "@/constants/authCookie";
 import { proxy } from "@/proxy";
 
 const profilePath = FirestorePaths.userProfile("user-a");
+const ownedMediaUrl =
+  "https://storage.googleapis.com/demo-bucket/generated/user-a/a.png";
 
 function asRequest(request: Request): NextRequest {
   return request as NextRequest;
@@ -144,6 +157,8 @@ describe("critical routes", () => {
   beforeEach(() => {
     memory.reset();
     testAuth.uid = "user-a";
+    testAuth.emailVerified = true;
+    resetUnlockWindows();
     strategyCall.calls = [];
     strategyCall.impl = async (input) =>
       Array.from({ length: input.imageCount ?? 1 }, () => "png-bytes");
@@ -162,7 +177,7 @@ describe("critical routes", () => {
   });
 
   it("sends an anonymous visitor home and lets a session cookie through", () => {
-    const cookieName = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
+    const cookieName = authCookieName();
     const anonymous = proxy(new NextRequestCtor("http://localhost/generate"));
     expect(anonymous.status).toBe(307);
     expect(anonymous.headers.get("location")).toContain("/login?redirect=%2Fgenerate");
@@ -206,14 +221,14 @@ describe("critical routes", () => {
     );
     const payload = await reloaded.json();
     expect(payload.data.isOwner).toBe(true);
-    expect(payload.data.data.downloadUrl).toBe("https://storage.example/generated/a.png");
+    expect(payload.data.data.downloadUrl).toBe(ownedMediaUrl);
 
     const styled = await saveHistory(
       jsonPost("http://localhost/api/history", {
         id: coverId,
         freestyle: "boat",
         style: "oil",
-        downloadUrl: "https://storage.example/generated/a.png",
+        downloadUrl: ownedMediaUrl,
         model: "dall-e",
         prompt: "a red boat",
         tags: [],
@@ -506,6 +521,9 @@ describe("critical routes", () => {
       jsonPost("http://localhost/api/payments/process", { paymentIntentId: "pi_pack" })
     );
     expect(failed.status).toBe(500);
+    const failedBody = (await failed.json()) as { error: string };
+    expect(failedBody.error).toBe("Something went wrong. Please try again.");
+    expect(failedBody.error).not.toContain("stripe down");
     expect(memory.docs.get(profilePath)?.credits).toBe(50);
     expect(memory.docs.has(FirestorePaths.userPayment("user-a", "pi_pack"))).toBe(false);
   });
@@ -537,5 +555,81 @@ describe("critical routes", () => {
     expect(memory.docs.get(profilePath)?.credits).toBe(
       STARTING_CREDITS - generationCreditCost("dall-e", 1)
     );
+  });
+
+  it("withholds a public image until the share password matches", async () => {
+    const secret = "s3cret-gate";
+    const hiddenUrl = "https://storage.googleapis.com/demo-bucket/generated/user-a/hidden.png";
+    memory.docs.set(FirestorePaths.publicImage("img-locked"), {
+      downloadUrl: hiddenUrl,
+      password: secret,
+      prompt: "hidden boat",
+    });
+
+    testAuth.uid = "";
+    const locked = await getImage(
+      asRequest(new Request("http://localhost/api/images/img-locked")),
+      imageContext("img-locked")
+    );
+    const lockedBody = await locked.json();
+    expect(lockedBody.data.data.locked).toBe(true);
+    expect(lockedBody.data.data.downloadUrl).toBeUndefined();
+    expect(JSON.stringify(lockedBody)).not.toContain(secret);
+    expect(JSON.stringify(lockedBody)).not.toContain(hiddenUrl);
+
+    const wrong = await unlockImage(
+      jsonPost("http://localhost/api/images/img-locked/access", { password: "nope" }),
+      imageContext("img-locked")
+    );
+    const wrongBody = await wrong.json();
+    expect(wrong.status).toBe(401);
+    expect(JSON.stringify(wrongBody)).not.toContain(secret);
+    expect(JSON.stringify(wrongBody)).not.toContain(hiddenUrl);
+
+    const opened = await unlockImage(
+      jsonPost("http://localhost/api/images/img-locked/access", { password: secret }),
+      imageContext("img-locked")
+    );
+    const openedBody = await opened.json();
+    expect(opened.status).toBe(200);
+    expect(openedBody.data.data.downloadUrl).toBe(hiddenUrl);
+    expect(JSON.stringify(openedBody)).not.toContain(secret);
+  });
+
+  it("rejects a gallery media URL outside the caller's storage prefix", async () => {
+    memory.docs.set(FirestorePaths.profileCover("user-a", "img-1"), {
+      downloadUrl: ownedMediaUrl,
+    });
+    const rejected = await patchImage(
+      jsonPost("http://localhost/api/images/img-1", {
+        downloadUrl: "https://evil.example/generated/user-a/a.png",
+      }),
+      imageContext("img-1")
+    );
+    expect(rejected.status).toBe(400);
+    expect(memory.docs.get(FirestorePaths.profileCover("user-a", "img-1"))?.downloadUrl).toBe(
+      ownedMediaUrl
+    );
+  });
+
+  it("does not spend platform credits for an unverified email", async () => {
+    seedProfile(100);
+    testAuth.emailVerified = false;
+    const events = await readEvents(await generateImage(imageForm("dall-e", 1)));
+    expect(events.at(-1)?.code).toBe("AUTHORIZATION_FAILED");
+    expect(strategyCall.calls).toHaveLength(0);
+    expect(memory.docs.get(profilePath)?.credits).toBe(100);
+  });
+
+  it("stops generation after the per-minute cap without charging", async () => {
+    seedProfile(100);
+    memory.docs.set("users/user-a/rateLimit/generation", {
+      windowStart: Date.now(),
+      count: 20,
+    });
+    const events = await readEvents(await generateImage(imageForm("dall-e", 1)));
+    expect(events.at(-1)?.code).toBe("RATE_LIMIT_EXCEEDED");
+    expect(strategyCall.calls).toHaveLength(0);
+    expect(memory.docs.get(profilePath)?.credits).toBe(100);
   });
 });

@@ -3,7 +3,10 @@ import { z } from "zod";
 import { revalidateTag } from "next/cache";
 import { adminDb } from "@/firebase/firebaseAdmin";
 import { PUBLIC_IMAGES_TAG } from "@/constants/cacheTags";
-import { toImageJson } from "@/utils/imageJson";
+import { isImageLocked, toViewerImageJson } from "@/utils/imageJson";
+import { isUserMediaUrl } from "@/utils/storageUrl";
+import { deleteOwnedObject } from "@/utils/storage";
+import { ValidationError } from "@/utils/errors";
 import { FirestorePaths } from "@/firebase/paths";
 import {
   jsonError,
@@ -45,14 +48,21 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       const ownerRef = adminDb.doc(FirestorePaths.profileCover(uid, imageId));
       const ownerSnap = await ownerRef.get();
       if (ownerSnap.exists) {
-        return jsonOk({ data: toImageJson(imageId, ownerSnap.data()), isOwner: true });
+        return jsonOk({
+          data: toViewerImageJson(imageId, ownerSnap.data(), false),
+          isOwner: true,
+        });
       }
     }
 
     const publicRef = adminDb.doc(FirestorePaths.publicImage(imageId));
     const publicSnap = await publicRef.get();
     if (publicSnap.exists) {
-      return jsonOk({ data: toImageJson(imageId, publicSnap.data()), isOwner: false });
+      const data = publicSnap.data();
+      return jsonOk({
+        data: toViewerImageJson(imageId, data, isImageLocked(data)),
+        isOwner: false,
+      });
     }
 
     return jsonError("Image not found", "NOT_FOUND", 404);
@@ -73,6 +83,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const updates = await parseJsonBody(request, patchSchema);
 
     const docRef = adminDb.doc(FirestorePaths.profileCover(uid, imageId));
+    if (typeof updates.downloadUrl === "string" && !isUserMediaUrl(updates.downloadUrl, uid)) {
+      throw new ValidationError("Media URL must point at this account's storage object.");
+    }
     // Normalise caption to "" when explicitly set
     const normalized: Record<string, unknown> = { ...updates };
     if ("caption" in normalized) {
@@ -110,6 +123,11 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     if (!coverSnap.exists) {
       return jsonError("Image not found", "NOT_FOUND", 404);
     }
+
+    const cover = coverSnap.data();
+    await deleteOwnedObject(cover?.downloadUrl, uid);
+    await deleteOwnedObject(cover?.videoDownloadUrl, uid);
+    await deleteOwnedObject(cover?.imageReference, uid);
 
     const batch = adminDb.batch();
     batch.delete(coverRef);

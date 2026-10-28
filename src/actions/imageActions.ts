@@ -63,6 +63,13 @@ export function updateImageDownloadUrl(
 /**
  * Fetches image data, preferring owner data; falls back to the public copy.
  */
+export function unlockImage(
+  imageId: string,
+  password: string
+): Promise<ActionResult<{ data: Record<string, unknown>; isOwner: boolean }>> {
+  return apiPost(`/api/images/${encodeURIComponent(imageId)}/access`, { password });
+}
+
 export function fetchImageData(imageId: string): Promise<
   ActionResult<{
     data: Record<string, unknown>;

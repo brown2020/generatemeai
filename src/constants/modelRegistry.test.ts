@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { MODEL_REGISTRY, getImageModels, isSelectableImageModel, isValidModel } from "./modelRegistry";
+import { MODEL_REGISTRY, creditsToMinus, getImageModels, isSelectableImageModel, isValidModel } from "./modelRegistry";
 
 const readEnvExampleKeys = (): Set<string> => {
   const envExample = readFileSync(join(process.cwd(), ".env.example"), "utf8");
@@ -46,6 +46,17 @@ describe("isValidModel", () => {
     for (const name of ["playground-v2", "stable-diffusion-xl", "constructor", "toString", ""]) {
       expect(isValidModel(name)).toBe(false);
     }
+  });
+});
+
+describe("creditsToMinus", () => {
+  it("reads the public credit price from a static env access", () => {
+    const key = "NEXT_PUBLIC_CREDITS_PER_DALL_E_IMAGE";
+    const previous = process.env[key];
+    process.env[key] = "7";
+    expect(creditsToMinus("dall-e")).toBe(7);
+    if (previous === undefined) delete process.env[key];
+    else process.env[key] = previous;
   });
 });
 

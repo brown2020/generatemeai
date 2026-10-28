@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isAllowedStorageUrl } from "./storageUrl";
+import { fetchChecked, isAllowedStorageUrl, isUserMediaUrl } from "./storageUrl";
 
 describe("isAllowedStorageUrl", () => {
   it("accepts Firebase/Google Storage HTTPS URLs", () => {
@@ -48,5 +48,78 @@ describe("isAllowedStorageUrl", () => {
   it("rejects malformed input", () => {
     expect(isAllowedStorageUrl("")).toBe(false);
     expect(isAllowedStorageUrl("not a url")).toBe(false);
+  });
+});
+
+describe("isUserMediaUrl", () => {
+  it("accepts only this account's generated, reference, and video objects", () => {
+    expect(
+      isUserMediaUrl(
+        "https://storage.googleapis.com/demo-bucket/generated/user-a/a.png",
+        "user-a"
+      )
+    ).toBe(true);
+    expect(
+      isUserMediaUrl(
+        "https://storage.googleapis.com/demo-bucket/generated/user-b/a.png",
+        "user-a"
+      )
+    ).toBe(false);
+    expect(
+      isUserMediaUrl(
+        "https://storage.googleapis.com/demo-bucket/video-generation/clip.mp4",
+        "user-a"
+      )
+    ).toBe(false);
+  });
+});
+
+describe("fetchChecked", () => {
+  it("refuses a redirect to a blocked host without fetching it", async () => {
+    const calls: string[] = [];
+    await expect(
+      fetchChecked("https://storage.googleapis.com/bucket/generated/user-a/a.png", {
+        maxBytes: 100,
+        allow: (url) => isUserMediaUrl(url, "user-a"),
+        fetchImpl: async (url) => {
+          calls.push(String(url));
+          return {
+            ok: false,
+            status: 302,
+            headers: { get: () => "http://169.254.169.254/latest/meta-data" },
+          };
+        },
+      })
+    ).rejects.toThrow(/not allowed/i);
+    expect(calls).toEqual([
+      "https://storage.googleapis.com/bucket/generated/user-a/a.png",
+    ]);
+  });
+
+  it("follows a redirect only when the next hop is still allowed", async () => {
+    const next = "https://storage.googleapis.com/bucket/generated/user-a/b.png";
+    const bytes = await fetchChecked(
+      "https://storage.googleapis.com/bucket/generated/user-a/a.png",
+      {
+        maxBytes: 100,
+        allow: (url) => isUserMediaUrl(url, "user-a"),
+        fetchImpl: async (url) => {
+          if (String(url).endsWith("/a.png")) {
+            return {
+              ok: false,
+              status: 302,
+              headers: { get: () => next },
+            };
+          }
+          return {
+            ok: true,
+            status: 200,
+            headers: { get: () => null },
+            arrayBuffer: async () => new Uint8Array([9]).buffer,
+          };
+        },
+      }
+    );
+    expect(bytes).toEqual(Buffer.from([9]));
   });
 });

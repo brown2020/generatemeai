@@ -14,6 +14,8 @@ export interface ImageData extends Partial<GenerationParams> {
   backgroundColor?: string;
   isSharable?: boolean;
   password?: string;
+  /** True when the server withheld media until the share password is checked. */
+  locked?: boolean;
 
   // Video-specific
   videoModel?: string;

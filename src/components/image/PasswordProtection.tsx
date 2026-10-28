@@ -3,21 +3,25 @@
 import { useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui";
+import { unlockImage } from "@/actions/imageActions";
+import type { ImageData } from "@/types/image";
 
 interface PasswordProtectionProps {
-  correctPassword: string;
-  onVerified: () => void;
+  imageId: string;
+  onUnlocked: (data: ImageData) => void;
 }
 
 /**
- * Password entry screen for protected images.
+ * Password entry screen for protected images. The password is checked on the
+ * server; this component never receives the stored password.
  */
 export const PasswordProtection = ({
-  correctPassword,
-  onVerified,
+  imageId,
+  onUnlocked,
 }: PasswordProtectionProps) => {
   const [enteredPassword, setEnteredPassword] = useState("");
   const [hasError, setHasError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4 py-10">
@@ -25,11 +29,18 @@ export const PasswordProtection = ({
         className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
         onSubmit={(e) => {
           e.preventDefault();
-          if (enteredPassword === correctPassword) {
-            onVerified();
-          } else {
-            setHasError(true);
-          }
+          if (!enteredPassword || isSubmitting) return;
+          setIsSubmitting(true);
+          void unlockImage(imageId, enteredPassword)
+            .then((result) => {
+              if (!result.success || !result.data?.data) {
+                setHasError(true);
+                return;
+              }
+              onUnlocked(result.data.data as unknown as ImageData);
+            })
+            .catch(() => setHasError(true))
+            .finally(() => setIsSubmitting(false));
         }}
       >
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-blue-50">
@@ -61,8 +72,8 @@ export const PasswordProtection = ({
         <p id="view-password-error" aria-live="polite" className="mt-1.5 min-h-5 text-sm text-red-600">
           {hasError ? "That password doesn't match. Check it with the owner and try again." : ""}
         </p>
-        <Button type="submit" fullWidth className="mt-2">
-          View Image
+        <Button type="submit" fullWidth className="mt-2" disabled={isSubmitting}>
+          {isSubmitting ? "Checking…" : "View Image"}
         </Button>
       </form>
     </div>

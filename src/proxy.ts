@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authCookieName } from "@/constants/authCookie";
 import { isProtectedRoute } from "@/constants/routes";
 
 /**
@@ -20,9 +21,7 @@ export function proxy(request: NextRequest) {
   // Check if route requires authentication
   if (isProtectedRoute(pathname)) {
     // Check for auth cookie (set by useAuthToken hook)
-    const authCookie = request.cookies.get(
-      process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken"
-    );
+    const authCookie = request.cookies.get(authCookieName());
 
     if (!authCookie?.value) {
       // Send unauthenticated users to sign in, then back to this page

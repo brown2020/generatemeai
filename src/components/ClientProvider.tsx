@@ -11,10 +11,6 @@ import { hasClientConfig } from "@/firebase/firebaseClient";
 import ErrorBoundary from "./ErrorBoundary";
 import { buttonClassName } from "./ui/buttonStyles";
 
-const getCookieName = (): string => {
-  return process.env.NEXT_PUBLIC_COOKIE_NAME?.trim() || "generateAuthToken";
-};
-
 function subscribeToWebView() {
   return () => {};
 }
@@ -92,7 +88,7 @@ function ClientShell({
 }
 
 function AuthReadyProvider({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuthToken(getCookieName());
+  const { loading } = useAuthToken();
   return <ClientShell loading={loading}>{children}</ClientShell>;
 }
 

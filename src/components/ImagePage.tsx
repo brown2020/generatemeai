@@ -60,6 +60,7 @@ const ImagePage = ({ id }: ImagePageProps) => {
     setCaption,
     setBackgroundColor,
     refreshData,
+    revealImage,
   } = useImagePageData({ id, uid, authPending, authReady });
 
   const {
@@ -79,7 +80,6 @@ const ImagePage = ({ id }: ImagePageProps) => {
   // Consolidated modal state - only one modal can be open at a time
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [password, setPassword] = useState("");
-  const [passwordVerified, setPasswordVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Derived modal states for cleaner component props
@@ -192,11 +192,11 @@ const ImagePage = ({ id }: ImagePageProps) => {
     );
   }
 
-  if (isPasswordProtected && !passwordVerified && !isOwner && imageData) {
+  if (isPasswordProtected && !isOwner && imageData && typeof imageData !== "boolean") {
     return (
       <PasswordProtection
-        correctPassword={imageData.password || ""}
-        onVerified={() => setPasswordVerified(true)}
+        imageId={id}
+        onUnlocked={revealImage}
       />
     );
   }

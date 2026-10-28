@@ -201,8 +201,9 @@ function TermsBilling({
         provider API keys.
       </p>
       <p>
-        A password on a shared image is a casual gate for that link. It is not
-        account security and it is not a secret credential.
+        A password on a shared image is checked on the server and is not sent
+        back to the browser. It is still only a casual gate for that link, not
+        account security.
       </p>
       <p>
         Payment information is processed by a third-party payment processor. You

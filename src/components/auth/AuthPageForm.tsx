@@ -6,11 +6,11 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   getIdToken,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
-import { setCookie } from "cookies-next";
 import { Eye, EyeOff, LockIcon, MailIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -22,12 +22,12 @@ import { STORAGE_KEYS } from "@/constants/storage";
 import { signInRedirectPath } from "@/constants/routes";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { buttonClassName } from "@/components/ui";
+import { establishAuthSession } from "@/actions/authSession";
 
 export type AuthPageMode = "login" | "signup" | "forgot";
 
 type Props = { mode: AuthPageMode };
 
-const COOKIE_NAME = process.env.NEXT_PUBLIC_COOKIE_NAME || "authToken";
 const SESSION_TIMEOUT_MS = 12_000;
 
 const TITLES: Record<AuthPageMode, string> = {
@@ -56,11 +56,8 @@ async function settleSessionCookie() {
   const firebaseUser = auth.currentUser;
   if (!firebaseUser) throw new Error("No user after auth");
   const token = await getIdToken(firebaseUser, true);
-  setCookie(COOKIE_NAME, token, {
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
+  const established = await establishAuthSession(token);
+  if (!established) throw new Error("Session cookie was not set");
 }
 
 function storeAuthInfo(em: string) {
@@ -225,6 +222,9 @@ export function AuthPageForm({ mode }: Props) {
     void runAuth(async () => {
       if (mode === "signup") {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
+        if (auth.currentUser) {
+          await sendEmailVerification(auth.currentUser).catch(() => undefined);
+        }
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), password);
       }

@@ -1,21 +1,44 @@
 /**
- * Profile fields that must only ever be mutated by trusted server logic
- * (credit purchases in /api/payments/process and deductions in
- * creditValidator). Clients can send arbitrary fields to PATCH /api/profile,
- * so these are stripped before any write to prevent forging a credit balance.
+ * Profile fields the signed-in user may change. Everything else, including
+ * credits and emailVerified, is dropped before the profile document is merged.
  */
-export const SERVER_CONTROLLED_PROFILE_FIELDS = ["credits"] as const;
+
+import { z } from "zod";
+
+const bounded = (max: number) => z.string().max(max);
+
+export const profileUpdateSchema = z.object({
+  email: bounded(320).optional(),
+  contactEmail: bounded(320).optional(),
+  displayName: bounded(120).optional(),
+  photoUrl: bounded(2000).optional(),
+  useCredits: z.boolean().optional(),
+  openai_api_key: bounded(500).optional(),
+  stability_api_key: bounded(500).optional(),
+  bria_api_key: bounded(500).optional(),
+  did_api_key: bounded(500).optional(),
+  replicate_api_key: bounded(500).optional(),
+  ideogram_api_key: bounded(500).optional(),
+  runway_ml_api_key: bounded(500).optional(),
+  selectedAvatar: bounded(200).optional(),
+  selectedTalkingPhoto: bounded(200).optional(),
+});
+
+export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;
+
+const PROFILE_FIELDS = Object.keys(profileUpdateSchema.shape);
 
 /**
- * Returns a shallow copy of `updates` with all server-controlled fields
- * removed. Used to sanitize client-supplied profile updates.
+ * Keeps only allowlisted profile fields. Invalid values for those fields
+ * throw (ZodError). Unknown fields, including credits, are ignored.
  */
-export function stripServerControlledProfileFields(
-  updates: Record<string, unknown>
-): Record<string, unknown> {
-  const sanitized: Record<string, unknown> = { ...updates };
-  for (const field of SERVER_CONTROLLED_PROFILE_FIELDS) {
-    delete sanitized[field];
+export function sanitizeProfileUpdate(updates: Record<string, unknown>): ProfileUpdate {
+  const known: Record<string, unknown> = {};
+  for (const field of PROFILE_FIELDS) {
+    if (field in updates) known[field] = updates[field];
   }
-  return sanitized;
+  return profileUpdateSchema.parse(known);
 }
+
+/** @see sanitizeProfileUpdate */
+export const stripServerControlledProfileFields = sanitizeProfileUpdate;

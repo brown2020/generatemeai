@@ -30,4 +30,20 @@ describe("stripServerControlledProfileFields", () => {
   it("returns an empty object when only protected fields are supplied", () => {
     expect(stripServerControlledProfileFields({ credits: 1 })).toEqual({});
   });
+
+  it("drops emailVerified and unknown fields", () => {
+    expect(
+      stripServerControlledProfileFields({
+        emailVerified: true,
+        displayName: "Ada",
+        isAdmin: true,
+      })
+    ).toEqual({ displayName: "Ada" });
+  });
+
+  it("rejects an invalid type on an allowlisted field", () => {
+    expect(() =>
+      stripServerControlledProfileFields({ useCredits: "yes" })
+    ).toThrow();
+  });
 });
