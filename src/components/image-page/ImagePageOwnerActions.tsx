@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button, Modal, buttonClassName } from "@/components/ui";
+import { creditsToMinus } from "@/constants/modelRegistry";
 import { ImageData } from "@/types/image";
 
 interface ImagePageOwnerActionsProps {
@@ -100,7 +101,7 @@ export const ImagePageOwnerActions = ({
       {confirmingBackgroundRemoval && (
         <Modal
           title="Remove the Background?"
-          description="This replaces the saved image with a transparent-background version and uses credits (or your Bria API key)."
+          description={`This replaces the saved image with a transparent-background version and uses ${creditsToMinus("bria.ai")} credits, or your Bria API key when credits are off.`}
           onClose={() => setConfirmingBackgroundRemoval(false)}
         >
           <div className="mt-6 flex justify-end gap-3">

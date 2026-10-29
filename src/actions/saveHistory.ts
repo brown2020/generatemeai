@@ -17,6 +17,7 @@ interface SaveHistoryParams {
   composition: string;
   medium: string;
   mood: string;
+  videoDownloadUrl?: string;
 }
 
 /**

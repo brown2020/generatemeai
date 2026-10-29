@@ -13,6 +13,7 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { ImageData } from "@/types/image";
 import useProfileStore from "@/zustand/useProfileStore";
 import {
+  creditsToMinus,
   getModelConfig,
   getVideoModels,
   type Model,
@@ -127,6 +128,7 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
           freestyle: imageData.freestyle || "",
           style: imageData.style || "",
           downloadUrl: imageData.downloadUrl,
+          videoDownloadUrl: videoDownloadURL,
           model: imageData.model || "",
           prompt: imageData.freestyle || "",
           tags: imageData.tags || [],
@@ -307,7 +309,11 @@ const VideoModalComponent: React.FC<VideoModalProps> = ({
             Cancel
           </Button>
           <Button loading={loading} onClick={handleGenerate}>
-            {loading ? "Generating…" : "Generate"}
+            {loading
+              ? "Generating…"
+              : useCredits
+                ? `Generate · ${creditsToMinus(videoModel)} credits`
+                : "Generate"}
           </Button>
         </div>
       </div>
