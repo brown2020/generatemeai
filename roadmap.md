@@ -27,8 +27,10 @@ Try again already opens `/generate` with the saved settings. Retired model ids f
 - `ffmpeg-static` has not been confirmed on a Vercel function. A preview deploy that converts one saved video is the check.
 - There is no browser end-to-end suite. Route tests cover generate, gallery, share, payments, and the video history field.
 - Firestore backups and error monitoring are not configured.
-- TypeScript 7 is published, but `npm run lint` refuses to run under it. Stay on TypeScript 6 until `typescript-eslint` supports it.
+- TypeScript 7 is published, but `typescript-eslint` (including its canary) still peers `typescript <6.1.0`, so `npm run lint` cannot run on it. Stay on TypeScript 6.0.3.
+- `@types/node` stays on the 24 line (`24.19.2`). The `latest` tag is Node 26 types, and `engines.node` is `24.x`.
 - Node engines stay `24.x`. Firebase packages warn on older Node.
+- `eslint-plugin-import`, `eslint-plugin-jsx-a11y`, and `eslint-plugin-react` still depend on minimatch 3. Forcing minimatch 11 removes the callable export those plugins call, so that moderate advisory stays until the plugins upgrade.
 
 ## Out of scope
 

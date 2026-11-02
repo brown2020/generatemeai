@@ -29,7 +29,7 @@ See `spec.md` for the full product promise, user flows, and roadmap.
 - **State**: Zustand 5
 - **Backend**: Firebase 13 client SDK + Firebase Admin 14 (modular imports only) (Auth, Firestore, Storage). Admin 14 pulls `jwks-rsa` 4, which depends on ESM-only `jose` 6. `package.json` overrides `jwks-rsa`'s `jose` to `5.10.0` so `require('firebase-admin/auth')` stays CommonJS. Keep that override. Re-test `/api/profile` on a preview deploy after any Admin upgrade.
 - **AI**: Vercel AI SDK 7 (`ai`, `@ai-sdk/openai` 4; prompts use `instructions`, not the deprecated `system`), Replicate SDK, plus direct REST calls (Stability, Ideogram, D-ID, RunwayML, Bria)
-- **Payments**: Stripe 23 (`stripe`, `@stripe/react-stripe-js` 7, `@stripe/stripe-js` 10), API version pinned to `2026-09-30.endive` in `src/lib/stripe.ts`
+- **Payments**: Stripe 23 (`stripe`, `@stripe/react-stripe-js` 7, `@stripe/stripe-js` 10), API version pinned to `2026-10-28.endive` in `src/lib/stripe.ts`
 - **Validation**: Zod 4
 - **Media**: `fluent-ffmpeg` + `ffmpeg-static` (GIF), `dom-to-image`; `sharp` arrives as a Next.js optional dependency
 - **Lint**: ESLint 10 (flat config `eslint.config.mjs`, `eslint-config-next`)
