@@ -163,13 +163,14 @@ export async function deleteUserStorage(uid: string, urls: string[]): Promise<vo
     `image-references/${uid}/`,
     `video-generation/${uid}/`,
   ];
-  for (const prefix of prefixes) {
-    await adminBucket.deleteFiles({ prefix, force: true });
-  }
+  await Promise.all(
+    prefixes.map((prefix) => adminBucket.deleteFiles({ prefix, force: true })),
+  );
 
-  for (const url of urls) {
+  const legacyDeletes = urls.flatMap((url) => {
     const objectPath = storageObjectPath(url);
-    if (!objectPath || !/^video-generation\/[^/]+$/.test(objectPath)) continue;
-    await adminBucket.file(objectPath).delete({ ignoreNotFound: true });
-  }
+    if (!objectPath || !/^video-generation\/[^/]+$/.test(objectPath)) return [];
+    return [adminBucket.file(objectPath).delete({ ignoreNotFound: true })];
+  });
+  await Promise.all(legacyDeletes);
 }
