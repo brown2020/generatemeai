@@ -23,25 +23,27 @@ export const PasswordProtection = ({
   const [hasError, setHasError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const submitPassword = (formData: FormData) => {
+    const password = String(formData.get("view-password") ?? "");
+    if (!password || isSubmitting) return;
+    setIsSubmitting(true);
+    void unlockImage(imageId, password)
+      .then((result) => {
+        if (!result.success || !result.data?.data) {
+          setHasError(true);
+          return;
+        }
+        onUnlocked(result.data.data as unknown as ImageData);
+      })
+      .catch(() => setHasError(true))
+      .finally(() => setIsSubmitting(false));
+  };
+
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4 py-10">
       <form
         className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!enteredPassword || isSubmitting) return;
-          setIsSubmitting(true);
-          void unlockImage(imageId, enteredPassword)
-            .then((result) => {
-              if (!result.success || !result.data?.data) {
-                setHasError(true);
-                return;
-              }
-              onUnlocked(result.data.data as unknown as ImageData);
-            })
-            .catch(() => setHasError(true))
-            .finally(() => setIsSubmitting(false));
-        }}
+        action={submitPassword}
       >
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-blue-50">
           <Lock className="size-6 text-blue-600" />

@@ -44,12 +44,10 @@ export const PATCH = withAuth(async (uid, request: NextRequest) => {
  * Deletes the user's profile, covers, public images, payments, and auth user.
  */
 export const DELETE = withAuth(async (uid) => {
-  const coversSnap = await adminDb
-    .collection(FirestorePaths.profileCovers(uid))
-    .get();
-  const paymentsSnap = await adminDb
-    .collection(FirestorePaths.userPayments(uid))
-    .get();
+  const [coversSnap, paymentsSnap] = await Promise.all([
+    adminDb.collection(FirestorePaths.profileCovers(uid)).get(),
+    adminDb.collection(FirestorePaths.userPayments(uid)).get(),
+  ]);
 
   const mediaUrls: string[] = [];
   const refs = [

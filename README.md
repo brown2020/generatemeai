@@ -19,12 +19,12 @@ Open-source AI image and video generation for creators. Sign in, pick a model, d
 
 | Layer | Tech |
 | --- | --- |
-| Framework | Next.js ^16.4.3 (App Router, Turbopack dev) |
-| UI | React ^19.3.1, Tailwind CSS ^4.3.3, Framer Motion ^14.9, Lucide ^1.66, react-icons |
+| Framework | Next.js ^16.4.5 (App Router, Turbopack dev) |
+| UI | React ^19.3.1, Tailwind CSS ^4.3.4, Framer Motion ^14.9, Lucide ^1.68, react-icons |
 | Language | TypeScript ^6.0.3 (lint cannot run on TypeScript 7 yet; `@types/node` stays on the Node 24 line) |
 | State | Zustand ^5.0.16 |
-| Backend | Firebase client ^13.1.0 + Firebase Admin ^14.5.0 (Auth, Firestore, Storage). `jwks-rsa` is pinned to `jose` 5.10.0 |
-| AI | Vercel AI SDK (`ai` ^7.0.159, `@ai-sdk/openai` ^4.0.106), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
+| Backend | Firebase client ^13.2.0 + Firebase Admin ^14.5.0 (Auth, Firestore, Storage). `jwks-rsa` is pinned to `jose` 5.10.0 |
+| AI | Vercel AI SDK (`ai` ^7.0.162, `@ai-sdk/openai` ^4.0.108), Replicate SDK, direct REST (Stability, Ideogram, D-ID, RunwayML, Bria) |
 | Payments | Stripe ^23.1 (API `2026-10-28.endive`) + `@stripe/react-stripe-js` ^7 |
 | Validation | Zod ^4.6.7 |
 | Media | `fluent-ffmpeg` + `ffmpeg-static`, `dom-to-image` (`sharp` comes with Next.js for self-hosted image optimization) |

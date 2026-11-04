@@ -26,6 +26,58 @@ interface PromptInputProps {
   uploadedImage: File | null;
 }
 
+interface PromptEnhanceButtonProps {
+  value: string;
+  isOptimizing: boolean;
+  optimizeCreditCost?: number;
+  onOptimize: () => void;
+}
+
+/** Enhance control, split out so the prompt field stays easy to follow. */
+const PromptEnhanceButton = ({
+  value,
+  isOptimizing,
+  optimizeCreditCost,
+  onOptimize,
+}: PromptEnhanceButtonProps) => {
+  const isDisabled = !value || isOptimizing;
+  const creditLabel = optimizeCreditCost
+    ? `Enhance prompt with AI (${optimizeCreditCost} credits)`
+    : "Enhance prompt with AI";
+  const accessibleLabel = optimizeCreditCost
+    ? `Enhance prompt with AI, ${optimizeCreditCost} credits`
+    : "Enhance prompt with AI";
+
+  return (
+    <button
+      type="button"
+      onClick={onOptimize}
+      disabled={isDisabled}
+      className={`group relative inline-flex items-center justify-center w-9 h-9 
+        rounded-lg transition-colors duration-200 hover:shadow-md
+        ${
+          isDisabled
+            ? "bg-gray-100 cursor-not-allowed"
+            : "bg-purple-50 hover:bg-purple-100 border border-purple-200"
+        }`}
+      title={creditLabel}
+      aria-label={accessibleLabel}
+    >
+      {isOptimizing ? (
+        <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+      ) : (
+        <Sparkles
+          className={`w-5 h-5 ${
+            isDisabled
+              ? "text-gray-400"
+              : "text-purple-600 group-hover:text-purple-700"
+          } transition-colors`}
+        />
+      )}
+    </button>
+  );
+};
+
 /**
  * Prompt input component with voice recording and AI optimization.
  */
@@ -126,40 +178,12 @@ export const PromptInput = ({
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={onOptimize}
-            disabled={!value || isOptimizing}
-            className={`group relative inline-flex items-center justify-center w-9 h-9 
-              rounded-lg transition-colors duration-200 hover:shadow-md
-              ${
-                !value || isOptimizing
-                  ? "bg-gray-100 cursor-not-allowed"
-                  : "bg-purple-50 hover:bg-purple-100 border border-purple-200"
-              }`}
-            title={
-              optimizeCreditCost
-                ? `Enhance prompt with AI (${optimizeCreditCost} credits)`
-                : "Enhance prompt with AI"
-            }
-            aria-label={
-              optimizeCreditCost
-                ? `Enhance prompt with AI, ${optimizeCreditCost} credits`
-                : "Enhance prompt with AI"
-            }
-          >
-            {isOptimizing ? (
-              <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
-            ) : (
-              <Sparkles
-                className={`w-5 h-5 ${
-                  !value
-                    ? "text-gray-400"
-                    : "text-purple-600 group-hover:text-purple-700"
-                } transition-colors`}
-              />
-            )}
-          </button>
+          <PromptEnhanceButton
+            value={value}
+            isOptimizing={isOptimizing}
+            optimizeCreditCost={optimizeCreditCost}
+            onOptimize={onOptimize}
+          />
         </div>
       </div>
 
