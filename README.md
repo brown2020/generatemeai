@@ -104,7 +104,7 @@ Copy `.env.example` to `.env.local`. Use placeholders only — never commit real
 | `NEXT_PUBLIC_FIREBASE_STORAGEBUCKET` | Storage bucket | Same |
 | `NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID` | Messaging sender id | Same |
 | `NEXT_PUBLIC_FIREBASE_APPID` | App id | Same |
-| `NEXT_PUBLIC_FIREBASE_MEASUREMENTID` | Analytics measurement id (optional) | Same |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENTID` | Analytics measurement id. After the cookie banner is accepted, the browser calls `getAnalytics` with this id and logs `page_view` on client route changes. Leave the live id in this variable | Same |
 | `NEXT_PUBLIC_COOKIE_NAME` | Name of the HttpOnly auth ID-token cookie. The server sets it from `POST /api/auth/session`; the fallback name is `generateAuthToken` | Choose a stable cookie name |
 | `OPENAI_API_KEY` | OpenAI / GPT Image + prompt/tag helpers | [platform.openai.com](https://platform.openai.com) |
 | `OPENAI_ORG_ID` | OpenAI org id (optional) | Same |

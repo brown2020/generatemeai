@@ -14,6 +14,9 @@ const firebaseConfig = {
 /** True when public Firebase web config is present (false in CI without secrets). */
 export const hasClientConfig = Boolean(firebaseConfig.apiKey?.trim());
 
+/** True when the web config includes the measurement id Analytics should use. */
+export const hasMeasurementId = Boolean(firebaseConfig.measurementId?.trim());
+
 let auth: Auth;
 
 if (hasClientConfig) {

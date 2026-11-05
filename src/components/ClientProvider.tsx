@@ -1,15 +1,33 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useSyncExternalStore } from "react";
 import { Toaster } from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
-import CookieConsent from "react-cookie-consent";
+import CookieConsent, { getCookieConsentValue } from "react-cookie-consent";
 
 import useAuthToken from "@/hooks/useAuthToken";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import { hasClientConfig } from "@/firebase/firebaseClient";
 import ErrorBoundary from "./ErrorBoundary";
+import { FirebaseAnalytics } from "./FirebaseAnalytics";
 import { buttonClassName } from "./ui/buttonStyles";
+
+const ANALYTICS_CONSENT_EVENT = "generateme-cookie-consent";
+
+function subscribeToAnalyticsConsent(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(ANALYTICS_CONSENT_EVENT, onChange);
+  return () => window.removeEventListener(ANALYTICS_CONSENT_EVENT, onChange);
+}
+
+function readAnalyticsConsent() {
+  if (typeof document === "undefined") return false;
+  return getCookieConsentValue() === "true";
+}
+
+function publishAnalyticsConsent() {
+  window.dispatchEvent(new Event(ANALYTICS_CONSENT_EVENT));
+}
 
 function subscribeToWebView() {
   return () => {};
@@ -29,6 +47,11 @@ function ClientShell({
   const isWebView = useSyncExternalStore(
     subscribeToWebView,
     readWebView,
+    () => false
+  );
+  const analyticsAllowed = useSyncExternalStore(
+    subscribeToAnalyticsConsent,
+    readAnalyticsConsent,
     () => false
   );
 
@@ -52,12 +75,19 @@ function ClientShell({
     };
   }, []);
 
+  const analytics = (
+    <Suspense fallback={null}>
+      <FirebaseAnalytics enabled={analyticsAllowed} />
+    </Suspense>
+  );
+
   if (loading) {
     return (
       <ErrorBoundary>
         <div className="flex h-full flex-col items-center justify-center bg-[#333b51]">
           <ClipLoader color="#fff" size={80} />
         </div>
+        {analytics}
       </ErrorBoundary>
     );
   }
@@ -66,12 +96,14 @@ function ClientShell({
     <ErrorBoundary>
       <div className="flex h-full flex-col">
         {children}
+        {analytics}
         {!isWebView && (
           <aside aria-label="Cookie consent">
             <CookieConsent
               disableStyles
               location="none"
               buttonText="Got It"
+              onAccept={publishAnalyticsConsent}
               containerClasses="fixed inset-x-3 top-[calc(4.75rem+env(safe-area-inset-top))] z-40 mx-auto flex max-w-xl items-center gap-3 rounded-xl border border-gray-200 bg-white py-3 pr-3 pl-4 text-sm text-gray-700 shadow-lg"
               contentClasses="min-w-0 flex-1"
               buttonClasses={buttonClassName({ size: "sm" })}
@@ -99,8 +131,9 @@ function AuthSkippedProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Client-side provider that handles auth token management, WebView detection,
- * cookie consent, and toasts. Soft-skips Firebase Auth when public config is
- * missing so CI/SSG does not hang or throw.
+ * cookie consent, Firebase Analytics (only after that consent), and toasts.
+ * Soft-skips Firebase Auth when public config is missing so CI/SSG does not
+ * hang or throw.
  */
 export function ClientProvider({ children }: { children: React.ReactNode }) {
   if (!hasClientConfig) {

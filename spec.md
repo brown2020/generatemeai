@@ -81,7 +81,7 @@ Generate.me AI is a working Next.js 16 app where authenticated users generate, m
 
 ### Existing integrations
 
-OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Ideogram, D-ID, RunwayML, Bria AI; Firebase (Auth/Firestore/Storage); Stripe; Vercel (hosting/AI SDK).
+OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Ideogram, D-ID, RunwayML, Bria AI; Firebase (Auth/Firestore/Storage, and Analytics after the cookie banner is accepted); Stripe; Vercel (hosting/AI SDK).
 
 ### Current architecture summary
 
@@ -90,6 +90,7 @@ OpenAI (DALL·E/GPT Image, GPT prompt+tags), Stability AI, Replicate (FLUX), Ide
 - **Strategy Pattern** for image providers (`src/strategies`), **Model Registry** as single source of truth (`src/constants/modelRegistry.ts`), **Factory Pattern** for option sets.
 - **Server-side credits** (`creditValidator.ts`, transactional deduction of per-image cost times bounded image count, refunded if the provider call fails); client profile updates are an allowlist (`PATCH /api/profile` drops `credits`, `emailVerified`, and unknown fields) and image mutations are owner-scoped before touching the public mirror; credit purchases accept only the published pack and grant it once per PaymentIntent, including from a signed `payment_intent.succeeded` webhook when `STRIPE_WEBHOOK_SECRET` is set; generation is capped at 20 attempts per minute; **Zod** validation at every boundary; **typed errors** + `ActionResult`.
 - **Zustand** stores for auth/profile/generation/payments.
+- **Firebase Analytics** starts in the browser only after the existing cookie-consent banner is accepted (`getAnalytics` / `isSupported`, measurement id from `NEXT_PUBLIC_FIREBASE_MEASUREMENTID`). `getAnalytics` records the first page view; later client route changes log `page_view`. The content security policy allows `https://www.googletagmanager.com` so gtag.js can load.
 - **Data model (Firestore)**: `users/{uid}` (auth metadata), `users/{uid}/profile/userData` (credits, keys, settings), `users/{uid}/payments/{id}`, `users/{uid}/rateLimit/generation`, `profiles/{uid}/covers/{id}` (gallery), `publicImages/{id}` (shared copies). Media in Storage under `generated/{uid}/*`, `image-references/{uid}/*`, and `video-generation/{uid}/*`, served via signed URLs. The client SDK cannot write those objects.
 
 ### Existing technical constraints
